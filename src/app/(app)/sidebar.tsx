@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { LogoMark } from "@/components/logo";
 import { focusRing, isActivePath } from "@/components/ui";
 import { SIDEBAR_COOKIE } from "@/lib/ui-prefs";
 import { logoutAction } from "../login/actions";
@@ -18,17 +19,17 @@ export interface Account {
 
 const LINKS: { href: string; label: "overview" | "agents" | "voices" | "numbers" | "calls" | "messages"; icon: ReactNode }[] = [
   { href: "/dashboard", label: "overview", icon: <path d="M3.5 9.5 10 4l6.5 5.5V16a1 1 0 0 1-1 1H12v-4.5H8V17H4.5a1 1 0 0 1-1-1V9.5Z" /> },
+  { href: "/assistants", label: "agents", icon: <path d="M4 8.5v3M7 6v8M10 4v12M13 6.5v7M16 8.5v3" /> },
   {
-    href: "/agents",
-    label: "agents",
+    href: "/voices",
+    label: "voices",
     icon: (
       <>
-        <rect x="4" y="6.5" width="12" height="9.5" rx="3" />
-        <path d="M10 3.5v3M8 11h.01M12 11h.01" />
+        <rect x="7.5" y="2.5" width="5" height="9" rx="2.5" />
+        <path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.5" />
       </>
     ),
   },
-  { href: "/voices", label: "voices", icon: <path d="M4 8.5v3M7 6v8M10 4v12M13 6.5v7M16 8.5v3" /> },
   { href: "/numbers", label: "numbers", icon: <path d="M8 3.5 6.5 16.5M13.5 3.5 12 16.5M4 7.5h12.5M3.5 12.5h12.5" /> },
   {
     href: "/calls",
@@ -102,7 +103,7 @@ export function Sidebar({ account, unread, initialCollapsed }: { account: Accoun
 
   return (
     <aside
-      className={`relative border-b border-stone-200 bg-white md:sticky md:top-0 md:flex md:h-screen md:shrink-0 md:flex-col md:border-b-0 md:border-r md:transition-[width] md:duration-200 md:ease-out motion-reduce:transition-none ${collapsed ? "md:w-16" : "md:w-56"}`}
+      className={`relative border-b border-stone-200 bg-white md:sticky md:top-0 md:flex md:h-screen md:shrink-0 md:flex-col md:border-b-0 md:border-r md:transition-[width] md:duration-200 md:ease-out motion-reduce:transition-none ${collapsed ? "md:w-16" : "md:w-60"}`}
     >
       <button
         type="button"
@@ -117,9 +118,9 @@ export function Sidebar({ account, unread, initialCollapsed }: { account: Accoun
       </button>
 
       <div className={`flex items-center justify-between gap-3 px-4 py-4 md:block ${collapsed ? "md:px-3" : ""}`}>
-        <Link href="/dashboard" className="flex items-center gap-2 overflow-hidden font-semibold">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-stone-900 text-sm text-white md:ml-1.5">◉</span>
-          <span className={labelClass}>Easy Voice</span>
+        <Link href="/dashboard" className={`flex items-center gap-2 overflow-hidden rounded-lg ${focusRing}`}>
+          <LogoMark className="h-6 w-6 md:ml-2" />
+          <span className={`${labelClass} text-xl font-medium leading-none tracking-[-0.05em]`}>VFi</span>
         </Link>
         <div className="flex items-center gap-2 md:hidden">
           {/* The Messages link (and its count) can be scrolled out of the row below, so new texts show here too. */}
@@ -131,7 +132,7 @@ export function Sidebar({ account, unread, initialCollapsed }: { account: Accoun
               <Icon>
                 <MessagesIcon />
               </Icon>
-              <span aria-hidden className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-sky-600 ring-2 ring-white" />
+              <span aria-hidden className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-stone-900 ring-2 ring-white" />
               <span className="sr-only">
                 {t("messages")}
                 {t("unreadSr", { count: unread })}
@@ -155,19 +156,19 @@ export function Sidebar({ account, unread, initialCollapsed }: { account: Accoun
               key={l.href}
               href={l.href}
               aria-current={active ? "page" : undefined}
-              className={`group relative flex shrink-0 items-center rounded-lg px-3 py-2 text-sm transition-colors ${focusRing} ${active ? "bg-stone-100 font-medium text-stone-900" : "text-stone-600 hover:bg-stone-50 hover:text-stone-900"}`}
+              className={`group relative flex shrink-0 items-center rounded-[10px] px-3 py-2 text-sm transition-colors ${focusRing} ${active ? "bg-stone-100 font-medium text-stone-900" : "text-stone-700 hover:bg-stone-100/70 hover:text-stone-900"}`}
             >
-              <span className="flex items-center gap-3 overflow-hidden">
+              <span className="flex flex-1 items-center gap-3 overflow-hidden">
                 <span className="relative hidden md:block">
                   <Icon>{l.icon}</Icon>
                   {showUnread && collapsed && (
-                    <span aria-hidden className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-sky-600 ring-2 ring-white" />
+                    <span aria-hidden className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-stone-900 ring-2 ring-white" />
                   )}
                 </span>
                 <span className={labelClass}>{t(l.label)}</span>
                 {showUnread && (
                   // Hidden from view in the rail (the dot shows instead) but still read out.
-                  <span className={`rounded-full bg-sky-600 px-1.5 py-0.5 text-xs font-medium text-white ${collapsed ? "md:sr-only" : ""}`}>
+                  <span className={`ml-auto rounded-full bg-stone-900 px-1.5 py-0.5 text-[11px] font-medium leading-none text-white ${collapsed ? "md:sr-only" : ""}`}>
                     <span aria-hidden>{unread}</span>
                     <span className="sr-only">{t("unreadSr", { count: unread })}</span>
                   </span>

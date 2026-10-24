@@ -112,7 +112,7 @@ export default async function VoicesPage({ searchParams }: { searchParams: Promi
           ) : (
             <ul className="grid gap-2 sm:grid-cols-2">
               {stock.map((v) => (
-                <li key={v.ref} className="flex items-start gap-1 rounded-lg border border-stone-100 px-3 py-2 text-sm">
+                <li key={v.ref} className="flex items-start gap-1 rounded-xl border border-stone-100 px-3 py-2 text-sm">
                   <PreviewButton voice={`stock:${v.ref}`} name={v.name} compact />
                   <span className="min-w-0 space-y-1">
                     <span className="block font-medium">{v.name}</span>
@@ -134,7 +134,7 @@ export default async function VoicesPage({ searchParams }: { searchParams: Promi
         <Tabs tabs={[{ href: "/voices", label: t("cloneTab"), active: true }]} />
         <div className="space-y-4 pt-4">
           <p className="text-sm text-stone-500">{t("labIntro")}</p>
-          {/* Once ElevenLabs is connected the Easy Voice option simply isn't offered; no notice needed. */}
+          {/* Once ElevenLabs is connected the VFi option simply isn't offered; no notice needed. */}
           {!cloning && canAddService && (
             <Notice>
               {te("cloningUnavailable")}
@@ -151,11 +151,11 @@ export default async function VoicesPage({ searchParams }: { searchParams: Promi
                   {providers.map((p, i) => (
                     <label
                       key={p}
-                      className="flex cursor-pointer items-start gap-2 rounded-lg border border-stone-200 px-3 py-2 text-sm has-[:checked]:border-stone-900"
+                      className="flex cursor-pointer items-start gap-2 rounded-xl border border-stone-200 px-3 py-2 text-sm has-[:checked]:border-stone-900"
                     >
                       <input type="radio" name="provider" value={p} defaultChecked={i === 0} required className="mt-0.5" />
                       <span>
-                        <span className="font-medium">{p === "elevenlabs" ? "ElevenLabs" : "Easy Voice"}</span>
+                        <span className="font-medium">{p === "elevenlabs" ? "ElevenLabs" : "VFi"}</span>
                         <span className="block text-stone-500">
                           {p === "elevenlabs"
                             ? t("elevenLabsOption")
@@ -167,7 +167,7 @@ export default async function VoicesPage({ searchParams }: { searchParams: Promi
                   {canAddService && (
                     <Link
                       href="/account/api-keys"
-                      className="flex items-center gap-2 rounded-lg border border-dashed border-stone-300 px-3 py-2 text-sm text-stone-600 hover:border-stone-500 hover:text-stone-900"
+                      className="flex items-center gap-2 rounded-xl border border-dashed border-stone-300 px-3 py-2 text-sm text-stone-600 hover:border-stone-500 hover:text-stone-900"
                     >
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-stone-300 text-base leading-none">
                         +

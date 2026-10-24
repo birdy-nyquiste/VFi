@@ -256,7 +256,7 @@ export async function refreshProcessingVoices(userId?: string): Promise<void> {
   for (const v of rows) {
     try {
       if (!v.providerVoiceId) {
-        // Being made right now, or never will be: failing it refunds an Easy Voice clone and frees the slot.
+        // Being made right now, or never will be: failing it refunds a VFi clone and frees the slot.
         if (Date.now() - v.createdAt.getTime() > STUCK_MS) await failVoice(v, stored("voiceCloneFailed"));
         continue;
       }

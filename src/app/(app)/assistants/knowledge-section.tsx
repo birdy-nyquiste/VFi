@@ -68,7 +68,7 @@ export async function KnowledgeSection({ agent }: { agent: Agent }) {
         {sources.length === 0 ? (
           <p className="text-sm text-stone-500">{t("empty")}</p>
         ) : (
-          <ul className="divide-y divide-stone-100 rounded-lg border border-stone-200">
+          <ul className="divide-y divide-stone-100 rounded-xl border border-stone-200">
             {sources.map((s) => (
               <li key={s.id} className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm">
                 {/* On phones the name gets a line of its own; a name that is still cut off shows in full on hover. */}
@@ -122,7 +122,7 @@ export async function KnowledgeSection({ agent }: { agent: Agent }) {
 
         {!full && (
           <div className="space-y-2" key={formKey}>
-            <details className="rounded-lg border border-stone-200 px-4 py-3">
+            <details className="rounded-xl border border-stone-200 px-4 py-3">
               <summary className="cursor-pointer text-sm font-medium text-stone-700">{t("addText")}</summary>
               <ActionForm action={addKnowledgeTextAction} className="mt-3 space-y-3">
                 <input type="hidden" name="agentId" value={agent.id} />
@@ -135,7 +135,7 @@ export async function KnowledgeSection({ agent }: { agent: Agent }) {
                 <SubmitButton>{t("addFor", { price })}</SubmitButton>
               </ActionForm>
             </details>
-            <details className="rounded-lg border border-stone-200 px-4 py-3">
+            <details className="rounded-xl border border-stone-200 px-4 py-3">
               <summary className="cursor-pointer text-sm font-medium text-stone-700">{t("addFile")}</summary>
               <ActionForm action={addKnowledgeFileAction} className="mt-3 space-y-3">
                 <input type="hidden" name="agentId" value={agent.id} />
@@ -161,7 +161,7 @@ export async function KnowledgeSection({ agent }: { agent: Agent }) {
             </details>
             {/* One website per agent, counting one that is still being removed. */}
             {config.features.knowledgeUrls && !website && (
-              <details className="rounded-lg border border-stone-200 px-4 py-3">
+              <details className="rounded-xl border border-stone-200 px-4 py-3">
                 <summary className="cursor-pointer text-sm font-medium text-stone-700">{t("addUrl")}</summary>
                 <ActionForm action={addKnowledgeUrlAction} className="mt-3 space-y-3">
                   <input type="hidden" name="agentId" value={agent.id} />

@@ -1,10 +1,141 @@
 @import "tailwindcss";
 
+/*
+ * VFi palette. The stock palettes the pages already use are remapped instead of renamed: stone is the
+ * warm ink-on-canvas neutral, emerald and sky are the one signal teal (live and ready), amber is
+ * attention and red is failure. Signal teal marks state only; actions are ink.
+ */
+@theme {
+  --color-stone-50: #fbfaf9;
+  --color-stone-100: #f3f2ef;
+  --color-stone-200: #e8e6e3;
+  --color-stone-300: #dcd9d5;
+  --color-stone-400: #a9a6a1;
+  --color-stone-500: #6e6f75;
+  --color-stone-600: #55565b;
+  --color-stone-700: #33343a;
+  --color-stone-800: #1f2024;
+  --color-stone-900: #0b0b0c;
+  --color-stone-950: #050506;
+
+  --color-emerald-50: #e6f5f6;
+  --color-emerald-100: #cdedef;
+  --color-emerald-200: #a8dee2;
+  --color-emerald-300: #74c9d0;
+  --color-emerald-400: #2bc4d1;
+  --color-emerald-500: #0e9aa7;
+  --color-emerald-600: #0c8592;
+  --color-emerald-700: #0b6670;
+  --color-emerald-800: #0a525a;
+  --color-emerald-900: #08393f;
+
+  --color-sky-50: #e6f5f6;
+  --color-sky-100: #cdedef;
+  --color-sky-200: #a8dee2;
+  --color-sky-300: #74c9d0;
+  --color-sky-400: #2bc4d1;
+  --color-sky-500: #0e9aa7;
+  --color-sky-600: #0c8592;
+  --color-sky-700: #0b6670;
+  --color-sky-800: #0a525a;
+  --color-sky-900: #08393f;
+
+  --color-amber-50: #fbf1e3;
+  --color-amber-100: #f7e3c6;
+  --color-amber-200: #f0d5ae;
+  --color-amber-300: #e2b06d;
+  --color-amber-400: #c98a2e;
+  --color-amber-500: #a15c00;
+  --color-amber-600: #8f5200;
+  --color-amber-700: #8a4f00;
+  --color-amber-800: #6e3f00;
+  --color-amber-900: #4f2d00;
+
+  --color-red-50: #fbeae8;
+  --color-red-100: #f6d5d1;
+  --color-red-200: #efc0ba;
+  --color-red-300: #e39a92;
+  --color-red-400: #d4645a;
+  --color-red-500: #c8372d;
+  --color-red-600: #b42318;
+  --color-red-700: #9b1c14;
+  --color-red-800: #7e170f;
+  --color-red-900: #5c100a;
+}
+
 @theme inline {
-  --font-sans: var(--font-vietnamese-sans, var(--font-geist-sans));
-  --font-mono: var(--font-vietnamese-mono, var(--font-geist-mono));
+  /* Latin and numerals in Geist (Inter for Vietnamese, which Geist can't set); CJK from the system, per language. */
+  --font-sans: var(--font-vietnamese-sans, var(--font-geist-sans)), var(--font-cjk), system-ui, sans-serif;
+  --font-mono: var(--font-vietnamese-mono, var(--font-geist-mono)), ui-monospace, Menlo, monospace;
+}
+
+:root {
+  --font-cjk: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC";
+}
+
+/* Japanese kanji take Japanese forms, never the Simplified Chinese ones. */
+:root:lang(ja) {
+  --font-cjk: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", "Noto Sans JP";
 }
 
 body {
   @apply bg-stone-50 text-stone-900 antialiased;
+}
+
+::selection {
+  background: var(--color-emerald-100);
+  color: var(--color-stone-900);
+}
+
+/* Prices, durations and phone numbers line up in columns. */
+table {
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  text-underline-offset: 3px;
+}
+
+@keyframes vfi-bar {
+  0%,
+  100% {
+    transform: scaleY(0.45);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes vfi-line-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@utility animate-vfi-bar {
+  transform-origin: center;
+  animation: vfi-bar 1.1s ease-in-out infinite;
+}
+
+@utility animate-vfi-line-in {
+  animation: vfi-line-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-vfi-bar,
+  .animate-vfi-line-in {
+    animation: none;
+  }
+}
+
+/* Browser-drawn parts carry the palette too. */
+:root {
+  caret-color: var(--color-stone-900);
+  accent-color: var(--color-stone-900);
+  scrollbar-color: var(--color-stone-300) transparent;
 }

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VFi sign-in code email</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;family=Geist+Mono:wght@400;500&amp;family=Noto+Sans+SC:wght@300;400;500&amp;display=swap">
+<style>
+body{margin:0;background:#EFEDEA}
+a{color:#0B0B0C}a:hover{color:#55565B}
+</style>
+</helmet>
+<div style="width:1440px;height:1160px;box-sizing:border-box;padding:56px 80px;background:#EFEDEA;color:#0B0B0C;font-family:Geist, 'Noto Sans SC', -apple-system, 'Segoe UI', Arial, sans-serif;display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:48px">
+  <sc-for list="{{versions}}" as="v" hint-placeholder-count="2">
+    <div style="display:flex;flex-direction:column;gap:20px;align-items:center">
+      <div style="width:100%;max-width:600px;display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:13px;color:#55565B">{{v.label}}</span>
+        <div style="background:#FFFFFF;border-radius:14px;border:1px solid #DEDBD7;padding:14px 16px;display:flex;gap:12px;align-items:flex-start">
+          <span style="flex:0 0 36px;height:36px;border-radius:10px;background:#0B0B0C;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="5" width="4.6" height="21" rx="2.3" fill="#FFFFFF"></rect><rect x="10.4" y="9.5" width="4.6" height="21" rx="2.3" fill="#FFFFFF"></rect><rect x="17.7" y="14" width="4.6" height="21" rx="2.3" fill="#2BC4D1"></rect><rect x="25" y="9.5" width="4.6" height="21" rx="2.3" fill="#FFFFFF"></rect><rect x="32.4" y="5" width="4.6" height="21" rx="2.3" fill="#FFFFFF"></rect></svg></span>
+          <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+            <div style="display:flex;justify-content:space-between;gap:12px"><span style="font-size:14px;font-weight:600">VFi</span><span style="font-size:12px;color:#6E6F75">9:41</span></div>
+            <span style="font-size:14px;font-weight:500">{{v.subject}}</span>
+            <span style="font-size:13px;color:#55565B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{v.preheader}}</span>
+          </div>
+        </div>
+        <span style="font-size:12px;color:#6E6F75">{{v.inboxNote}}</span>
+      </div>
+
+      <div style="width:100%;max-width:600px;background:#FBFAF9;border-radius:18px;border:1px solid #DEDBD7;padding:40px 32px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:20px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <svg width="24" height="24" viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="5" width="4.6" height="21" rx="2.3" fill="#0B0B0C"></rect><rect x="10.4" y="9.5" width="4.6" height="21" rx="2.3" fill="#0B0B0C"></rect><rect x="17.7" y="14" width="4.6" height="21" rx="2.3" fill="#0E9AA7"></rect><rect x="25" y="9.5" width="4.6" height="21" rx="2.3" fill="#0B0B0C"></rect><rect x="32.4" y="5" width="4.6" height="21" rx="2.3" fill="#0B0B0C"></rect></svg>
+          <span style="font-size:20px;font-weight:500;letter-spacing:-0.05em">VFi</span>
+        </div>
+        <div style="width:100%;background:#FFFFFF;border:1px solid #E8E6E3;border-radius:16px;padding:36px 36px 32px;box-sizing:border-box;display:flex;flex-direction:column;gap:20px">
+          <h1 style="margin:0;font-size:28px;line-height:34px;font-weight:300;letter-spacing:-0.02em">{{v.heading}}</h1>
+          <p style="margin:0;font-size:15px;line-height:23px;color:#33343A">{{v.body}}</p>
+          <div style="background:#F3F2EF;border-radius:12px;padding:22px 0;text-align:center;font-family:'Geist Mono', ui-monospace, Menlo, monospace;font-size:38px;line-height:40px;letter-spacing:0.32em;font-weight:500;padding-left:0.32em">482 913</div>
+          <p style="margin:0;font-size:14px;line-height:21px;color:#55565B">{{v.expiry}}</p>
+          <div style="height:1px;background:#EFEDEA"></div>
+          <p style="margin:0;font-size:13px;line-height:20px;color:#6E6F75">{{v.notYou}}</p>
+        </div>
+        <p style="margin:0;font-size:12px;line-height:18px;color:#6E6F75;text-align:center;max-width:440px">{{v.footer}}</p>
+      </div>
+    </div>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1160}}'>
+class Component extends DCLogic {
+renderVals() {
+return { versions: [
+{ label: 'English', inboxNote: 'Inbox preview: the code is in the subject, so it can be read from the notification.',
+  subject: '482913 is your VFi sign-in code',
+  preheader: 'It expires in 10 minutes. Didn’t request it? You can ignore this email.',
+  heading: 'Your sign-in code',
+  body: 'Enter this code on the VFi sign-in page to continue as lin@lumenhome.example.',
+  expiry: 'The code expires in 10 minutes and works once. If you ask for a new code, only the newest one works.',
+  notYou: 'Didn’t try to sign in? You can ignore this email; nobody can sign in without the code.',
+  footer: 'VFi by Nyquiste Corporation · 12020 Sunrise Valley Dr Ste 100, Reston, VA 20191 · birdyyao@nyquiste.com' },
+{ label: '中文', inboxNote: '收件箱预览：验证码在标题中，通知里即可看到。',
+  subject: '482913 是你的 VFi 登录验证码',
+  preheader: '10 分钟内有效。如非本人操作，请忽略此邮件。',
+  heading: '你的登录验证码',
+  body: '在 VFi 登录页面输入以下验证码，以 lin@lumenhome.example 继续登录。',
+  expiry: '验证码 10 分钟内有效，仅可使用一次。重新获取后，只有最新的验证码有效。',
+  notYou: '不是你本人在登录？请忽略此邮件，没有验证码任何人都无法登录。',
+  footer: 'VFi · Nyquiste Corporation 出品 · 12020 Sunrise Valley Dr Ste 100, Reston, VA 20191 · birdyyao@nyquiste.com' }
+] };
+}
+}
+</script>
+</body>
+</html>

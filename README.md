@@ -1,6 +1,6 @@
-# Easy Voice
+# VFi
 
-A personal AI voice agent with its own US phone number. A thin web app over Telnyx (numbers, voices, AI Assistants, Call Control) with prepaid billing through Stripe. See [SPEC.md](SPEC.md) for product decisions (§16 lists the MVP decisions).
+VFi (vfi.airppp.com) is the phone service of AirPPP by Nyquiste: a US phone number plus AI Assistants that answer and place calls for a business. A thin web app over Telnyx (numbers, voices, AI Assistants, Call Control) with prepaid billing through Stripe. See [SPEC.md](SPEC.md) for product decisions (§16 lists the MVP decisions).
 
 ## Run locally
 

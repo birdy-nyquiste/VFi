@@ -12,12 +12,14 @@ export function SubmitButton({
   variant = "primary",
   confirm,
   disabled = false,
+  size = "md",
 }: {
   children: ReactNode;
   pendingText?: string;
   variant?: "primary" | "secondary" | "danger";
   confirm?: string;
   disabled?: boolean;
+  size?: "md" | "lg";
 }) {
   const t = useTranslations("common");
   const formStatus = useFormStatus();
@@ -27,7 +29,7 @@ export function SubmitButton({
     <button
       type="submit"
       disabled={pending || disabled}
-      className={buttonClass(variant)}
+      className={buttonClass(variant, size)}
       onClick={(e) => {
         if (confirm && !window.confirm(confirm)) e.preventDefault();
       }}
@@ -51,7 +53,7 @@ export function FormMessage({ initialOk, className = "text-sm" }: { initialOk?: 
   const state = ctx?.state;
   if (state?.error) return <p role="alert" className={`${className} text-red-600`}>{state.error}</p>;
   const ok = state?.ok ?? (state || ctx?.pending ? undefined : initialOk);
-  return ok ? <p role="status" className={`${className} text-emerald-700`}>{ok}</p> : null;
+  return ok ? <p role="status" className={`${className} text-stone-600`}>{ok}</p> : null;
 }
 
 /**

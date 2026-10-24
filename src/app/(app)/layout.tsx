@@ -22,9 +22,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         unread={unread}
         initialCollapsed={collapsed}
       />
-      <main className="mx-auto w-full min-w-0 max-w-5xl flex-1 px-4 py-8 md:px-8">
+      <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 pb-16 pt-8 md:px-10">
         {config.telnyx.mode === "mock" && (
-          <div className="mb-6 rounded-lg border border-sky-200 bg-sky-50 px-4 py-2 text-xs text-sky-800">
+          <div className="mb-6 rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs text-stone-600">
             {t.rich("banner", { code: (chunks) => <code>{chunks}</code> })}
           </div>
         )}

@@ -162,7 +162,7 @@ describe("daily jobs", () => {
     expect(await balance()).toBe(1000);
   });
 
-  it("refund a stuck Easy Voice clone even if the user deleted it before the hour was up", async () => {
+  it("refund a stuck VFi clone even if the user deleted it before the hour was up", async () => {
     const user = await makeUser(1000);
     vi.spyOn(mockProvider, "cloneVoice").mockImplementationOnce(() => new Promise(() => {})); // the server stops mid-clone
     const audio = new File([new Uint8Array(5000)], "s.wav", { type: "audio/wav" });

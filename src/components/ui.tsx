@@ -16,7 +16,7 @@ export function PageHeader({
   back?: { href: string; label: string };
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
       <div>
         {back && (
           <Link
@@ -29,8 +29,8 @@ export function PageHeader({
             {back.label}
           </Link>
         )}
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {description && <p className="mt-1 text-sm text-stone-500">{description}</p>}
+        <h1 className="text-[30px] font-normal leading-9 tracking-[-0.025em]">{title}</h1>
+        {description && <p className="mt-1.5 text-[15px] text-stone-600">{description}</p>}
       </div>
       {action}
     </div>
@@ -38,25 +38,27 @@ export function PageHeader({
 }
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-xl border border-stone-200 bg-white p-5 shadow-sm ${className}`}>{children}</div>;
+  return <div className={`rounded-[20px] border border-stone-200 bg-white p-6 ${className}`}>{children}</div>;
 }
 
 export function CardTitle({ children }: { children: ReactNode }) {
-  return <h2 className="mb-3 text-sm font-semibold text-stone-700">{children}</h2>;
+  return <h2 className="mb-3 text-[15px] font-medium text-stone-900">{children}</h2>;
 }
 
+/** Pill and dot colors. Teal (green, blue) is a live or ready state; nothing else uses it. */
 const tones = {
-  green: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  amber: "bg-amber-50 text-amber-700 ring-amber-200",
-  red: "bg-red-50 text-red-700 ring-red-200",
-  gray: "bg-stone-100 text-stone-600 ring-stone-200",
-  blue: "bg-sky-50 text-sky-700 ring-sky-200",
+  green: ["bg-emerald-50 text-emerald-700", "bg-emerald-500"],
+  amber: ["bg-amber-50 text-amber-800", "bg-amber-500"],
+  red: ["bg-red-50 text-red-700", "bg-red-600"],
+  gray: ["bg-stone-100 text-stone-600", "bg-stone-400"],
+  blue: ["bg-sky-50 text-sky-700", "bg-sky-500"],
 };
 
 export function Badge({ tone = "gray", children }: { tone?: keyof typeof tones; children: ReactNode }) {
   // Never wraps ("↙ entrante", "đã hoàn tất"): in a tight row the text beside it gives way instead.
   return (
-    <span className={`inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${tones[tone]}`}>
+    <span className={`inline-flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-xs ${tones[tone][0]}`}>
+      <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${tones[tone][1]}`} />
       {children}
     </span>
   );
@@ -69,8 +71,8 @@ export function StatusBadge({ status }: { status: Status }) {
   const tone: Record<Status, keyof typeof tones> = {
     active: "green",
     ready: "green",
-    completed: "green",
-    succeeded: "green",
+    completed: "gray",
+    succeeded: "gray",
     answered: "blue",
     initiated: "blue",
     pending: "amber",
@@ -81,6 +83,17 @@ export function StatusBadge({ status }: { status: Status }) {
     released: "gray",
   };
   return <Badge tone={tone[status]}>{t(status)}</Badge>;
+}
+
+/** Inbound or outbound, as an arrow in a gray disc; `label` is what screen readers hear. */
+export function DirectionIcon({ inbound, label }: { inbound: boolean; label: string }) {
+  return (
+    <span role="img" aria-label={label} className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-stone-100 text-stone-600">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden className="h-3.5 w-3.5">
+        <path d={inbound ? "M17 7 7 17M15 17H7V9" : "M7 17 17 7M9 7h8v8"} />
+      </svg>
+    </span>
+  );
 }
 
 /** A stock voice's gender as the catalog gives it ("female", "male"); unknown values show as-is. */
@@ -95,8 +108,10 @@ const btn = {
   danger: "bg-white text-red-600 ring-1 ring-inset ring-red-200 hover:bg-red-50 disabled:text-red-300",
 };
 
-export function buttonClass(variant: keyof typeof btn = "primary") {
-  return `inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:cursor-not-allowed ${btn[variant]}`;
+/** Pill buttons. `lg` is for the landing and sign-in pages; the Dashboard uses the default size. */
+export function buttonClass(variant: keyof typeof btn = "primary", size: "md" | "lg" = "md") {
+  const sized = size === "lg" ? "min-h-12 px-6 text-base" : "min-h-10 px-[18px] text-sm";
+  return `inline-flex items-center justify-center gap-2 rounded-full py-1.5 transition-colors disabled:cursor-not-allowed ${focusRing} ${sized} ${btn[variant]}`;
 }
 
 export function ButtonLink({ variant = "primary", ...props }: ComponentProps<typeof Link> & { variant?: keyof typeof btn }) {
@@ -104,13 +119,13 @@ export function ButtonLink({ variant = "primary", ...props }: ComponentProps<typ
 }
 
 export const inputClass =
-  "block w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-stone-500 focus:ring-2 focus:ring-stone-200";
+  "block w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-[15px] outline-none transition-colors placeholder:text-stone-500 focus:border-stone-500 focus:ring-2 focus:ring-emerald-100";
 
 /**
- * Keyboard focus ring for links and buttons drawn without the browser's outline. stone-500 keeps 3:1
- * against white, the gray rows and the dark avatar (WCAG 1.4.11).
+ * Keyboard focus ring for links and buttons drawn without the browser's outline. Signal teal keeps
+ * 3:1 against white, the canvas and the gray rows (WCAG 1.4.11); the offset keeps it off dark fills.
  */
-export const focusRing = "outline-none focus-visible:ring-2 focus-visible:ring-stone-500";
+export const focusRing = "outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
 
 /** What Field puts on its control: the id its label points at, and the hint that describes it. */
 export interface FieldControl {
@@ -137,12 +152,12 @@ export function Field({
   const control: FieldControl = { id, "aria-describedby": hint ? `${id}-hint` : undefined };
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="block text-sm font-medium text-stone-700">
+      <label htmlFor={id} className="block text-sm font-medium text-stone-900">
         {label}
       </label>
       {typeof children === "function" ? children(control) : withControl(children, control)}
       {hint && (
-        <p id={`${id}-hint`} className="text-xs text-stone-500">
+        <p id={`${id}-hint`} className="text-[13px] leading-[19px] text-stone-500">
           {hint}
         </p>
       )}
@@ -159,14 +174,14 @@ function withControl(children: ReactNode, control: FieldControl) {
 export function FieldGroup({ legend, children }: { legend: string; children: ReactNode }) {
   return (
     <fieldset>
-      <legend className="text-sm font-medium text-stone-700">{legend}</legend>
+      <legend className="text-sm font-medium text-stone-900">{legend}</legend>
       <div className="mt-1.5">{children}</div>
     </fieldset>
   );
 }
 
 export function Empty({ children }: { children: ReactNode }) {
-  return <div className="rounded-xl border border-dashed border-stone-300 p-8 text-center text-sm text-stone-500">{children}</div>;
+  return <div className="rounded-[20px] border border-dashed border-stone-300 bg-white/60 p-10 text-center text-[15px] text-stone-600">{children}</div>;
 }
 
 export function Notice({ tone = "amber", children }: { tone?: "amber" | "red" | "green" | "blue"; children: ReactNode }) {
@@ -176,7 +191,7 @@ export function Notice({ tone = "amber", children }: { tone?: "amber" | "red" | 
     green: "border-emerald-200 bg-emerald-50 text-emerald-800",
     blue: "border-sky-200 bg-sky-50 text-sky-800",
   }[tone];
-  return <div className={`rounded-lg border px-4 py-3 text-sm ${cls}`}>{children}</div>;
+  return <div className={`rounded-2xl border px-4 py-3 text-sm leading-[21px] ${cls}`}>{children}</div>;
 }
 
 /** Whether `path` is `href` or a page under it. */
@@ -194,7 +209,7 @@ export function Tabs({ tabs }: { tabs: { href: string; label: ReactNode; active:
           href={t.href}
           scroll={false}
           aria-current={t.active ? "page" : undefined}
-          className={`-mb-px border-b-2 px-3 py-2 text-sm ${t.active ? "border-stone-900 font-medium text-stone-900" : "border-transparent text-stone-500 hover:text-stone-900"}`}
+          className={`-mb-px shrink-0 whitespace-nowrap border-b-2 px-3.5 py-2.5 text-sm ${t.active ? "border-stone-900 font-medium text-stone-900" : "border-transparent text-stone-600 hover:text-stone-900"}`}
         >
           {t.label}
         </Link>

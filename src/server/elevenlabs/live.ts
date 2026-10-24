@@ -73,7 +73,7 @@ export const liveElevenLabs: ElevenLabsClient = {
     form.set("name", name);
     form.append("files", audio, audio instanceof File ? audio.name : "sample.wav");
     form.set("remove_background_noise", "true");
-    form.set("description", "Cloned in Easy Voice");
+    form.set("description", "Cloned in VFi");
     form.set("labels", JSON.stringify({ language, gender }));
     const res = (await (await request(apiKey, "POST", "/v1/voices/add", form)).json()) as {
       voice_id: string;

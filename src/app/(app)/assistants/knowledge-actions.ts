@@ -15,7 +15,7 @@ async function run(form: FormData, fn: (userId: string, agentId: string) => Prom
     const user = await requireUser();
     const agentId = String(form.get("agentId") ?? "");
     const message = await fn(user.id, agentId);
-    revalidatePath(`/agents/${agentId}`);
+    revalidatePath(`/assistants/${agentId}`);
     // The balance in the sidebar changes when a source is charged or refunded.
     revalidatePath("/", "layout");
     return message;

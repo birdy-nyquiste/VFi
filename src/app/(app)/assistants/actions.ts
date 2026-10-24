@@ -56,7 +56,7 @@ export async function saveAgentAction(_: ActionState, form: FormData): Promise<A
   // action's state, so the page shows the outcome: "Saved." via the URL, or why the sync failed.
   // A new agent that failed to sync is saved too: going to it makes saving again update it
   // instead of creating a duplicate.
-  if (status) redirect(status === "ready" ? `/agents/${id}?saved=1` : `/agents/${id}`);
+  if (status) redirect(status === "ready" ? `/assistants/${id}?saved=1` : `/assistants/${id}`);
   return result;
 }
 
@@ -69,6 +69,6 @@ export async function deleteAgentAction(_: ActionState, form: FormData): Promise
     await cleanUpKnowledge({ agentId }).catch((err) => console.error("knowledge cleanup failed", agentId, err));
     revalidatePath("/", "layout");
   });
-  if (!result?.error) redirect("/agents");
+  if (!result?.error) redirect("/assistants");
   return result;
 }

@@ -68,10 +68,18 @@ export function PreviewButton({ voice, name, compact }: { voice: string; name?: 
       disabled={!voice}
       onClick={() => toggle(voice)}
       aria-label={label}
-      className={compact ? "shrink-0 rounded-md px-2 py-1 text-xs font-medium text-stone-600 hover:bg-stone-100 disabled:opacity-40" : `${buttonClass("secondary")} shrink-0`}
+      className={compact ? "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-stone-700 ring-1 ring-inset ring-stone-300 hover:bg-stone-100 disabled:opacity-40" : `${buttonClass("secondary")} shrink-0`}
     >
-      {status === "idle" && <span aria-hidden="true">▶ </span>}
-      {status === "playing" && <span aria-hidden="true">■ </span>}
+      {status === "idle" && (
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden className="h-3 w-3">
+          <path d="M4.5 2.5v11l9-5.5z" />
+        </svg>
+      )}
+      {status === "playing" && (
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden className="h-3 w-3">
+          <rect x="3.5" y="3.5" width="9" height="9" rx="1.5" />
+        </svg>
+      )}
       {text[status]}
     </button>
   );
