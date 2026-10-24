@@ -72,7 +72,10 @@ export function LoginForm({ google, oauthError }: { google: boolean; oauthError?
               inputMode="numeric"
               autoComplete="one-time-code"
               pattern="\d{6}"
-              maxLength={6}
+              // No maxLength: a pasted "482 913" would be cut to "482 91" before this could tidy it.
+              onInput={(e) => {
+                e.currentTarget.value = e.currentTarget.value.replace(/\D/g, "").slice(0, 6);
+              }}
               required
               autoFocus
               placeholder="123456"

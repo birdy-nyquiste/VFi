@@ -19,8 +19,6 @@ export function signInCodeEmail(locale: Locale, code: string, email: string): { 
     footer: t("otpFooter"),
   };
   const text = [parts.heading, "", parts.intro, "", code, "", parts.expiry, "", parts.notYou, "", "—", parts.footer].join("\n");
-  // Grouped "482 913" reads more easily; the subject keeps the digits together for copying.
-  const spaced = `${code.slice(0, 3)}&nbsp;${code.slice(3)}`;
   const e = escapeHtml;
   const font = "-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans','Microsoft YaHei',Helvetica,Arial,sans-serif";
   const html = `<!doctype html>
@@ -45,7 +43,7 @@ export function signInCodeEmail(locale: Locale, code: string, email: string): { 
 <tr><td style="background:#ffffff;border:1px solid #e8e6e3;border-radius:16px;padding:36px 36px 32px;">
 <h1 style="margin:0 0 16px;font-size:26px;line-height:32px;font-weight:400;letter-spacing:-0.5px;">${e(parts.heading)}</h1>
 <p style="margin:0 0 20px;font-size:15px;line-height:23px;color:#33343a;">${e(parts.intro)}</p>
-<div style="background:#f3f2ef;border-radius:12px;padding:20px 0;text-align:center;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:36px;line-height:40px;font-weight:600;letter-spacing:8px;color:#0b0b0c;">${spaced}</div>
+<div style="background:#f3f2ef;border-radius:12px;padding:20px 0;text-align:center;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:36px;line-height:40px;font-weight:600;letter-spacing:8px;color:#0b0b0c;">${code}</div>
 <p style="margin:20px 0 0;font-size:14px;line-height:21px;color:#55565b;">${e(parts.expiry)}</p>
 <div style="height:1px;background:#efedea;margin:24px 0;line-height:1px;font-size:1px;">&nbsp;</div>
 <p style="margin:0;font-size:13px;line-height:20px;color:#6e6f75;">${e(parts.notYou)}</p>

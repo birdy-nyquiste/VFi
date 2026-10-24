@@ -23,7 +23,7 @@ const en = {
   },
   nav: { scenarios: "Scenarios", how: "How it works", pricing: "Pricing", signIn: "Sign in", dashboard: "Dashboard", language: "Language", home: "VFi home" },
   hero: {
-    title: "Your US customer calls, now handled by a Voice AI Agent.",
+    title: "Your US phone Customer Engagement, now handled by a Voice AI Agent.",
     subtitle: "A US phone number plus Assistants for every scenario: reception, business Q&A and outreach. In English and Mandarin, all on one platform.",
     seePricing: "See pricing",
     note: "Pay as you go. No subscription.",

@@ -24,7 +24,8 @@ export async function loginAction(prev: LoginState, form: FormData): Promise<Log
     // code works" note when codes were already resent.
     return { step: prev.step, email, resent: prev.resent, error: errorText(locale, r.error) };
   }
-  const r = await verifyEmailOtp(email, String(form.get("code") ?? ""));
+  // Digits only: a code copied from an email client may carry spaces.
+  const r = await verifyEmailOtp(email, String(form.get("code") ?? "").replace(/\D/g, ""));
   // Keep the "only the newest code works" note: a wrong code after a resend is often the old one.
   if (!r.ok) return { step: "code", email, resent: prev.resent, error: errorText(locale, r.error) };
   redirect("/dashboard");

@@ -111,7 +111,7 @@ const btn = {
 /** Pill buttons. `lg` is for the landing and sign-in pages; the Dashboard uses the default size. */
 export function buttonClass(variant: keyof typeof btn = "primary", size: "md" | "lg" = "md") {
   const sized = size === "lg" ? "min-h-12 px-6 text-base" : "min-h-10 px-[18px] text-sm";
-  return `inline-flex items-center justify-center gap-2 rounded-full py-1.5 transition-colors disabled:cursor-not-allowed ${focusRing} ${sized} ${btn[variant]}`;
+  return `inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full py-1.5 transition-colors disabled:cursor-not-allowed ${focusRing} ${sized} ${btn[variant]}`;
 }
 
 export function ButtonLink({ variant = "primary", ...props }: ComponentProps<typeof Link> & { variant?: keyof typeof btn }) {
