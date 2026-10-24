@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ButtonLink, Card, Empty, PageHeader, StatusBadge } from "@/components/ui";
+import { ButtonLink, Card, Empty, focusRing, PageHeader, StatusBadge } from "@/components/ui";
 import { config } from "@/lib/config";
 import { formatPhone } from "@/lib/format";
 import { listUserAgents, resyncStaleAgentsOnView } from "@/server/agents";
@@ -29,7 +29,7 @@ export default async function AgentsPage() {
         description={t("description")}
         action={
           agents.length < max ? (
-            <ButtonLink href="/agents/new">{t("new")}</ButtonLink>
+            <ButtonLink href="/assistants/new">{t("new")}</ButtonLink>
           ) : (
             <p className="max-w-xs text-sm text-stone-500">{t("limitReached", { max })}</p>
           )
@@ -39,7 +39,7 @@ export default async function AgentsPage() {
         <Empty>
           {t.rich("empty", {
             link: (chunks) => (
-              <Link href="/agents/new" className="font-medium underline">
+              <Link href="/assistants/new" className="font-medium underline">
                 {chunks}
               </Link>
             ),
@@ -50,17 +50,17 @@ export default async function AgentsPage() {
           {agents.map((a) => {
             const num = numbers.find((n) => n.agentId === a.id && n.status === "active");
             return (
-              <Link key={a.id} href={`/agents/${a.id}`}>
-                <Card className="transition hover:border-stone-400">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{a.name}</span>
+              <Link key={a.id} href={`/assistants/${a.id}`} className={`group rounded-[20px] ${focusRing}`}>
+                <Card className="h-full transition-colors group-hover:border-stone-900">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="min-w-0 truncate text-base font-medium">{a.name}</span>
                     <StatusBadge status={a.status} />
                   </div>
-                  <p className="mt-1 line-clamp-2 text-sm text-stone-500">{a.greeting}</p>
+                  <p className="mt-2 line-clamp-2 text-sm leading-[21px] text-stone-600">{a.greeting}</p>
                   {keyRejected && isElevenLabsVoice(a.voiceRef) && (
                     <p className="mt-2 text-xs text-red-600">{t("keyRejected")}</p>
                   )}
-                  <p className="mt-3 text-xs text-stone-500">
+                  <p className="mt-4 text-[13px] text-stone-500">
                     {tl(a.language)} · {num ? t("answers", { number: formatPhone(num.e164) }) : t("notOnNumber")}
                   </p>
                 </Card>

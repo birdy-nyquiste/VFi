@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
     return [
       { source: "/account", destination: "/account/billing", permanent: false },
       { source: "/billing", destination: "/account/billing", permanent: false },
+      // Agents were renamed Assistants; old bookmarks and links keep working.
+      { source: "/agents", destination: "/assistants", permanent: true },
+      { source: "/agents/:path*", destination: "/assistants/:path*", permanent: true },
     ];
   },
   experimental: {

@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VFi landing page</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;family=Geist+Mono:wght@400;500&amp;family=Noto+Sans+SC:wght@300;400;500&amp;display=swap">
+<style>
+body{margin:0;background:#FBFAF9}
+a{color:#0B0B0C}a:hover{color:#55565B}
+::selection{background:#CDEDEF;color:#0B0B0C}
+a:focus-visible,button:focus-visible{outline:2px solid #0E9AA7;outline-offset:3px}
+@keyframes vfiBar{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(1)}}
+@keyframes vfiIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.live-bar{transform-origin:center;animation:vfiBar 1.1s ease-in-out infinite}
+.line-in{animation:vfiIn .6s cubic-bezier(.16,1,.3,1) both}
+@media (prefers-reduced-motion: reduce){.live-bar,.line-in{animation:none}}
+.wrap{max-width:1200px;margin:0 auto;padding:0 32px;box-sizing:border-box}
+@media (max-width:720px){.wrap{padding:0 16px}.hide-sm{display:none !important}.h1{font-size:44px !important;line-height:48px !important}.h2{font-size:34px !important;line-height:40px !important}}
+</style>
+</helmet>
+<div style="background:#FBFAF9;color:#0B0B0C;font-family:Geist, 'Noto Sans SC', system-ui, sans-serif;min-height:100vh">
+
+  <header style="position:sticky;top:0;z-index:5;background:rgba(251,250,249,0.94);border-bottom:1px solid #E8E6E3">
+    <div class="wrap" style="height:68px;display:flex;align-items:center;gap:32px">
+      <a href="#top" aria-label="VFi home" style="display:flex;align-items:center;gap:9px;text-decoration:none">
+        <svg width="26" height="26" viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="5" width="4.6" height="21" rx="2.3" fill="#0B0B0C"></rect><rect x="10.4" y="9.5" width="4.6" height="21" rx="2.3" fill="#0B0B0C"></rect><rect x="17.7" y="14" width="4.6" height="21" rx="2.3" fill="#0E9AA7"></rect><rect x="25" y="9.5" width="4.6" height="21" rx="2.3" fill="#0B0B0C"></rect><rect x="32.4" y="5" width="4.6" height="21" rx="2.3" fill="#0B0B0C"></rect></svg>
+        <span style="font-size:22px;font-weight:500;letter-spacing:-0.05em">VFi</span>
+      </a>
+      <nav class="hide-sm" aria-label="Main" style="display:flex;gap:28px;font-size:15px">
+        <a href="#scenarios" style="text-decoration:none">{{t.navScenarios}}</a>
+        <a href="#how" style="text-decoration:none">{{t.navHow}}</a>
+        <a href="#pricing" style="text-decoration:none">{{t.navPricing}}</a>
+      </nav>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+        <div role="group" aria-label="Language" style="display:flex;padding:3px;border-radius:999px;background:#F0EEEB">
+          <button type="button" onClick="{{setEn}}" aria-pressed="{{isEn}}" style="{{enStyle}}">EN</button>
+          <button type="button" onClick="{{setZh}}" aria-pressed="{{isZh}}" style="{{zhStyle}}">中文</button>
+        </div>
+        <a href="{{accountHref}}" style="display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:999px;background:#0B0B0C;color:#FFFFFF;text-decoration:none;font-size:14px">{{accountLabel}}</a>
+      </div>
+    </div>
+  </header>
+
+  <section id="top" class="wrap" style="padding-top:88px;padding-bottom:96px;display:flex;flex-wrap:wrap;gap:56px;align-items:center">
+    <div style="flex:1 1 440px;min-width:0;display:flex;flex-direction:column;gap:24px">
+      <h1 class="h1" style="margin:0;font-size:68px;line-height:70px;font-weight:300;letter-spacing:-0.04em;white-space:pre-line;text-wrap:balance">{{t.heroTitle}}</h1>
+      <p style="margin:0;font-size:19px;line-height:29px;color:#55565B;max-width:520px">{{t.heroSub}}</p>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;padding-top:4px">
+        <a href="{{accountHref}}" style="display:inline-flex;align-items:center;height:48px;padding:0 24px;border-radius:999px;background:#0B0B0C;color:#FFFFFF;text-decoration:none;font-size:16px">{{accountLabel}}</a>
+        <a href="#pricing" style="display:inline-flex;align-items:center;height:48px;padding:0 24px;border-radius:999px;background:#FFFFFF;border:1px solid #DCD9D5;text-decoration:none;font-size:16px">{{t.ctaPricing}}</a>
+      </div>
+      <p style="margin:0;font-size:14px;color:#6E6F75">{{t.heroNote}}</p>
+    </div>
+
+    <div style="flex:1 1 460px;min-width:0">
+      <div style="background:#FFFFFF;border:1px solid #E8E6E3;border-radius:28px;box-shadow:0 24px 60px rgba(11,11,12,0.08), 0 2px 6px rgba(11,11,12,0.04);overflow:hidden">
+        <div style="display:flex;align-items:center;gap:12px;padding:18px 22px;border-bottom:1px solid #EFEDEA">
+          <span style="width:40px;height:40px;border-radius:20px;background:#0E9AA7;display:flex;align-items:center;justify-content:center;gap:3px" aria-hidden="true">
+            <span class="live-bar" style="width:3px;height:14px;border-radius:2px;background:#FFFFFF"></span>
+            <span class="live-bar" style="width:3px;height:19px;border-radius:2px;background:#FFFFFF;animation-delay:.15s"></span>
+            <span class="live-bar" style="width:3px;height:14px;border-radius:2px;background:#FFFFFF;animation-delay:.3s"></span>
+          </span>
+          <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+            <span style="font-size:15px;font-weight:500;font-variant-numeric:tabular-nums">+1 (415) 555-0132</span>
+            <span style="font-size:13px;color:#6E6F75">{{t.callMeta}}</span>
+          </div>
+          <span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;background:#E6F5F6;color:#0B6670;font-size:13px;white-space:nowrap"><span style="width:6px;height:6px;border-radius:3px;background:#0E9AA7"></span>{{t.onCall}} · <span style="font-variant-numeric:tabular-nums">02:14</span></span>
+        </div>
+        <ol style="list-style:none;margin:0;padding:22px;display:flex;flex-direction:column;gap:14px;font-size:15px;line-height:22px">
+          <li class="line-in" style="display:flex;gap:12px"><span style="flex:0 0 64px;font-size:13px;color:#0B6670;padding-top:1px">{{t.assistant}}</span><span>Thanks for calling Lumen Home. This call may be recorded. How can I help?</span></li>
+          <li class="line-in" style="display:flex;gap:12px;animation-delay:.5s"><span style="flex:0 0 64px;font-size:13px;color:#6E6F75;padding-top:1px">{{t.caller}}</span><span>Hi, I saw your website. Do you ship wholesale orders to Texas?</span></li>
+          <li class="line-in" style="display:flex;gap:12px;animation-delay:1s"><span style="flex:0 0 64px;font-size:13px;color:#0B6670;padding-top:1px">{{t.assistant}}</span><span>We do. May I have your name and the best email for a quote?</span></li>
+          <li class="line-in" style="display:flex;gap:12px;animation-delay:1.5s"><span style="flex:0 0 64px;font-size:13px;color:#6E6F75;padding-top:1px">{{t.caller}}</span><span>Dana Ortiz, dana@example.com. About two hundred units to Austin.</span></li>
+        </ol>
+        <div class="line-in" style="margin:0 14px 14px;padding:16px 18px;border-radius:18px;background:#F6F5F3;display:flex;flex-direction:column;gap:10px;animation-delay:2.1s">
+          <span style="font-size:13px;font-weight:500">{{t.summary}}</span>
+          <span style="font-size:14px;line-height:21px;color:#33343A">Wholesale inquiry, about 200 units to Austin, TX. Contact: Dana Ortiz, dana@example.com. Wants a quote.</span>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <sc-for list="{{t.tags}}" as="tag" hint-placeholder-count="3">
+              <span style="height:24px;display:inline-flex;align-items:center;padding:0 10px;border-radius:999px;background:#FFFFFF;border:1px solid #E3E1DD;font-size:12px">{{tag}}</span>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      <p style="margin:12px 0 0;font-size:12px;color:#6E6F75;text-align:center">{{t.illustration}}</p>
+    </div>
+  </section>
+
+  <section class="wrap" style="padding-bottom:112px">
+    <h2 class="h2" style="margin:0 0 40px;font-size:44px;line-height:50px;font-weight:300;letter-spacing:-0.035em;max-width:720px">{{t.valuesTitle}}</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));border-top:1px solid #E8E6E3;border-left:1px solid #E8E6E3">
+      <sc-for list="{{t.values}}" as="v" hint-placeholder-count="6">
+        <div style="padding:32px 32px 36px;border-right:1px solid #E8E6E3;border-bottom:1px solid #E8E6E3;display:flex;flex-direction:column;gap:10px;background:#FFFFFF">
+          <h3 style="margin:0;font-size:20px;font-weight:500;letter-spacing:-0.01em">{{v.title}}</h3>
+          <p style="margin:0;font-size:15px;line-height:23px;color:#55565B">{{v.body}}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="scenarios" style="background:#FFFFFF;border-top:1px solid #E8E6E3;border-bottom:1px solid #E8E6E3;padding:104px 0">
+    <div class="wrap" style="display:flex;flex-direction:column;gap:40px">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:24px">
+        <h2 class="h2" style="margin:0;font-size:44px;line-height:50px;font-weight:300;letter-spacing:-0.035em;max-width:640px">{{t.scenariosTitle}}</h2>
+        <div role="tablist" aria-label="{{t.scenariosTitle}}" style="display:flex;flex-wrap:wrap;gap:6px;padding:4px;border-radius:999px;background:#F0EEEB">
+          <sc-for list="{{scenarios}}" as="s" hint-placeholder-count="3">
+            <button type="button" role="tab" aria-selected="{{s.selected}}" onClick="{{s.pick}}" style="{{s.tabStyle}}">{{s.name}}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:stretch">
+        <div style="flex:1 1 460px;min-width:0;display:flex;flex-direction:column;gap:28px;padding:8px 0">
+          <h3 style="margin:0;font-size:30px;line-height:38px;font-weight:300;letter-spacing:-0.02em;text-wrap:balance">{{cur.headline}}</h3>
+          <dl style="margin:0;display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:24px 32px">
+            <sc-for list="{{cur.facts}}" as="f" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;gap:6px;padding-top:16px;border-top:1px solid #E8E6E3">
+                <dt style="font-size:13px;color:#6E6F75">{{f.label}}</dt>
+                <dd style="margin:0;font-size:15px;line-height:23px">{{f.body}}</dd>
+              </div>
+            </sc-for>
+          </dl>
+        </div>
+
+        <div style="flex:1 1 420px;min-width:0;border-radius:28px;background:#F3F2EF;padding:28px;display:flex;align-items:center;justify-content:center;min-height:380px;box-sizing:border-box">
+          <sc-if value="{{isReception}}" hint-placeholder-val="{{true}}">
+            <div style="width:100%;max-width:400px;background:#FFFFFF;border-radius:20px;border:1px solid #E8E6E3;box-shadow:0 12px 32px rgba(11,11,12,0.06);padding:22px;display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px;font-weight:500">{{t.captured}}</span><span style="font-size:12px;color:#6E6F75;font-variant-numeric:tabular-nums">3:41 · {{t.inbound}}</span></div>
+              <div style="display:grid;grid-template-columns:96px 1fr;gap:10px 12px;font-size:14px">
+                <span style="color:#6E6F75">{{t.fName}}</span><span>Marcus Bell</span>
+                <span style="color:#6E6F75">{{t.fCompany}}</span><span>Bell &amp; Rowe Interiors</span>
+                <span style="color:#6E6F75">{{t.fNeed}}</span><span>Distribution partnership in the Midwest</span>
+                <span style="color:#6E6F75">{{t.fCallback}}</span><span style="font-variant-numeric:tabular-nums">+1 (312) 555-0187</span>
+              </div>
+              <span style="align-self:flex-start;display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;background:#FBF1E3;color:#8A4F00;font-size:12px"><span style="width:6px;height:6px;border-radius:3px;background:#A15C00"></span>{{t.needsFollowUp}}</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{isQa}}" hint-placeholder-val="{{false}}">
+            <div style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:12px">
+              <div style="background:#FFFFFF;border-radius:20px;border:1px solid #E8E6E3;padding:18px 20px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px;font-weight:500">{{t.knowledge}}</span><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:#0B0B0C;color:#FFFFFF;font-size:12px">{{t.strict}}</span></div>
+                <div style="display:flex;flex-direction:column;gap:8px;font-size:14px">
+                  <div style="display:flex;justify-content:space-between"><span>Company profile.pdf</span><span style="color:#0B6670;font-size:12px">{{t.ready}}</span></div>
+                  <div style="display:flex;justify-content:space-between"><span>Product catalog 2026.pdf</span><span style="color:#0B6670;font-size:12px">{{t.ready}}</span></div>
+                  <div style="display:flex;justify-content:space-between"><span>Partner FAQ</span><span style="color:#0B6670;font-size:12px">{{t.ready}}</span></div>
+                </div>
+              </div>
+              <div style="background:#FFFFFF;border-radius:20px;border:1px solid #E8E6E3;padding:18px 20px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:21px">
+                <span><span style="color:#6E6F75">{{t.caller}} · </span>Do you offer net-60 payment terms?</span>
+                <span><span style="color:#0B6670">{{t.assistant}} · </span>I can't confirm that, so I'll have the team follow up. What's the best email for you?</span>
+                <span style="align-self:flex-start;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:#FBF1E3;color:#8A4F00;font-size:12px"><span style="width:6px;height:6px;border-radius:3px;background:#A15C00"></span>{{t.toConfirm}}</span>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{isOutreach}}" hint-placeholder-val="{{false}}">
+            <div style="width:100%;max-width:400px;background:#FFFFFF;border-radius:20px;border:1px solid #E8E6E3;box-shadow:0 12px 32px rgba(11,11,12,0.06);padding:22px;display:flex;flex-direction:column;gap:14px">
+              <span style="font-size:14px;font-weight:500">{{t.placeCall}}</span>
+              <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;color:#6E6F75">{{t.numberToCall}}</span><div style="height:42px;border:1px solid #DCD9D5;border-radius:12px;display:flex;align-items:center;padding:0 12px;font-size:14px;font-variant-numeric:tabular-nums">+1 (646) 555-0119</div></div>
+              <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;color:#6E6F75">{{t.callGoal}}</span><div style="min-height:64px;border:1px solid #DCD9D5;border-radius:12px;padding:10px 12px;font-size:14px;line-height:21px;box-sizing:border-box">Confirm a 30-minute call with Priya next week and offer Tuesday or Thursday afternoon.</div></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:4px">
+                <span style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;background:#E6F5F6;color:#0B6670;font-size:12px"><span style="width:6px;height:6px;border-radius:3px;background:#0E9AA7"></span>{{t.resultConfirmed}}</span>
+                <span style="display:inline-flex;align-items:center;height:38px;padding:0 18px;border-radius:999px;background:#0B0B0C;color:#FFFFFF;font-size:14px">{{t.call}}</span>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+      <p style="margin:0;font-size:12px;color:#6E6F75">{{t.scenarioNote}}</p>
+    </div>
+  </section>
+
+  <section id="how" class="wrap" style="padding-top:112px;padding-bottom:112px;display:flex;flex-direction:column;gap:48px">
+    <h2 class="h2" style="margin:0;font-size:44px;line-height:50px;font-weight:300;letter-spacing:-0.035em">{{t.stepsTitle}}</h2>
+    <ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:24px">
+      <sc-for list="{{t.steps}}" as="st" hint-placeholder-count="4">
+        <li style="display:flex;flex-direction:column;gap:12px;padding-top:20px;border-top:1px solid #0B0B0C">
+          <span style="font-size:14px;color:#6E6F75;font-variant-numeric:tabular-nums">{{st.n}}</span>
+          <h3 style="margin:0;font-size:20px;font-weight:500">{{st.title}}</h3>
+          <p style="margin:0;font-size:15px;line-height:23px;color:#55565B">{{st.body}}</p>
+        </li>
+      </sc-for>
+    </ol>
+
+    <div style="display:flex;flex-wrap:wrap;gap:24px;padding-top:24px">
+      <div style="flex:1 1 320px;min-width:0;background:#FFFFFF;border:1px solid #E8E6E3;border-radius:24px;padding:28px;display:flex;flex-direction:column;gap:14px">
+        <h3 style="margin:0;font-size:18px;font-weight:500">{{t.inTitle}}</h3>
+        <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:15px;line-height:22px;color:#33343A">
+          <sc-for list="{{t.inSteps}}" as="x" hint-placeholder-count="3"><li>{{x}}</li></sc-for>
+        </ul>
+      </div>
+      <div style="flex:1 1 320px;min-width:0;background:#FFFFFF;border:1px solid #E8E6E3;border-radius:24px;padding:28px;display:flex;flex-direction:column;gap:14px">
+        <h3 style="margin:0;font-size:18px;font-weight:500">{{t.outTitle}}</h3>
+        <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:15px;line-height:22px;color:#33343A">
+          <sc-for list="{{t.outSteps}}" as="x" hint-placeholder-count="3"><li>{{x}}</li></sc-for>
+        </ul>
+      </div>
+      <div style="flex:1 1 320px;min-width:0;background:#0B0B0C;color:#FFFFFF;border-radius:24px;padding:28px;display:flex;flex-direction:column;gap:14px">
+        <h3 style="margin:0;font-size:18px;font-weight:500">{{t.afterTitle}}</h3>
+        <p style="margin:0;font-size:15px;line-height:23px;color:#C9C8CC">{{t.afterBody}}</p>
+      </div>
+    </div>
+    <p style="margin:0;font-size:13px;line-height:20px;color:#6E6F75;max-width:760px">{{t.opsNote}}</p>
+  </section>
+
+  <section id="pricing" style="background:#FFFFFF;border-top:1px solid #E8E6E3;border-bottom:1px solid #E8E6E3;padding:104px 0">
+    <div class="wrap" style="display:flex;flex-wrap:wrap;gap:56px">
+      <div style="flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:20px">
+        <h2 class="h2" style="margin:0;font-size:44px;line-height:50px;font-weight:300;letter-spacing:-0.035em">{{t.pricingTitle}}</h2>
+        <p style="margin:0;font-size:16px;line-height:25px;color:#55565B;max-width:400px">{{t.pricingSub}}</p>
+        <a href="{{accountHref}}" style="align-self:flex-start;display:inline-flex;align-items:center;height:48px;padding:0 24px;border-radius:999px;background:#0B0B0C;color:#FFFFFF;text-decoration:none;font-size:16px">{{accountLabel}}</a>
+      </div>
+      <div style="flex:2 1 520px;min-width:0">
+        <table style="width:100%;border-collapse:collapse;font-size:16px">
+          <caption style="text-align:left;font-size:13px;color:#6E6F75;padding-bottom:12px">{{t.pricingCaption}}</caption>
+          <tbody>
+            <sc-for list="{{t.prices}}" as="p" hint-placeholder-count="5">
+              <tr style="border-top:1px solid #E8E6E3">
+                <th scope="row" style="text-align:left;font-weight:400;padding:22px 0">{{p.item}}</th>
+                <td style="text-align:right;padding:22px 0;font-size:24px;font-weight:300;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;white-space:nowrap">{{p.price}}</td>
+                <td style="text-align:right;padding:22px 0 22px 16px;color:#6E6F75;font-size:14px;width:130px">{{p.unit}}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <p style="margin:16px 0 0;font-size:13px;line-height:20px;color:#6E6F75;border-top:1px solid #E8E6E3;padding-top:16px">{{t.pricingNote}}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" style="padding-top:120px;padding-bottom:120px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:24px">
+    <svg width="56" height="56" viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="5" width="4.6" height="21" rx="2.3" fill="#0B0B0C"></rect><rect x="10.4" y="9.5" width="4.6" height="21" rx="2.3" fill="#0B0B0C"></rect><rect x="17.7" y="14" width="4.6" height="21" rx="2.3" fill="#0E9AA7"></rect><rect x="25" y="9.5" width="4.6" height="21" rx="2.3" fill="#0B0B0C"></rect><rect x="32.4" y="5" width="4.6" height="21" rx="2.3" fill="#0B0B0C"></rect></svg>
+    <h2 class="h2" style="margin:0;font-size:52px;line-height:58px;font-weight:300;letter-spacing:-0.04em;max-width:760px;text-wrap:balance">{{t.closeTitle}}</h2>
+    <a href="{{accountHref}}" style="display:inline-flex;align-items:center;height:48px;padding:0 26px;border-radius:999px;background:#0B0B0C;color:#FFFFFF;text-decoration:none;font-size:16px">{{accountLabel}}</a>
+  </section>
+
+  <footer style="border-top:1px solid #E8E6E3">
+    <div class="wrap" style="padding-top:40px;padding-bottom:40px;display:flex;flex-wrap:wrap;gap:24px 48px;justify-content:space-between;font-size:14px;color:#55565B">
+      <div style="display:flex;flex-direction:column;gap:8px;max-width:420px">
+        <span style="display:flex;align-items:center;gap:8px;color:#0B0B0C"><svg width="18" height="18" viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="5" width="4.6" height="21" rx="2.3" fill="#0B0B0C"></rect><rect x="10.4" y="9.5" width="4.6" height="21" rx="2.3" fill="#0B0B0C"></rect><rect x="17.7" y="14" width="4.6" height="21" rx="2.3" fill="#0E9AA7"></rect><rect x="25" y="9.5" width="4.6" height="21" rx="2.3" fill="#0B0B0C"></rect><rect x="32.4" y="5" width="4.6" height="21" rx="2.3" fill="#0B0B0C"></rect></svg><span style="font-weight:500;letter-spacing:-0.04em">VFi</span></span>
+        <span>{{t.footerPre}}<a href="https://www.nyquiste.com">Nyquiste Corporation</a>{{t.footerPost}}</span>
+        <span>12020 Sunrise Valley Dr Ste 100, Reston, VA 20191</span>
+      </div>
+      <nav aria-label="Footer" style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+        <a href="#pricing" style="text-decoration:none">{{t.navPricing}}</a>
+        <a href="#" style="text-decoration:none">{{t.privacy}}</a>
+        <a href="#" style="text-decoration:none">{{t.terms}}</a>
+        <a href="mailto:birdyyao@nyquiste.com" style="text-decoration:none">birdyyao@nyquiste.com</a>
+      </nav>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"signedIn":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":4300}}'>
+const COPY = {
+  en: {
+    navScenarios: 'Scenarios', navHow: 'How it works', navPricing: 'Pricing', signIn: 'Sign in', dashboard: 'Dashboard',
+    heroTitle: 'Your US customer calls,\nnow handled by a Voice AI Agent.',
+    heroSub: 'A US phone number plus Assistants for every scenario: reception, business Q&A and outreach. In English and Mandarin, all on one platform.',
+    ctaPricing: 'See pricing', heroNote: 'Pay as you go. No subscription.',
+    callMeta: 'Inbound · Front desk Assistant', onCall: 'On a call', assistant: 'Assistant', caller: 'Caller', summary: 'Summary',
+    tags: ['Inquiry', 'Contact collected', 'Follow up'], illustration: 'Illustration with made-up details, not a real customer call.',
+    valuesTitle: 'Built for teams taking their business to the US',
+    values: [
+      { title: 'Quick to respond', body: 'Built to reply quickly, so conversations feel natural.' },
+      { title: 'All in one', body: 'Numbers, Assistants, voices and billing on one platform, with no outside providers to integrate.' },
+      { title: 'Reliable foundation', body: 'Built on established US carrier infrastructure.' },
+      { title: 'Low cost', body: 'No expensive call-center staff, and no traditional phone infrastructure to buy.' },
+      { title: 'Smart', body: 'Current AI models and Voice AI Agents deliver quality answers across scenarios.' },
+      { title: 'Easy', body: 'Manage numbers, Assistants and billing quickly, in one place.' }
+    ],
+    scenariosTitle: 'Multiple Assistants, multiple scenarios',
+    scenarioNote: 'Examples are illustrations, not customer cases or promised results.',
+    labels: { task: 'Task', setup: 'Setup', example: 'Example', team: 'Your team' },
+    scenarios: [
+      { id: 'reception', name: 'Reception', headline: 'Every first call is received. Every need is recorded.',
+        task: 'Introduce your company, learn why they are calling, and collect who they are, how to reach them and what they need.',
+        setup: 'Add your company intro to the Knowledge Base, write a greeting and reception instructions, pick a language and voice, then link a US number.',
+        example: 'A customer calls from your website about working together. The Assistant introduces your company from the Knowledge Base, then learns about their company, intent and contact details.',
+        team: 'Review the call record, judge the need, and have the right person follow up.' },
+      { id: 'qa', name: 'Business Q&A', headline: 'Answers backed by your materials. Open questions go to your team.',
+        task: 'Answer common questions about your products, service scope and how to work with you, from your own materials.',
+        setup: 'Add your company profile, product information and FAQs to the Knowledge Base. Once they are processed, set the answer boundaries.',
+        example: 'A customer asks about service scope and terms. The Assistant answers what is confirmed and records what is not.',
+        team: 'Strict mode limits factual answers to the Knowledge Base. When it cannot confirm something, it says so and collects details.' },
+      { id: 'outreach', name: 'Outreach', headline: 'Business calls with a clear goal.',
+        task: 'Call US customers, vendors or partners to ask questions, confirm details or follow up.',
+        setup: 'Pick an Assistant, enter the US number and the task, and place the call from the web. Background the call needs, such as your company intro or an offer, comes from the Knowledge Base.',
+        example: 'Call a partner who agreed to take the call, confirm when they are free, then your team schedules the meeting.',
+        team: 'Define who the Assistant is, what it may discuss and what it must not promise. Review the result and decide the next step.' }
+    ],
+    captured: 'Captured on the call', inbound: 'Inbound', fName: 'Name', fCompany: 'Company', fNeed: 'Need', fCallback: 'Callback', needsFollowUp: 'Needs follow-up',
+    knowledge: 'Knowledge Base', strict: 'Strict mode', ready: 'Ready', toConfirm: 'To confirm', placeCall: 'Place a call', numberToCall: 'Number to call', callGoal: 'Goal for this call', resultConfirmed: 'Thursday 2 PM confirmed', call: 'Call',
+    stepsTitle: 'Live in four steps',
+    steps: [
+      { n: 'Step 1', title: 'Sign up and top up', body: 'Create an account and add balance through Stripe. The minimum top-up is US$10.' },
+      { n: 'Step 2', title: 'Set up your Assistant', body: 'Write a greeting and instructions, pick a language and voice, and add your company info to the Knowledge Base.' },
+      { n: 'Step 3', title: 'Get a number and link it', body: 'Buy a US number by area code. Link it once the number is active and the Assistant is ready.' },
+      { n: 'Step 4', title: 'Test and go live', body: 'Call in or place a test outreach call. Check the answers and collected details, then adjust.' }
+    ],
+    inTitle: 'Customers call you', inSteps: ['A customer calls your US number', 'The linked Assistant answers by your instructions', 'Their intent and the conversation are recorded'],
+    outTitle: 'You place a call', outSteps: ['Pick an Assistant and enter a US number', 'Write the goal for this call and place it', 'The Assistant makes the call and handles the conversation'],
+    afterTitle: 'Then review and act', afterBody: 'Use the recording, transcript and summary when available to check needs, schedule follow-ups and handle anything that needs a person.',
+    opsNote: 'Calls need a ready Assistant, an active number and enough balance.',
+    pricingTitle: 'Pay as you go. No plans.', pricingSub: 'Add balance with Stripe and pay only for what you use. Unanswered calls are free.', pricingCaption: 'Prices in US dollars',
+    prices: [
+      { item: 'Calls, in or out', price: 'US$0.15', unit: 'per minute' },
+      { item: 'Phone number', price: 'US$3.00', unit: 'every 30 days' },
+      { item: 'Voice clone', price: 'US$5.00', unit: 'each' },
+      { item: 'Knowledge Base source', price: 'US$1.00', unit: 'each' },
+      { item: 'Text received', price: 'US$0.02', unit: 'per segment' }
+    ],
+    pricingNote: 'Built-in voices are included. Cloning with your own ElevenLabs account is free here; the voice usage comes from that account.',
+    closeTitle: 'A US line for your business, answered in English and Mandarin.',
+    footerPre: 'VFi is the phone service of AirPPP, by ', footerPost: '.', privacy: 'Privacy', terms: 'Terms'
+  },
+  zh: {
+    navScenarios: '应用场景', navHow: '开通流程', navPricing: '价格', signIn: '登录', dashboard: '控制台',
+    heroTitle: '你的美国客户电话互动\n现在由 AI 语音智能体接管。',
+    heroSub: '美国电话号码 + 多场景语音助理：来电接待、业务咨询、商务外联。支持英文和普通话，在同一平台完成。',
+    ctaPricing: '查看价格', heroNote: '按需付费，无订阅。',
+    callMeta: '呼入 · 前台接待助理', onCall: '通话中', assistant: '助理', caller: '来电者', summary: '摘要',
+    tags: ['咨询', '已收集联系方式', '待跟进'], illustration: '示意图，信息为虚构，并非真实客户通话。',
+    valuesTitle: '为出海美国的团队而建',
+    values: [
+      { title: '响应迅速', body: '为快速响应而设计，让对话自然流畅。' },
+      { title: '聚合', body: '号码、助理、声音和账单在单一平台完成，无需集成外部服务商。' },
+      { title: '可靠底层', body: '基于成熟的美国运营商基础设施构建。' },
+      { title: '低成本', body: '无需投入昂贵人工客服成本，无需投入传统电话基建成本。' },
+      { title: '智能', body: '集成前沿 AI 模型和 AI 语音智能体，多场景下提供高质量输出。' },
+      { title: '便捷', body: '轻松、快速地管理号码、助理与账单。' }
+    ],
+    scenariosTitle: '多助理，多场景',
+    scenarioNote: '应用示例不代表客户案例或效果承诺。',
+    labels: { task: '任务', setup: '配置方式', example: '应用示例', team: '团队跟进' },
+    scenarios: [
+      { id: 'reception', name: '来电接待', headline: '首次来电有接待，客户需求有记录。',
+        task: '介绍企业、了解来意，收集客户身份、联系方式与关键需求。',
+        setup: '在知识库中添加企业简介，设置开场白和接待指令，选择语言、声音，再关联美国号码。',
+        example: '客户从官网致电咨询合作。助理依据知识库介绍企业，并了解对方企业、合作意向与联系方式。',
+        team: '查看通话记录，判断需求，安排业务负责人继续联系。' },
+      { id: 'qa', name: '业务咨询', headline: '企业资料支持回答，待确认事项由团队跟进。',
+        task: '依据企业资料，解答产品、服务范围与合作方式等常见问题。',
+        setup: '在知识库中添加企业介绍、产品说明和常见问题。待资料处理完成后，设定回答边界。',
+        example: '客户询问服务范围与合作条件。助理解答已确认的信息，记录待确认事项。',
+        team: '严格模式可将事实性回答限定在知识库范围内。无法确认时说明情况，并收集信息。' },
+      { id: 'outreach', name: '商务外联', headline: '围绕明确目标，完成商务电话任务。',
+        task: '联系美国客户、服务商或合作伙伴，开展询问、信息确认与回访。',
+        setup: '选择助理，输入美国目标号码与任务，在网页发起电话。通话所需的背景信息，如企业简介或合作方案，来自知识库。',
+        example: '联系已约定接听的合作伙伴，确认可沟通时间，再由团队安排会议。',
+        team: '明确身份、沟通范围与承诺边界。查看结果，由团队决定下一步行动。' }
+    ],
+    captured: '通话中收集的信息', inbound: '呼入', fName: '姓名', fCompany: '公司', fNeed: '需求', fCallback: '回拨号码', needsFollowUp: '待跟进',
+    knowledge: '知识库', strict: '严格模式', ready: '就绪', toConfirm: '待确认', placeCall: '发起通话', numberToCall: '拨打号码', callGoal: '本次通话目标', resultConfirmed: '已确认周四下午 2 点', call: '拨打',
+    stepsTitle: '四步完成开通',
+    steps: [
+      { n: '第 1 步', title: '注册并充值', body: '创建账户，通过 Stripe 充值使用余额。最低充值 US$10。' },
+      { n: '第 2 步', title: '配置业务助理', body: '填写开场白与指令，选择语言、声音，并在知识库中添加企业信息。' },
+      { n: '第 3 步', title: '开通并关联号码', body: '按区号购买美国号码。待号码激活、助理就绪后完成关联。' },
+      { n: '第 4 步', title: '测试并投入使用', body: '拨入或发起外联测试。核对回答与信息收集，调整配置。' }
+    ],
+    inTitle: '客户拨入', inSteps: ['客户拨打企业的美国号码', '关联助理按工作指令接待', '记录客户来意与沟通内容'],
+    outTitle: '企业发起', outSteps: ['选择助理并输入美国目标号码', '填写本次通话目标并发起', '助理拨打电话并开展沟通'],
+    afterTitle: '查看记录，安排下一步', afterBody: '结合录音、转写及可用的摘要，核对需求、安排回访，并处理需要人工确认的事项。',
+    opsNote: '通话需要助理就绪、号码有效且余额充足。',
+    pricingTitle: '按需付费，无订阅套餐。', pricingSub: '通过 Stripe 充值，只为实际用量付费。未接通的电话不收费。', pricingCaption: '价格以美元计',
+    prices: [
+      { item: '通话（呼入或呼出）', price: 'US$0.15', unit: '每分钟' },
+      { item: '电话号码', price: 'US$3.00', unit: '每 30 天' },
+      { item: '声音克隆', price: 'US$5.00', unit: '每个' },
+      { item: '知识库资料', price: 'US$1.00', unit: '每个' },
+      { item: '接收短信', price: 'US$0.02', unit: '每段' }
+    ],
+    pricingNote: '内置声音可直接选用。连接自有 ElevenLabs 账户克隆声音，在本产品侧免费，相关语音消耗使用该账户额度。',
+    closeTitle: '为你的企业开通美国号码，中英文都能接听。',
+    footerPre: 'VFi 是 ', footerPost: ' 旗下 AirPPP 的电话服务。', privacy: '隐私政策', terms: '服务条款'
+  }
+};
+const TAB_ON = 'height:36px;padding:0 16px;border-radius:999px;border:0;background:#0B0B0C;color:#FFFFFF;font:inherit;font-size:14px;cursor:pointer';
+const TAB_OFF = 'height:36px;padding:0 16px;border-radius:999px;border:0;background:transparent;color:#33343A;font:inherit;font-size:14px;cursor:pointer';
+const LANG_ON = 'height:32px;min-width:44px;padding:0 12px;border-radius:999px;border:0;background:#FFFFFF;color:#0B0B0C;font:inherit;font-size:13px;cursor:pointer;box-shadow:0 1px 3px rgba(11,11,12,0.12)';
+const LANG_OFF = 'height:32px;min-width:44px;padding:0 12px;border-radius:999px;border:0;background:transparent;color:#55565B;font:inherit;font-size:13px;cursor:pointer';
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { lang: 'en', tab: 'reception' }; }
+  renderVals() {
+    const lang = this.state.lang;
+    const t = COPY[lang];
+    const tab = this.state.tab;
+    const scenarios = t.scenarios.map((s) => ({
+      ...s,
+      selected: s.id === tab,
+      tabStyle: s.id === tab ? TAB_ON : TAB_OFF,
+      pick: () => this.setState({ tab: s.id })
+    }));
+    const c = t.scenarios.find((s) => s.id === tab);
+    const cur = {
+      headline: c.headline,
+      facts: [
+        { label: t.labels.task, body: c.task },
+        { label: t.labels.setup, body: c.setup },
+        { label: t.labels.example, body: c.example },
+        { label: t.labels.team, body: c.team }
+      ]
+    };
+    return {
+      t, scenarios, cur,
+      accountLabel: (this.props.signedIn ?? false) ? t.dashboard : t.signIn,
+      accountHref: (this.props.signedIn ?? false) ? 'Overview.dc.html' : 'SignIn.dc.html',
+      isReception: tab === 'reception', isQa: tab === 'qa', isOutreach: tab === 'outreach',
+      isEn: lang === 'en', isZh: lang === 'zh',
+      enStyle: lang === 'en' ? LANG_ON : LANG_OFF,
+      zhStyle: lang === 'zh' ? LANG_ON : LANG_OFF,
+      setEn: () => this.setState({ lang: 'en' }),
+      setZh: () => this.setState({ lang: 'zh' })
+    };
+  }
+}
+</script>
+</body>
+</html>

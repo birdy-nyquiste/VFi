@@ -66,7 +66,7 @@ export default async function AgentPage({
       : "deleteConfirm";
   return (
     <div className="space-y-6">
-      <PageHeader back={{ href: "/agents", label: t("all") }} title={agent.name} action={<StatusBadge status={agent.status} />} />
+      <PageHeader back={{ href: "/assistants", label: t("all") }} title={agent.name} action={<StatusBadge status={agent.status} />} />
       {agent.status === "failed" && <Notice tone="red">{showStored(locale, agent.failureReason, agent.failureMsg)}</Notice>}
       {keyRejected && (
         <Notice tone="red">

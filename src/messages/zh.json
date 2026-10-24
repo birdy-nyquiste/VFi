@@ -1,6 +1,6 @@
 {
   "meta": {
-    "description": "你的专属 AI 语音助理，拥有自己的电话号码。"
+    "description": "获取美国电话号码，让助理为你的企业接听和拨打电话，支持英文和普通话。按需付费，US$10 起充。"
   },
   "common": {
     "working": "处理中…",
@@ -14,8 +14,6 @@
     "remove": "移除",
     "name": "名称",
     "agent": "助理",
-    "inbound": "↙ 呼入",
-    "outbound": "↗ 呼出",
     "language": "语言",
     "sentenceGap": ""
   },
@@ -61,6 +59,7 @@
     "stopLabel": "停止试听 {name}"
   },
   "nav": {
+    "dashboard": "控制台",
     "overview": "概览",
     "agents": "助理",
     "voices": "声音",
@@ -81,8 +80,8 @@
     "banner": "模拟模式：电话号码、声音、通话和短信均为模拟。设置 <code>TELNYX_MODE=live</code> 以使用 Telnyx。"
   },
   "login": {
-    "title": "登录 Easy Voice",
-    "tagline": "你的 AI 助理，拥有自己的电话号码。",
+    "title": "登录 VFi",
+    "tagline": "第一次使用？登录即会创建账户。",
     "google": "使用 Google 继续",
     "or": "或",
     "emailLabel": "邮箱",
@@ -99,22 +98,33 @@
     "googleDisabled": "尚未配置 Google 登录。",
     "googleState": "Google 登录已过期，请重试。",
     "googleEmail": "你的 Google 账户邮箱尚未验证。",
-    "googleFailed": "Google 登录失败，请重试。"
+    "googleFailed": "Google 登录失败，请重试。",
+    "legal": "继续即表示你同意<terms>服务条款</terms>和<privacy>隐私政策</privacy>。",
+    "panelTitle": "你的美国号码，中英文都能接听。",
+    "panelCard": "前台接待助理接听了一通来电",
+    "panelCardDetail": "批发咨询 · 已收集联系方式",
+    "panelNote": "示意图，并非真实通话。",
+    "footer": "VFi · Nyquiste 出品"
   },
   "email": {
-    "otpSubject": "你的 Easy Voice 验证码：{code}",
-    "otpBody": "你的登录验证码是 {code}，10 分钟内有效。"
+    "otpSubject": "{code} 是你的 VFi 登录验证码",
+    "otpPreheader": "10 分钟内有效。如非本人操作，请忽略此邮件。",
+    "otpHeading": "你的登录验证码",
+    "otpIntro": "在 VFi 登录页面输入以下验证码，以 {email} 继续登录。",
+    "otpExpiry": "验证码 10 分钟内有效，仅可使用一次。重新获取后，只有最新的验证码有效。",
+    "otpNotYou": "不是你本人在登录？请忽略此邮件，没有验证码任何人都无法登录。",
+    "otpFooter": "VFi · Nyquiste Corporation 出品 · 12020 Sunrise Valley Dr Ste 100, Reston, VA 20191"
   },
   "dashboard": {
     "title": "概览",
     "balance": "余额",
-    "topUp": "充值 →",
+    "topUp": "充值",
     "number": "号码",
     "answeredBy": "由 {name} 接听",
     "noAgent": "未分配助理",
     "noNumber": "还没有号码",
     "agents": "助理",
-    "manage": "管理 →",
+    "manage": "管理",
     "setup": "开始设置",
     "stepCredit": "充值",
     "stepAgent": "创建助理（选择或克隆声音）",
@@ -122,8 +132,11 @@
     "stepConnect": "将助理连接到你的号码",
     "stepCall": "拨打或接听第一通电话",
     "recentCalls": "最近通话",
-    "allCalls": "全部通话 →",
-    "noCalls": "还没有通话。"
+    "allCalls": "全部通话",
+    "noCalls": "还没有通话。",
+    "placeCall": "发起通话",
+    "liveCall": "{name}正在与 {number} 通话",
+    "openCall": "查看通话"
   },
   "agents": {
     "title": "助理",
@@ -142,7 +155,7 @@
     "deleteConfirmKnowledge": "删除 {name}？它的知识库也会被永久删除，且不退款。",
     "deleteConfirmNumberKnowledge": "删除 {name}？它的号码将不再接听电话，它的知识库也会被永久删除，且不退款。",
     "delete": "删除助理",
-    "namePlaceholder": "我的助理",
+    "namePlaceholder": "前台接待",
     "language": "主要语言",
     "languageHint": "来电者仍可中英文混合交流。",
     "voice": "声音",
@@ -176,8 +189,8 @@
     "backgroundSound": "背景音",
     "backgroundNone": "无",
     "backgroundOffice": "办公室",
-    "greetingPlaceholder": "您好，这里是我的助理，请问有什么可以帮您？",
-    "instructionsPlaceholder": "写明助理的身份、通话中要做什么，以及绝对不能做什么。",
+    "greetingPlaceholder": "感谢来电，请问有什么可以帮您？",
+    "instructionsPlaceholder": "写明助理在你的企业中担任什么角色、通话中要做什么，以及绝对不能做什么。",
     "variables": "变量",
     "variablesHint": "在开场白或指令中写 <code>'{{'name'}}'</code>，每次通话开始时会替换为对应的值。",
     "builtIn": {
@@ -188,7 +201,7 @@
     },
     "variableName": "名称",
     "variableValue": "值",
-    "variableValuePlaceholder": "例如：小王",
+    "variableValuePlaceholder": "例如：Lumen Home",
     "variableValueOptional": "默认值（可选）",
     "askPerCall": "每次通话时填写",
     "askPerCallHint": "每次通话时填写：发起呼叫时再填写；留空则使用这里的值。",
@@ -230,30 +243,22 @@
       "name": "空白",
       "description": "从零开始，自己编写开场白和指令。"
     },
-    "receptionist": {
-      "name": "私人接待",
-      "description": "你无法接听时代为留言，也能替你拨打电话。"
+    "reception": {
+      "name": "来电接待",
+      "description": "接待来电，依据知识库介绍企业，收集客户身份、联系方式与需求。"
     },
-    "screener": {
-      "name": "来电筛选",
-      "description": "婉拒推销和骚扰电话，其他来电则代为留言。"
+    "qa": {
+      "name": "业务咨询",
+      "description": "依据知识库解答产品与服务问题，并记录无法确认的事项。"
     },
-    "booking": {
-      "name": "预约代打",
-      "description": "致电商家，预约或更改预约。"
-    },
-    "frontDesk": {
-      "name": "前台",
-      "description": "根据知识库回答有关你业务的问题，并代为留言。"
-    },
-    "bilingual": {
-      "name": "双语助理",
-      "description": "默认说普通话，对方说英语时用英语回复。"
+    "outreach": {
+      "name": "商务外联",
+      "description": "按每次设定的目标，致电美国客户、服务商或合作伙伴。"
     }
   },
   "knowledge": {
     "title": "知识库",
-    "intro": "助理在通话中可以查阅的参考资料：文字、文件或网站。每条资料一次性收费 {price}。",
+    "intro": "助理在通话中可以查阅的企业信息和参考资料：文字、文件或网站。每条资料一次性收费 {price}。",
     "privacy": "对方可能会听到你在这里添加的任何内容。不要添加不希望在通话中被读出的内容。",
     "mode": "使用方式",
     "modeOff": "关闭：不查阅",
@@ -298,14 +303,14 @@
     "labIntro": "录制或上传某人说话的音频，得到一个听起来像他们的声音。",
     "connectToClone": "连接一个声音服务即可开始克隆。",
     "cloneLimit": "每个服务最多可以有 {max} 个克隆声音。删除一个后才能再克隆。",
-    "cloneLimitOrConnect": "Easy Voice 克隆声音已达到 {max} 个的上限。删除一个，或连接 ElevenLabs 来克隆更多声音。",
+    "cloneLimitOrConnect": "VFi 克隆声音已达到 {max} 个的上限。删除一个，或连接 ElevenLabs 来克隆更多声音。",
     "useOwnElevenLabs": "你仍然可以用自己的 ElevenLabs 账户克隆：请使用下方的“添加服务”。",
     "cloneWith": "克隆方式",
     "elevenLabsOption": "你自己的账户。在这里免费；通话使用你的 ElevenLabs 额度。",
     "easyVoiceOption": "从余额中扣除 {price}。",
     "addService": "添加服务",
     "addServiceHint": "连接你自己的 ElevenLabs 账户。",
-    "namePlaceholder": "我的声音",
+    "namePlaceholder": "品牌声音",
     "sampleLanguage": "样本语言",
     "voiceType": "声音类型",
     "female": "女声",
@@ -366,17 +371,17 @@
   "calls": {
     "title": "通话",
     "description": "通话按每分钟 {price} 计费，不足一分钟按一分钟计。",
-    "placeTitle": "让助理给别人打电话",
+    "placeTitle": "让助理拨打电话",
     "needBoth": "你需要<number>一个已激活的号码</number>和<agent>一个就绪的助理</agent>才能拨打电话。",
     "needNumber": "你需要<number>一个已激活的号码</number>才能拨打电话。",
     "needAgent": "你需要<agent>一个就绪的助理</agent>才能拨打电话。",
     "to": "拨打号码",
     "goal": "助理在这通电话中要做什么？（可选）",
     "goalHint": "仅在本次通话中以 <code>'{{'call_goal'}}'</code> 传给助理，如何使用由它的指令决定。",
-    "goalPlaceholder": "例如：打给李医生的诊所，把我周四下午 3 点的预约改到下周。",
+    "goalPlaceholder": "例如：和 Priya 确认下周一次 30 分钟的通话，可约周二或周四下午。",
     "dialing": "拨号中…",
     "call": "拨打",
-    "callerId": "通话会以你的号码 {number} 作为来电显示。请只拨打给预期会接到你助理电话的人。",
+    "callerId": "通话会以你的号码 {number} 作为来电显示。请只拨打给预期会接到你公司来电的人。",
     "empty": "还没有通话。",
     "colCall": "通话",
     "colStatus": "状态",
@@ -405,7 +410,13 @@
     "noTranscript": "暂无通话文字记录。",
     "deleteConfirm": "删除这通电话的录音、通话文字记录和摘要？账单记录会保留。",
     "delete": "删除通话记录",
-    "variableDefault": "留空则使用：{value}"
+    "variableDefault": "留空则使用：{value}",
+    "callBackTitle": "回拨",
+    "callBackBody": "让助理按你设定的目标拨打这个号码。",
+    "callBackAction": "发起通话",
+    "playRecording": "播放录音",
+    "pauseRecording": "暂停录音",
+    "seekRecording": "录音进度"
   },
   "messages": {
     "title": "短信",
@@ -422,10 +433,10 @@
     "billed": "已计费 {amount}",
     "deleteConfirm": "删除来自 {name} 的所有短信？此操作无法撤销。",
     "delete": "删除对话",
-    "namePlaceholder": "例如：李医生的诊所",
+    "namePlaceholder": "例如：Lakeside Packaging",
     "deletedAfter": "已在 {days} 天后删除。",
     "noText": "（无文字）",
-    "footer": "无法在 Easy Voice 中回复。短信会在 {days} 天后删除。",
+    "footer": "无法在 VFi 中回复。短信会在 {days} 天后删除。",
     "nameSaved": "名称已保存。",
     "nameRemoved": "名称已移除。"
   },
@@ -441,7 +452,7 @@
     "connectedBadge": "已连接",
     "rejectedNotice": "ElevenLabs 于 {date} 拒绝了此密钥：它可能已被撤销、过期或失去了某项权限。在 ElevenLabs 重新接受此密钥（每隔几分钟检查一次）或你于下方换成同一账户的有效密钥之前，使用你 ElevenLabs 声音的通话都会被拒接。",
     "keyEnding": "密钥尾号 <mono>{hint}</mono>。你用 ElevenLabs 克隆的声音保存在你的 ElevenLabs 账户中，使用它们的通话会消耗你的 ElevenLabs 额度。",
-    "cloneLink": "克隆声音 →",
+    "cloneLink": "克隆声音",
     "replaceKey": "更换密钥",
     "replaceHint": "同一 ElevenLabs 账户的新密钥。",
     "replace": "更换",
@@ -489,7 +500,7 @@
     "columnAmount": "金额",
     "activityLimited": "仅显示最近 {count} 条记录。",
     "payments": "付款",
-    "checkoutItem": "Easy Voice 余额",
+    "checkoutItem": "VFi 余额",
     "knowledgeSource": "知识库资料"
   },
   "stored": {
@@ -581,8 +592,8 @@
     "voiceNoMandarin": "{name} 不会说普通话，请选择标有“普通话 + 英语”的声音。",
     "cloneNotReady": "该克隆声音还没有准备好。",
     "modelUnavailable": "该模型不可用，请选择其他模型。",
-    "cloningUnavailable": "Easy Voice 克隆声音暂时不可用。",
-    "cloningUnavailablePickBuiltIn": "Easy Voice 克隆声音暂时不可用，请先选择内置声音。",
+    "cloningUnavailable": "VFi 克隆声音暂时不可用。",
+    "cloningUnavailablePickBuiltIn": "VFi 克隆声音暂时不可用，请先选择内置声音。",
     "voiceNameRequired": "请为声音命名。",
     "consentRequired": "你必须确认这是你本人的声音，或已获得说话人的同意。",
     "audioRequired": "请上传或录制一段音频样本。",
@@ -614,7 +625,7 @@
     "goalTooLong": "通话目标请控制在 {max} 个字符以内。",
     "balanceEmptyCall": "你的余额已用完，请充值后再拨打电话。",
     "noActiveNumber": "你需要一个已激活的电话号码才能拨打电话。",
-    "cantCallOwnNumber": "不能拨打你自己的助理号码。",
+    "cantCallOwnNumber": "不能拨打你自己的 VFi 号码。",
     "callInProgress": "另一通电话正在进行中，请等它结束。",
     "callNotFound": "找不到该通话。",
     "callStillLive": "通话仍在进行中，无法删除。",
@@ -649,6 +660,13 @@
     "variableValueRequired": "请为“{key}”填写值，或勾选“每次通话时填写”。",
     "variableValueTooLong": "“{key}”的值最多 {max} 个字符。",
     "variableNameRequired": "请为每个变量填写名称。"
+  },
+  "comingSoon": {
+    "title": "即将上线",
+    "privacy": "隐私政策",
+    "terms": "服务条款",
+    "body": "我们正在撰写 VFi 的{document}。如有疑问，请发送邮件至 <email>birdyyao@nyquiste.com</email>。",
+    "back": "返回 VFi"
   },
   "errorPage": {
     "notFoundTitle": "页面不存在",

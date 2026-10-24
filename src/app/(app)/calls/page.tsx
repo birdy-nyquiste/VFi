@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ActionForm, SubmitButton } from "@/components/forms";
-import { Badge, Card, CardTitle, Empty, Field, Notice, PageHeader, StatusBadge, inputClass } from "@/components/ui";
+import { Card, DirectionIcon, Empty, Field, Notice, PageHeader, StatusBadge, inputClass } from "@/components/ui";
 import { config } from "@/lib/config";
 import { formatCallerNumber, formatCents, formatDateTime, formatDuration, formatPhone } from "@/lib/format";
 import { listUserAgents, MAX_CALL_GOAL_LENGTH } from "@/server/agents";
@@ -26,8 +26,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getTranslations("calls"))("title") };
 }
 
-export default async function CallsPage() {
+export default async function CallsPage({ searchParams }: { searchParams: Promise<{ to?: string }> }) {
   const user = await requireUser();
+  // "Call them back" on a call page opens this form with the number filled in.
+  const { to } = await searchParams;
   const [rows, agents, numbers] = await Promise.all([listUserCalls(user.id), listUserAgents(user.id), listUserNumbers(user.id)]);
   const readyAgents = agents.filter((a) => a.status === "ready");
   const activeNumber = numbers.find((n) => n.status === "active");
@@ -39,7 +41,7 @@ export default async function CallsPage() {
     </Link>
   );
   const agentLink = (chunks: React.ReactNode) => (
-    <Link href="/agents/new" className="underline">
+    <Link href="/assistants/new" className="underline">
       {chunks}
     </Link>
   );
@@ -50,8 +52,10 @@ export default async function CallsPage() {
       {inFlight && <AutoRefresh />}
       <PageHeader title={t("title")} description={t("description", { price: formatCents(config.pricing.callPerMinuteCents, locale) })} />
 
-      <Card>
-        <CardTitle>{t("placeTitle")}</CardTitle>
+      <Card className="scroll-mt-6">
+        <h2 id="place" className="mb-3 scroll-mt-6 text-[15px] font-medium text-stone-900">
+          {t("placeTitle")}
+        </h2>
         {!activeNumber || readyAgents.length === 0 ? (
           <Notice>
             {t.rich(!activeNumber && readyAgents.length === 0 ? "needBoth" : !activeNumber ? "needNumber" : "needAgent", {
@@ -64,7 +68,7 @@ export default async function CallsPage() {
             {/* The number's agent only if it's ready: an id not in the list would hide the shown agent's per-call fields. */}
             <AgentFields agents={readyAgents.map(callAgent)} defaultAgentId={readyAgents.find((a) => a.id === activeNumber.agentId)?.id ?? readyAgents[0].id}>
               <Field label={t("to")}>
-                <input name="to" required inputMode="tel" placeholder="(415) 555-0100" className={inputClass} />
+                <input name="to" required inputMode="tel" placeholder="(415) 555-0100" defaultValue={to ? formatPhone(to) : undefined} className={inputClass} />
               </Field>
             </AgentFields>
             <Field
@@ -92,32 +96,32 @@ export default async function CallsPage() {
       ) : (
         <Card className="overflow-x-auto p-0">
           <table className="w-full text-sm">
-            <thead className="border-b border-stone-100 text-left text-xs font-medium text-stone-500">
+            <thead className="border-b border-stone-100 text-left text-[13px] text-stone-500">
               <tr>
-                <th className="px-5 py-3 font-medium">{t("colCall")}</th>
-                <th className="hidden px-3 py-3 font-medium sm:table-cell">{tc("agent")}</th>
-                <th className="px-3 py-3 font-medium">{t("colStatus")}</th>
-                <th className="hidden px-3 py-3 text-right font-medium sm:table-cell">{t("colDuration")}</th>
-                <th className="hidden px-3 py-3 text-right font-medium sm:table-cell">{t("colCost")}</th>
-                <th className="hidden px-5 py-3 text-right font-medium sm:table-cell">{t("colWhen")}</th>
+                <th className="px-6 py-3.5 font-normal">{t("colCall")}</th>
+                <th className="hidden px-3 py-3.5 font-medium sm:table-cell">{tc("agent")}</th>
+                <th className="px-3 py-3.5 font-normal">{t("colStatus")}</th>
+                <th className="hidden px-3 py-3.5 text-right font-medium sm:table-cell">{t("colDuration")}</th>
+                <th className="hidden px-3 py-3.5 text-right font-medium sm:table-cell">{t("colCost")}</th>
+                <th className="hidden px-6 py-3.5 text-right font-medium sm:table-cell">{t("colWhen")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
               {rows.map(({ call, agentName }) => (
                 <tr key={call.id} className="hover:bg-stone-50">
-                  <td className="px-5 py-3">
-                    <Link href={`/calls/${call.id}`} className="flex items-center gap-2 whitespace-nowrap font-medium">
-                      <Badge>{call.direction === "inbound" ? tc("inbound") : tc("outbound")}</Badge>
+                  <td className="px-6 py-3.5">
+                    <Link href={`/calls/${call.id}`} className="flex items-center gap-3 whitespace-nowrap tabular-nums">
+                      <DirectionIcon inbound={call.direction === "inbound"} label={t(call.direction === "inbound" ? "directionInbound" : "directionOutbound")} />
                       {formatCallerNumber(call.direction === "inbound" ? call.fromNumber : call.toNumber, tc("unknownNumber"))}
                     </Link>
                     {/* On phones the time goes here instead of in its own column. */}
                     <div className="mt-0.5 text-xs text-stone-500 sm:hidden">{formatDateTime(call.createdAt, locale, tz)}</div>
                   </td>
-                  <td className="hidden px-3 py-3 text-stone-600 sm:table-cell">{agentName ?? "—"}</td>
-                  <td className="px-3 py-3"><StatusBadge status={call.status} /></td>
-                  <td className="hidden px-3 py-3 text-right tabular-nums sm:table-cell">{formatDuration(call.durationSec)}</td>
-                  <td className="hidden px-3 py-3 text-right tabular-nums sm:table-cell">{call.billedCents != null ? formatCents(call.billedCents, locale) : "—"}</td>
-                  <td className="hidden whitespace-nowrap px-5 py-3 text-right text-stone-500 sm:table-cell">{formatDateTime(call.createdAt, locale, tz)}</td>
+                  <td className="hidden px-3 py-3.5 text-stone-600 sm:table-cell">{agentName ?? "—"}</td>
+                  <td className="px-3 py-3.5"><StatusBadge status={call.status} /></td>
+                  <td className="hidden px-3 py-3.5 text-right tabular-nums sm:table-cell">{formatDuration(call.durationSec)}</td>
+                  <td className="hidden px-3 py-3.5 text-right tabular-nums sm:table-cell">{call.billedCents != null ? formatCents(call.billedCents, locale) : "—"}</td>
+                  <td className="hidden whitespace-nowrap px-6 py-3.5 text-right text-stone-500 sm:table-cell">{formatDateTime(call.createdAt, locale, tz)}</td>
                 </tr>
               ))}
             </tbody>

@@ -85,15 +85,15 @@ export default async function NumbersPage({ searchParams }: { searchParams: Prom
             <Card key={n.id}>
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-lg">{formatPhone(n.e164)}</span>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-[28px] font-light leading-9 tracking-[-0.02em] tabular-nums">{formatPhone(n.e164)}</span>
                     <StatusBadge status={n.status} />
                   </div>
                   {n.status === "active" && n.paidThrough && (
-                    <p className="mt-1 text-xs text-stone-500">{t("renews", { date: formatDate(n.paidThrough, locale, tz) })}</p>
+                    <p className="mt-1.5 text-sm text-stone-600">{t("renews", { date: formatDate(n.paidThrough, locale, tz) })}</p>
                   )}
                   {n.status === "active" && config.features.inboundSms && (
-                    <p className="mt-1 text-xs text-stone-500">
+                    <p className="mt-1.5 text-sm text-stone-600">
                       {n.smsEnabledAt ? (
                         t.rich("receivesTexts", {
                           price: formatCents(config.pricing.smsInboundPerPartCents, locale),
@@ -108,7 +108,7 @@ export default async function NumbersPage({ searchParams }: { searchParams: Prom
                       )}
                     </p>
                   )}
-                  {n.status === "pending" && <p className="mt-1 text-xs text-stone-500">{t("activating")}</p>}
+                  {n.status === "pending" && <p className="mt-1.5 text-sm text-stone-600">{t("activating")}</p>}
                   {n.failureReason && n.status === "failed" && <p className="mt-1 text-sm text-red-600">{showStored(locale, n.failureReason, n.failureMsg)}</p>}
                 </div>
                 {n.status === "active" && (
@@ -176,7 +176,7 @@ export default async function NumbersPage({ searchParams }: { searchParams: Prom
               </Notice>
             </div>
           )}
-          <form className="flex gap-2" action="/numbers">
+          <form className="flex flex-wrap gap-2" action="/numbers" role="search">
             <input
               name="area"
               aria-label={t("areaCode")}
@@ -186,7 +186,7 @@ export default async function NumbersPage({ searchParams }: { searchParams: Prom
               maxLength={3}
               className={`${inputClass} max-w-48`}
             />
-            <button className={buttonClass("secondary")}>{t("search")}</button>
+            <button className={buttonClass("primary")}>{t("search")}</button>
           </form>
           {searchError && <p className="mt-3 text-sm text-red-600">{searchError}</p>}
           {results.length > 0 && results.every((r) => r.nearby) && (
@@ -196,17 +196,20 @@ export default async function NumbersPage({ searchParams }: { searchParams: Prom
             <p className="mt-3 text-sm text-stone-500">{t("noResults")}</p>
           )}
           {results.length > 0 && (
-            <ul className="mt-4 divide-y divide-stone-100">
+            <ul className="mt-5 grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-3">
               {results.map((r) => (
-                <li key={r.e164} className="flex items-center justify-between py-2">
-                  <span>
-                    <span className="font-mono">{formatPhone(r.e164)}</span>
-                    <span className="ml-2 text-sm text-stone-500">{[r.locality, r.region].filter(Boolean).join(", ")}</span>
-                    {r.nearby && <span className="ml-2"><Badge tone="amber">{t("nearby")}</Badge></span>}
+                <li key={r.e164} className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-white px-[18px] py-4">
+                  <span className="flex min-w-0 flex-col gap-0.5">
+                    <span className="text-[17px] tabular-nums">{formatPhone(r.e164)}</span>
+                    <span className="flex flex-wrap items-center gap-2 text-[13px] text-stone-500">
+                      {[r.locality, r.region].filter(Boolean).join(", ")}
+                      {r.nearby && <Badge tone="amber">{t("nearby")}</Badge>}
+                    </span>
                   </span>
-                  <ActionForm action={buyNumberAction} className="text-right">
+                  <ActionForm action={buyNumberAction} className="ml-auto text-right">
                     <input type="hidden" name="e164" value={r.e164} />
                     <SubmitButton
+                      variant="secondary"
                       disabled={!canAfford}
                       pendingText={t("ordering")}
                       confirm={t("buyConfirm", { number: formatPhone(r.e164), price: formatCents(config.pricing.numberMonthlyCents, locale) })}

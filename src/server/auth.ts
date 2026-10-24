@@ -7,10 +7,10 @@ import { cache } from "react";
 import { db, withLock } from "@/db";
 import { emailOtps, sessions, users, type User } from "@/db/schema";
 import type { Locale } from "@/i18n/locales";
-import { translator } from "@/i18n/messages";
 import { config, SESSION_COOKIE } from "@/lib/config";
 import type { ErrorKey } from "@/lib/errors";
 import { sendEmail } from "./email";
+import { signInCodeEmail } from "./emails/sign-in-code";
 import { syncLocaleAtSignIn } from "./locale";
 
 const OTP_TTL_MS = 10 * 60 * 1000;
@@ -54,9 +54,8 @@ export async function requestEmailOtp(rawEmail: string, locale: Locale): Promise
     return row.id;
   });
   if (!otpId) return { ok: false, error: "tooManyCodes" };
-  const t = translator(locale, "email");
   try {
-    await sendEmail({ to: email, subject: t("otpSubject", { code }), text: t("otpBody", { code }) });
+    await sendEmail({ to: email, ...signInCodeEmail(locale, code, email) });
   } catch (err) {
     // A code that never arrived shouldn't count toward the hourly limit.
     console.error("Sign-in code email failed", err);

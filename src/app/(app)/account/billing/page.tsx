@@ -62,31 +62,33 @@ export default async function BillingPage({
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardTitle>{t("balance")}</CardTitle>
-          <p className={`text-3xl font-semibold ${user.balanceCents <= 0 ? "text-red-600" : ""}`}>{formatCents(user.balanceCents, locale)}</p>
+          <p className={`text-5xl font-light tracking-[-0.035em] tabular-nums ${user.balanceCents <= 0 ? "text-red-600" : ""}`}>{formatCents(user.balanceCents, locale)}</p>
           <ActionForm action={topupAction} className="mt-4">
             <fieldset>
               <legend className="sr-only">{t("topupAmount")}</legend>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(72px,1fr))] gap-2">
                 {amounts.map((a, i) => (
                   <label key={a} className="cursor-pointer">
                     <input type="radio" name="amount" value={a} defaultChecked={i === Math.min(1, amounts.length - 1)} className="peer sr-only" />
-                    <span className="block rounded-lg px-4 py-2 text-sm font-medium ring-1 ring-stone-300 peer-checked:bg-stone-900 peer-checked:text-white peer-checked:ring-stone-900 peer-focus-visible:ring-2 peer-focus-visible:ring-stone-400 peer-focus-visible:ring-offset-2">
+                    <span className="flex h-11 items-center justify-center rounded-xl bg-white text-[15px] tabular-nums ring-1 ring-inset ring-stone-300 peer-checked:font-medium peer-checked:ring-2 peer-checked:ring-stone-900 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-emerald-500">
                       {formatCents(a * 100, locale, { whole: Number.isInteger(a) })}
                     </span>
                   </label>
                 ))}
               </div>
             </fieldset>
-            <div className="mt-3">
-              <SubmitButton pendingText={t("redirecting")}>{t("addCredit")}</SubmitButton>
+            <div className="mt-4 grid">
+              <SubmitButton size="lg" pendingText={t("redirecting")}>
+                {t("addCredit")}
+              </SubmitButton>
             </div>
           </ActionForm>
           {config.devCreditEnabled && (
-            <ActionForm action={devCreditAction} className="mt-4 rounded-lg border border-dashed border-sky-300 bg-sky-50 p-3">
-              <p className="mb-2 text-xs font-medium text-sky-800">{t("devOnly")}</p>
+            <ActionForm action={devCreditAction} className="mt-4 rounded-xl border border-dashed border-stone-300 p-3">
+              <p className="mb-2 text-xs font-medium text-stone-600">{t("devOnly")}</p>
               <div className="flex gap-2">
                 {[10, 50].map((a) => (
-                  <button key={a} name="amount" value={a} className="rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-sky-800 ring-1 ring-sky-300 hover:bg-sky-100">
+                  <button key={a} name="amount" value={a} className="rounded-full bg-white px-3 py-1.5 text-sm text-stone-700 ring-1 ring-stone-300 hover:bg-stone-100">
                     {formatCents(a * 100, locale, { whole: true, signed: true })}
                   </button>
                 ))}
@@ -96,44 +98,44 @@ export default async function BillingPage({
         </Card>
         <Card>
           <CardTitle>{t("pricing")}</CardTitle>
-          <dl className="space-y-2 text-sm">
-            <div className="flex justify-between"><dt>{t("calls")}</dt><dd className="font-medium">{t("perMin", { price: formatCents(p.callPerMinuteCents, locale) })}</dd></div>
-            <div className="flex justify-between"><dt>{t("number")}</dt><dd className="font-medium">{t("perMonth", { price: formatCents(p.numberMonthlyCents, locale) })}</dd></div>
-            <div className="flex justify-between"><dt>{t("clone")}</dt><dd className="font-medium">{t("each", { price: formatCents(p.voiceCloneCents, locale) })}</dd></div>
+          <dl className="divide-y divide-stone-100 border-t border-stone-100 text-[15px]">
+            <div className="flex justify-between gap-4 py-3"><dt>{t("calls")}</dt><dd className="tabular-nums">{t("perMin", { price: formatCents(p.callPerMinuteCents, locale) })}</dd></div>
+            <div className="flex justify-between gap-4 py-3"><dt>{t("number")}</dt><dd className="tabular-nums">{t("perMonth", { price: formatCents(p.numberMonthlyCents, locale) })}</dd></div>
+            <div className="flex justify-between gap-4 py-3"><dt>{t("clone")}</dt><dd className="tabular-nums">{t("each", { price: formatCents(p.voiceCloneCents, locale) })}</dd></div>
             {config.features.knowledgeBase && (
-              <div className="flex justify-between"><dt>{t("knowledgeSource")}</dt><dd className="font-medium">{t("each", { price: formatCents(p.knowledgeSourceCents, locale) })}</dd></div>
+              <div className="flex justify-between gap-4 py-3"><dt>{t("knowledgeSource")}</dt><dd className="tabular-nums">{t("each", { price: formatCents(p.knowledgeSourceCents, locale) })}</dd></div>
             )}
             {config.features.inboundSms && (
-              <div className="flex justify-between"><dt>{t("textReceived")}</dt><dd className="font-medium">{t("perSegment", { price: formatCents(p.smsInboundPerPartCents, locale) })}</dd></div>
+              <div className="flex justify-between gap-4 py-3"><dt>{t("textReceived")}</dt><dd className="tabular-nums">{t("perSegment", { price: formatCents(p.smsInboundPerPartCents, locale) })}</dd></div>
             )}
           </dl>
-          <p className="mt-4 text-xs text-stone-500">{t("terms")}{config.features.inboundSms && t("segmentNote")}</p>
+          <p className="mt-4 text-[13px] leading-5 text-stone-500">{t("terms")}{config.features.inboundSms && t("segmentNote")}</p>
         </Card>
       </div>
 
       <Card className="overflow-x-auto p-0">
-        <div className="px-5 pt-5"><CardTitle>{t("activity")}</CardTitle></div>
+        <div className="px-6 pt-5"><CardTitle>{t("activity")}</CardTitle></div>
         {ledger.length === 0 ? (
-          <p className="px-5 pb-5 text-sm text-stone-500">{t("noActivity")}</p>
+          <p className="px-6 pb-6 text-[15px] text-stone-500">{t("noActivity")}</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b border-stone-100 text-left text-xs text-stone-500">
+          <table className="w-full min-w-[560px] text-sm">
+            <thead className="border-b border-stone-100 text-left text-[13px] text-stone-500">
               <tr>
-                <th scope="col" className="px-5 py-2 font-medium">{t("columnDate")}</th>
-                <th scope="col" className="px-3 py-2 font-medium">{t("columnDescription")}</th>
-                <th scope="col" className="px-3 py-2 text-right font-medium">{t("columnAmount")}</th>
-                <th scope="col" className="hidden px-5 py-2 text-right font-medium sm:table-cell">{t("balance")}</th>
+                <th scope="col" className="px-6 py-2.5 font-normal">{t("columnDate")}</th>
+                <th scope="col" className="px-3 py-3.5 font-normal">{t("columnDescription")}</th>
+                <th scope="col" className="px-3 py-3.5 text-right font-normal">{t("columnAmount")}</th>
+                <th scope="col" className="hidden px-6 py-2.5 text-right font-normal sm:table-cell">{t("balance")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
               {ledger.map((e) => (
                 <tr key={e.id}>
-                  <td className="px-5 py-2.5 text-stone-500">{formatDateTime(e.createdAt, locale, tz)}</td>
-                  <td className="px-3 py-2.5">{showStored(locale, e.description, e.descriptionMsg)}</td>
-                  <td className={`px-3 py-2.5 text-right tabular-nums ${e.amountCents > 0 ? "text-emerald-700" : ""}`}>
+                  <td className="px-6 py-3.5 text-stone-500">{formatDateTime(e.createdAt, locale, tz)}</td>
+                  <td className="px-3 py-3.5">{showStored(locale, e.description, e.descriptionMsg)}</td>
+                  <td className={`px-3 py-3.5 text-right tabular-nums ${e.amountCents > 0 ? "text-emerald-700" : ""}`}>
                     {formatCents(e.amountCents, locale, { signed: true })}
                   </td>
-                  <td className="hidden px-5 py-2.5 text-right tabular-nums text-stone-500 sm:table-cell">{formatCents(e.balanceAfterCents, locale)}</td>
+                  <td className="hidden px-6 py-3.5 text-right tabular-nums text-stone-500 sm:table-cell">{formatCents(e.balanceAfterCents, locale)}</td>
                 </tr>
               ))}
             </tbody>

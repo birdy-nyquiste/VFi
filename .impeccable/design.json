@@ -1,0 +1,629 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-23T18:38:39.195528+00:00",
+  "title": "Design System: VFi",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "primary",
+        "displayName": "Switchboard Ink",
+        "tonalRamp": [
+          "#050506",
+          "#0b0b0c",
+          "#1f2024",
+          "#33343a",
+          "#55565b",
+          "#6e6f75",
+          "#a9a6a1",
+          "#dcd9d5",
+          "#e8e6e3",
+          "#f3f2ef",
+          "#fbfaf9"
+        ],
+        "sourceToken": "--color-stone-900"
+      },
+      "ink-hover": {
+        "role": "primary",
+        "displayName": "Graphite",
+        "tonalRamp": [
+          "#050506",
+          "#0b0b0c",
+          "#1f2024",
+          "#33343a",
+          "#55565b",
+          "#6e6f75",
+          "#a9a6a1",
+          "#dcd9d5",
+          "#e8e6e3",
+          "#f3f2ef",
+          "#fbfaf9"
+        ],
+        "sourceToken": "--color-stone-700"
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Warm Canvas",
+        "tonalRamp": [
+          "#050506",
+          "#0b0b0c",
+          "#1f2024",
+          "#33343a",
+          "#55565b",
+          "#6e6f75",
+          "#a9a6a1",
+          "#dcd9d5",
+          "#e8e6e3",
+          "#f3f2ef",
+          "#fbfaf9"
+        ],
+        "sourceToken": "--color-stone-50"
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Paper White",
+        "tonalRamp": [
+          "#050506",
+          "#0b0b0c",
+          "#1f2024",
+          "#33343a",
+          "#55565b",
+          "#6e6f75",
+          "#a9a6a1",
+          "#dcd9d5",
+          "#e8e6e3",
+          "#f3f2ef",
+          "#fbfaf9"
+        ],
+        "sourceToken": "white"
+      },
+      "wash": {
+        "role": "neutral",
+        "displayName": "Stone Wash",
+        "tonalRamp": [
+          "#050506",
+          "#0b0b0c",
+          "#1f2024",
+          "#33343a",
+          "#55565b",
+          "#6e6f75",
+          "#a9a6a1",
+          "#dcd9d5",
+          "#e8e6e3",
+          "#f3f2ef",
+          "#fbfaf9"
+        ],
+        "sourceToken": "--color-stone-100"
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "tonalRamp": [
+          "#050506",
+          "#0b0b0c",
+          "#1f2024",
+          "#33343a",
+          "#55565b",
+          "#6e6f75",
+          "#a9a6a1",
+          "#dcd9d5",
+          "#e8e6e3",
+          "#f3f2ef",
+          "#fbfaf9"
+        ],
+        "sourceToken": "--color-stone-200"
+      },
+      "control-stroke": {
+        "role": "neutral",
+        "displayName": "Control Stroke",
+        "tonalRamp": [
+          "#050506",
+          "#0b0b0c",
+          "#1f2024",
+          "#33343a",
+          "#55565b",
+          "#6e6f75",
+          "#a9a6a1",
+          "#dcd9d5",
+          "#e8e6e3",
+          "#f3f2ef",
+          "#fbfaf9"
+        ],
+        "sourceToken": "--color-stone-300"
+      },
+      "disabled": {
+        "role": "neutral",
+        "displayName": "Disabled Stone",
+        "tonalRamp": [
+          "#050506",
+          "#0b0b0c",
+          "#1f2024",
+          "#33343a",
+          "#55565b",
+          "#6e6f75",
+          "#a9a6a1",
+          "#dcd9d5",
+          "#e8e6e3",
+          "#f3f2ef",
+          "#fbfaf9"
+        ],
+        "sourceToken": "--color-stone-400"
+      },
+      "muted-text": {
+        "role": "neutral",
+        "displayName": "Muted Text",
+        "tonalRamp": [
+          "#050506",
+          "#0b0b0c",
+          "#1f2024",
+          "#33343a",
+          "#55565b",
+          "#6e6f75",
+          "#a9a6a1",
+          "#dcd9d5",
+          "#e8e6e3",
+          "#f3f2ef",
+          "#fbfaf9"
+        ],
+        "sourceToken": "--color-stone-500"
+      },
+      "secondary-text": {
+        "role": "neutral",
+        "displayName": "Secondary Text",
+        "tonalRamp": [
+          "#050506",
+          "#0b0b0c",
+          "#1f2024",
+          "#33343a",
+          "#55565b",
+          "#6e6f75",
+          "#a9a6a1",
+          "#dcd9d5",
+          "#e8e6e3",
+          "#f3f2ef",
+          "#fbfaf9"
+        ],
+        "sourceToken": "--color-stone-600"
+      },
+      "ink-raised": {
+        "role": "neutral",
+        "displayName": "Raised Ink",
+        "tonalRamp": [
+          "#050506",
+          "#0b0b0c",
+          "#1f2024",
+          "#33343a",
+          "#55565b",
+          "#6e6f75",
+          "#a9a6a1",
+          "#dcd9d5",
+          "#e8e6e3",
+          "#f3f2ef",
+          "#fbfaf9"
+        ],
+        "sourceToken": "--color-stone-800"
+      },
+      "signal": {
+        "role": "secondary",
+        "displayName": "Signal Teal",
+        "tonalRamp": [
+          "#08393f",
+          "#0a525a",
+          "#0b6670",
+          "#0c8592",
+          "#0e9aa7",
+          "#2bc4d1",
+          "#74c9d0",
+          "#a8dee2",
+          "#cdedef",
+          "#e6f5f6"
+        ],
+        "sourceToken": "--color-emerald-500 / --color-sky-500"
+      },
+      "signal-text": {
+        "role": "secondary",
+        "displayName": "Deep Signal",
+        "tonalRamp": [
+          "#08393f",
+          "#0a525a",
+          "#0b6670",
+          "#0c8592",
+          "#0e9aa7",
+          "#2bc4d1",
+          "#74c9d0",
+          "#a8dee2",
+          "#cdedef",
+          "#e6f5f6"
+        ],
+        "sourceToken": "--color-emerald-700 / --color-sky-700"
+      },
+      "signal-wash": {
+        "role": "secondary",
+        "displayName": "Signal Wash",
+        "tonalRamp": [
+          "#08393f",
+          "#0a525a",
+          "#0b6670",
+          "#0c8592",
+          "#0e9aa7",
+          "#2bc4d1",
+          "#74c9d0",
+          "#a8dee2",
+          "#cdedef",
+          "#e6f5f6"
+        ],
+        "sourceToken": "--color-emerald-50 / --color-sky-50"
+      },
+      "signal-tint": {
+        "role": "secondary",
+        "displayName": "Signal Tint",
+        "tonalRamp": [
+          "#08393f",
+          "#0a525a",
+          "#0b6670",
+          "#0c8592",
+          "#0e9aa7",
+          "#2bc4d1",
+          "#74c9d0",
+          "#a8dee2",
+          "#cdedef",
+          "#e6f5f6"
+        ],
+        "sourceToken": "--color-emerald-100"
+      },
+      "attention": {
+        "role": "tertiary",
+        "displayName": "Attention Amber",
+        "tonalRamp": [
+          "#4f2d00",
+          "#6e3f00",
+          "#8a4f00",
+          "#8f5200",
+          "#a15c00",
+          "#c98a2e",
+          "#e2b06d",
+          "#f0d5ae",
+          "#f7e3c6",
+          "#fbf1e3"
+        ],
+        "sourceToken": "--color-amber-500"
+      },
+      "attention-text": {
+        "role": "tertiary",
+        "displayName": "Attention Text",
+        "tonalRamp": [
+          "#4f2d00",
+          "#6e3f00",
+          "#8a4f00",
+          "#8f5200",
+          "#a15c00",
+          "#c98a2e",
+          "#e2b06d",
+          "#f0d5ae",
+          "#f7e3c6",
+          "#fbf1e3"
+        ],
+        "sourceToken": "--color-amber-800"
+      },
+      "attention-wash": {
+        "role": "tertiary",
+        "displayName": "Attention Wash",
+        "tonalRamp": [
+          "#4f2d00",
+          "#6e3f00",
+          "#8a4f00",
+          "#8f5200",
+          "#a15c00",
+          "#c98a2e",
+          "#e2b06d",
+          "#f0d5ae",
+          "#f7e3c6",
+          "#fbf1e3"
+        ],
+        "sourceToken": "--color-amber-50"
+      },
+      "failure": {
+        "role": "tertiary",
+        "displayName": "Failure Red",
+        "tonalRamp": [
+          "#5c100a",
+          "#7e170f",
+          "#9b1c14",
+          "#b42318",
+          "#c8372d",
+          "#d4645a",
+          "#e39a92",
+          "#efc0ba",
+          "#f6d5d1",
+          "#fbeae8"
+        ],
+        "sourceToken": "--color-red-600"
+      },
+      "failure-text": {
+        "role": "tertiary",
+        "displayName": "Failure Text",
+        "tonalRamp": [
+          "#5c100a",
+          "#7e170f",
+          "#9b1c14",
+          "#b42318",
+          "#c8372d",
+          "#d4645a",
+          "#e39a92",
+          "#efc0ba",
+          "#f6d5d1",
+          "#fbeae8"
+        ],
+        "sourceToken": "--color-red-700"
+      },
+      "failure-wash": {
+        "role": "tertiary",
+        "displayName": "Failure Wash",
+        "tonalRamp": [
+          "#5c100a",
+          "#7e170f",
+          "#9b1c14",
+          "#b42318",
+          "#c8372d",
+          "#d4645a",
+          "#e39a92",
+          "#efc0ba",
+          "#f6d5d1",
+          "#fbeae8"
+        ],
+        "sourceToken": "--color-red-50"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Landing hero headline only; 44px/48px under 640px."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Landing section headings, sign-in title and panel line."
+      },
+      "figure": {
+        "displayName": "Figure",
+        "purpose": "Balances, counts and phone numbers as large light tabular figures."
+      },
+      "page-title": {
+        "displayName": "Page Title",
+        "purpose": "The h1 of every Dashboard page."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Landing value-grid and step titles."
+      },
+      "card-title": {
+        "displayName": "Card Title",
+        "purpose": "Headings inside Dashboard cards."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Running text across landing and app."
+      },
+      "ui": {
+        "displayName": "UI",
+        "purpose": "Buttons, nav, tabs, table cells, notices."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Captions, metadata, hints, speaker names; never uppercase."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Assistant instructions and template variables only."
+      }
+    },
+    "shadows": [
+      {
+        "name": "hero-float",
+        "value": "0 24px 60px rgba(11,11,12,0.08), 0 2px 6px rgba(11,11,12,0.04)",
+        "purpose": "The landing hero's live call card."
+      },
+      {
+        "name": "illustration-lift",
+        "value": "0 12px 32px rgba(11,11,12,0.06)",
+        "purpose": "Product illustration cards on scenario stages."
+      },
+      {
+        "name": "thumb",
+        "value": "0 1px 3px rgba(11,11,12,0.12)",
+        "purpose": "Selected thumb of the EN / 中文 toggle."
+      },
+      {
+        "name": "popover",
+        "value": "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)",
+        "purpose": "Account popover (Tailwind shadow-lg); tooltips use shadow-md, the collapse handle shadow-sm."
+      }
+    ],
+    "motion": [
+      {
+        "name": "vfi-bar",
+        "value": "vfi-bar 1.1s ease-in-out infinite (scaleY 0.45 to 1), 150ms stagger",
+        "purpose": "Live indicator bars; only while a call is live."
+      },
+      {
+        "name": "vfi-line-in",
+        "value": "0.6s cubic-bezier(0.16, 1, 0.3, 1) both; opacity 0 and translateY(6px) to rest",
+        "purpose": "Transcript lines entering in sequence on the landing hero (0.5s stagger)."
+      },
+      {
+        "name": "sidebar-collapse",
+        "value": "width 200ms ease-out; labels fade 150ms",
+        "purpose": "Sidebar rail collapse and account card reveal."
+      },
+      {
+        "name": "state-transition",
+        "value": "Tailwind transition-colors (150ms, cubic-bezier(0.4, 0, 0.2, 1))",
+        "purpose": "Hover color changes on buttons, nav, tabs."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation: none / transition: none under prefers-reduced-motion",
+        "purpose": "Every animated element stops."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ink pill for every primary action; 48px large size on landing and sign-in only.",
+      "html": "<button class=\"ds-btn-primary\">Sign in</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:6px 18px;border-radius:9999px;font:400 14px/20px var(--font-sans,Geist,system-ui,sans-serif);border:none;cursor:pointer;transition:background-color .15s,color .15s;background:#0b0b0c;color:#fff;} .ds-btn-primary:hover{background:#33343a;} .ds-btn-primary:disabled{background:#a9a6a1;cursor:not-allowed;} .ds-btn-primary:focus-visible{outline:none;box-shadow:0 0 0 2px #fff,0 0 0 4px var(--color-emerald-500,#0e9aa7);}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "White pill with an inset stone ring; secondary actions such as See pricing.",
+      "html": "<button class=\"ds-btn-secondary\">See pricing</button>",
+      "css": ".ds-btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:6px 18px;border-radius:9999px;font:400 14px/20px var(--font-sans,Geist,system-ui,sans-serif);border:none;cursor:pointer;transition:background-color .15s,color .15s;background:#fff;color:#0b0b0c;box-shadow:inset 0 0 0 1px #dcd9d5;} .ds-btn-secondary:hover{background:#fbfaf9;} .ds-btn-secondary:focus-visible{outline:none;box-shadow:inset 0 0 0 1px #dcd9d5,0 0 0 2px #fff,0 0 0 4px #0e9aa7;}"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "White pill with red text and ring; destructive actions.",
+      "html": "<button class=\"ds-btn-danger\">Release number</button>",
+      "css": ".ds-btn-danger{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:6px 18px;border-radius:9999px;font:400 14px/20px var(--font-sans,Geist,system-ui,sans-serif);border:none;cursor:pointer;transition:background-color .15s,color .15s;background:#fff;color:#b42318;box-shadow:inset 0 0 0 1px #efc0ba;} .ds-btn-danger:hover{background:#fbeae8;} .ds-btn-danger:focus-visible{outline:none;box-shadow:inset 0 0 0 1px #efc0ba,0 0 0 2px #fff,0 0 0 4px #0e9aa7;}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Label, 12px-radius input and muted hint.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-field-label\" for=\"ds-in\">Assistant name</label><input id=\"ds-in\" class=\"ds-input\" placeholder=\"Front desk\"><p class=\"ds-field-hint\">Shown in call logs.</p></div>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:6px;font-family:var(--font-sans,Geist,system-ui,sans-serif);} .ds-field-label{font-size:14px;font-weight:500;color:#0b0b0c;} .ds-input{display:block;width:100%;border:1px solid #dcd9d5;border-radius:12px;background:#fff;padding:10px 14px;font-size:15px;color:#0b0b0c;outline:none;transition:border-color .15s,box-shadow .15s;} .ds-input::placeholder{color:#6e6f75;} .ds-input:focus{border-color:#6e6f75;box-shadow:0 0 0 2px #cdedef;} .ds-field-hint{margin:0;font-size:13px;line-height:19px;color:#6e6f75;}"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge-live",
+      "description": "24px pill with a dot; teal live/ready, amber attention, red failure, stone neutral.",
+      "html": "<span class=\"ds-badge ds-badge-live\"><i></i>Ready</span> <span class=\"ds-badge ds-badge-amber\"><i></i>Syncing</span> <span class=\"ds-badge ds-badge-red\"><i></i>Failed</span> <span class=\"ds-badge ds-badge-gray\"><i></i>Completed</span>",
+      "css": ".ds-badge{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:9999px;font:400 12px/1 var(--font-sans,Geist,system-ui,sans-serif);white-space:nowrap;} .ds-badge i{width:6px;height:6px;border-radius:9999px;} .ds-badge-live{background:#e6f5f6;color:#0b6670;} .ds-badge-live i{background:#0e9aa7;} .ds-badge-amber{background:#fbf1e3;color:#6e3f00;} .ds-badge-amber i{background:#a15c00;} .ds-badge-red{background:#fbeae8;color:#9b1c14;} .ds-badge-red i{background:#b42318;} .ds-badge-gray{background:#f3f2ef;color:#55565b;} .ds-badge-gray i{background:#a9a6a1;}"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "White 20px-radius hairline card, flat at rest.",
+      "html": "<div class=\"ds-card\"><h2 class=\"ds-card-label\">Balance</h2><p class=\"ds-card-figure\">$38.69</p></div>",
+      "css": ".ds-card{border:1px solid #e8e6e3;border-radius:20px;background:#fff;padding:24px;font-family:var(--font-sans,Geist,system-ui,sans-serif);color:#0b0b0c;} .ds-card-label{margin:0 0 12px;font-size:14px;font-weight:400;color:#6e6f75;} .ds-card-figure{margin:0;font-size:34px;line-height:38px;font-weight:300;letter-spacing:-0.03em;font-variant-numeric:tabular-nums;}"
+    },
+    {
+      "name": "Sidebar Nav",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "10px-radius rows with stroke icons; active row in stone wash.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item ds-nav-active\" href=\"#\"><svg viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3.5 9.5 10 4l6.5 5.5V16a1 1 0 0 1-1 1H12v-4.5H8V17H4.5a1 1 0 0 1-1-1V9.5Z\"/></svg>Overview</a><a class=\"ds-nav-item\" href=\"#\"><svg viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 8.5v3M7 6v8M10 4v12M13 6.5v7M16 8.5v3\"/></svg>Assistants</a></nav>",
+      "css": ".ds-nav{display:flex;flex-direction:column;gap:4px;width:240px;padding:12px;background:#fff;border-right:1px solid #e8e6e3;font-family:var(--font-sans,Geist,system-ui,sans-serif);} .ds-nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:10px;font-size:14px;color:#33343a;text-decoration:none;transition:background-color .15s,color .15s;} .ds-nav-item svg{width:20px;height:20px;flex-shrink:0;} .ds-nav-item:hover{background:rgba(243,242,239,.7);color:#0b0b0c;} .ds-nav-active{background:#f3f2ef;color:#0b0b0c;font-weight:500;} .ds-nav-item:focus-visible{outline:none;box-shadow:0 0 0 2px #fff,0 0 0 4px #0e9aa7;}"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "nav",
+      "refersTo": "segmented",
+      "description": "Stone-wash pill track; the active segment is an ink pill.",
+      "html": "<div class=\"ds-seg\" role=\"tablist\"><button class=\"ds-seg-btn ds-seg-on\">Reception</button><button class=\"ds-seg-btn\">Business Q&amp;A</button><button class=\"ds-seg-btn\">Outreach</button></div>",
+      "css": ".ds-seg{display:inline-flex;gap:6px;padding:4px;border-radius:9999px;background:#f3f2ef;} .ds-seg-btn{height:36px;padding:0 16px;border:none;border-radius:9999px;background:transparent;font:400 14px/1 var(--font-sans,Geist,system-ui,sans-serif);color:#33343a;cursor:pointer;transition:background-color .15s,color .15s;} .ds-seg-btn:hover{color:#0b0b0c;} .ds-seg-on{background:#0b0b0c;color:#fff;} .ds-seg-on:hover{color:#fff;} .ds-seg-btn:focus-visible{outline:none;box-shadow:0 0 0 2px #0e9aa7;}"
+    },
+    {
+      "name": "Live Call Panel",
+      "kind": "custom",
+      "refersTo": "live-panel",
+      "description": "Ink panel with the three-bar live indicator; only while a call is in progress.",
+      "html": "<div class=\"ds-live\"><span class=\"ds-live-dot\"><i></i><i></i><i></i></span><span class=\"ds-live-text\"><b>Front desk is on a call with +1 (415) 555-0132</b><small>Inbound · 02:14</small></span></div>",
+      "css": "@keyframes ds-vfi-bar{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(1)}} .ds-live{display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:20px;background:#0b0b0c;color:#fff;font-family:var(--font-sans,Geist,system-ui,sans-serif);} .ds-live-dot{display:flex;align-items:center;justify-content:center;gap:3px;width:40px;height:40px;border-radius:9999px;background:#0e9aa7;flex-shrink:0;} .ds-live-dot i{width:3px;height:14px;border-radius:2px;background:#fff;animation:ds-vfi-bar 1.1s ease-in-out infinite;} .ds-live-dot i:nth-child(2){height:19px;animation-delay:150ms;} .ds-live-dot i:nth-child(3){animation-delay:300ms;} .ds-live-text{display:flex;flex-direction:column;gap:2px;} .ds-live-text b{font-weight:400;font-size:15px;} .ds-live-text small{font-size:13px;color:#a9a6a1;} @media (prefers-reduced-motion:reduce){.ds-live-dot i{animation:none;}}"
+    },
+    {
+      "name": "Wave V Logo",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Five rounded voice bars dipping into a V, center bar in signal teal, beside the Geist 500 wordmark.",
+      "html": "<span class=\"ds-logo\"><svg viewBox=\"0 0 40 40\"><rect x=\"3\" y=\"5\" width=\"4.6\" height=\"21\" rx=\"2.3\" fill=\"currentColor\"/><rect x=\"10.4\" y=\"9.5\" width=\"4.6\" height=\"21\" rx=\"2.3\" fill=\"currentColor\"/><rect x=\"17.7\" y=\"14\" width=\"4.6\" height=\"21\" rx=\"2.3\" fill=\"#0e9aa7\"/><rect x=\"25\" y=\"9.5\" width=\"4.6\" height=\"21\" rx=\"2.3\" fill=\"currentColor\"/><rect x=\"32.4\" y=\"5\" width=\"4.6\" height=\"21\" rx=\"2.3\" fill=\"currentColor\"/></svg><span>VFi</span></span>",
+      "css": ".ds-logo{display:inline-flex;align-items:center;gap:8px;color:#0b0b0c;font-family:var(--font-sans,Geist,system-ui,sans-serif);} .ds-logo svg{width:24px;height:24px;} .ds-logo span{font-size:22px;font-weight:500;line-height:1;letter-spacing:-0.05em;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Switchboard",
+    "overview": "VFi is the category standard for voice-agent platforms played straight: black ink on a warm off-white canvas, white hairline cards, black and white pill buttons, and a light Geist display face that speaks at large sizes without raising its voice. The public landing page and the signed-in Dashboard are one system; the landing simply uses the larger button size and the lighter, bigger headline steps. The peer and craft bar is ElevenLabs Agents: restrained monochrome, polished console, the product itself as the proof.\n\nColor is almost absent on purpose. The palette is ink and its warm grays; one signal teal appears only where something is alive or working for the user (a call in progress, an Assistant that is ready, the Assistant's own voice in a transcript, money arriving, the keyboard focus, the center bar of the Wave V mark). Amber marks what needs attention and red marks failure. Actions are always ink, never color.\n\nDensity is calm. App pages sit in a 1152px column with 40px gutters and 20px-radius cards with 24px padding; the landing runs a 1200px column with section rhythm near 104px. Depth is mostly flat: hairline borders and tonal washes separate surfaces, and soft ink-tinted shadows appear only on floating illustrations and floating menus. The system works in five languages; CJK and Vietnamese are first-class, which is why the stack is chosen per language and why case is never styled.",
+    "keyCharacteristics": [
+      "Ink on warm canvas; white hairline cards; one signal teal reserved for life and readiness.",
+      "Pill-shaped ink buttons; the Dashboard uses 40px, the landing and sign-in use 48px.",
+      "Geist light (300) for display and figures, regular for page titles, medium for titles and labels.",
+      "Flat by default; soft ink shadows only on floating things.",
+      "Large, soft radii (20px cards, 28px stages) against small, precise hairlines.",
+      "The Wave V mark and its three-bar live indicator are the only motifs."
+    ],
+    "rules": [
+      {
+        "name": "The Signal Rule",
+        "body": "Signal teal means the system is alive or working for the user: live, ready, the Assistant speaking, credit arriving, and the keyboard focus. It never fills an action, never decorates, and never marks merely \"new\" or \"saved\".",
+        "section": "colors"
+      },
+      {
+        "name": "The Ink Action Rule",
+        "body": "Every button the user presses is ink, white with an ink or stone ring, or white with red for destruction. A colored primary button does not exist.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Teals Are One Rule",
+        "body": "Emerald and sky are the same ramp; choose by meaning in code (green for ready or live, blue for answered or initiated), never expect them to look different.",
+        "section": "colors"
+      },
+      {
+        "name": "The Sentence Case Rule",
+        "body": "Case is never styled: no uppercase transforms, no ALL-CAPS labels, no wide tracking to fake a label voice. \"VFi\" is a name, not styling.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Figures Rule",
+        "body": "Prices, durations, balances and phone numbers use tabular numerals (tables get them globally) so they line up in columns.",
+        "section": "typography"
+      },
+      {
+        "name": "The Light Large Rule",
+        "body": "Above 26px, type is light (300) with negative tracking; the Dashboard page title is the single regular-weight exception.",
+        "section": "typography"
+      },
+      {
+        "name": "The Float-Only Rule",
+        "body": "A shadow means \"this is floating\": an illustration or a transient menu. Cards, panels, rows and buttons at rest carry a hairline or nothing.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do fill every action with ink (#0b0b0c) and shape it as a full pill; use the 48px size only on the landing and sign-in.",
+      "Do reserve signal teal for live, ready, the Assistant's voice, incoming credit and keyboard focus (The Signal Rule).",
+      "Do separate surfaces with 1px hairlines and tonal washes; keep cards at 20px radius with 24px padding.",
+      "Do set type above 26px in Geist light (300) with negative tracking, and every number in tabular figures.",
+      "Do let layouts collapse by content width (flex-basis minimums, auto-fit grids) so CJK, Vietnamese and English all fit without per-language overrides.",
+      "Do give each new animated element a reduced-motion stop, as the live bars and line entrances have."
+    ],
+    "donts": [
+      "Don't use uppercase text styling or ALL-CAPS labels, anywhere, in any language.",
+      "Don't put teal on a button, a link, a \"new\" or \"unread\" marker, or a decorative accent.",
+      "Don't add shadows to cards, rows or buttons at rest; shadows are for floating illustrations and menus only.",
+      "Don't introduce a second accent hue, gradients, or a dark neon theme; the world is ink on warm canvas.",
+      "Don't add a second primary call to action beside the account button on the landing page.",
+      "Don't use typographic glyphs (arrows, checkmarks) as icons; draw icons as inline SVG with round caps and joins, as the sidebar and direction icons are."
+    ]
+  }
+}

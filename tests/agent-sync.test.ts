@@ -400,14 +400,14 @@ describe("templates", () => {
     expect(MESSAGES.en.agentTemplates[id]).toEqual({ name: expect.any(String), description: expect.any(String) });
   });
 
-  it("offers front desk, which answers from a knowledge base, only where agents can have one", () => {
+  it("offers business Q&A, which answers from a knowledge base, only where Assistants can have one", () => {
     expect(offeredTemplates(true)).toEqual(TEMPLATE_IDS);
-    expect(offeredTemplates(false)).toEqual(TEMPLATE_IDS.filter((id) => id !== "frontDesk"));
+    expect(offeredTemplates(false)).toEqual(TEMPLATE_IDS.filter((id) => id !== "qa"));
   });
 
   it("can be saved once its variables are filled in", async () => {
     const u = await makeUser();
-    const tpl = AGENT_TEMPLATES.booking;
+    const tpl = AGENT_TEMPLATES.outreach;
     const variables = tpl.variables.map((v) => ({ ...v, value: v.askPerCall ? "" : "Alex" }));
     const a = await createAgent(u.id, { ...input, greeting: tpl.greeting, instructions: tpl.instructions, behavior: tpl.behavior, variables });
     expect(a.status).toBe("ready");

@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { cache } from "react";
 import { ActionForm, SubmitButton } from "@/components/forms";
-import { Badge, Card, CardTitle, Notice, PageHeader, StatusBadge } from "@/components/ui";
+import { LiveIndicator } from "@/components/logo";
+import { ButtonLink, Card, CardTitle, Notice, PageHeader, StatusBadge } from "@/components/ui";
 import type { Call } from "@/db/schema";
 import { formatCents, formatDateTime, formatDuration, formatPhone } from "@/lib/format";
 import { showStored, type StoredMessage } from "@/lib/stored-text";
@@ -13,6 +14,7 @@ import { isAwaitingResults, isCallLive } from "@/server/calls/state";
 import { deleteCallAction, hangupAction } from "../actions";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { viewerTimeZone } from "@/server/time-zone";
+import { RecordingPlayer } from "./recording-player";
 
 /** Outcomes that are just how the call went at the other end, or a routine rejection; any other is a failure. */
 const ROUTINE_OUTCOMES = new Set<StoredMessage["key"]>([
@@ -49,6 +51,14 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
   const awaitingResults = isAwaitingResults(call);
   const [t, tc, locale] = await Promise.all([getTranslations("calls"), getTranslations("common"), getLocale()]);
   const tz = await viewerTimeZone();
+  const other = call.direction === "inbound" ? call.fromNumber : call.toNumber;
+  const meta = [
+    t(call.direction === "inbound" ? "directionInbound" : "directionOutbound"),
+    agentName,
+    call.durationSec != null ? formatDuration(call.durationSec) : null,
+    call.billedCents != null ? formatCents(call.billedCents, locale) : null,
+    formatDateTime(call.createdAt, locale, tz),
+  ].filter(Boolean);
 
   return (
     <div className="space-y-6">
@@ -56,20 +66,19 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
       <PageHeader
         back={{ href: "/calls", label: t("all") }}
         title={await callTitle(call)}
-        description={formatDateTime(call.createdAt, locale, tz)}
+        description={meta.join(" · ")}
         action={<StatusBadge status={call.status} />}
       />
 
       {live && (
-        <Notice tone="blue">
-          <div className="flex items-center justify-between gap-3">
-            <span>{call.status === "answered" ? t("inProgress") : t("connecting")}</span>
-            <ActionForm action={hangupAction}>
-              <input type="hidden" name="id" value={call.id} />
-              <SubmitButton variant="danger">{t("hangUp")}</SubmitButton>
-            </ActionForm>
-          </div>
-        </Notice>
+        <div className="flex flex-wrap items-center gap-4 rounded-[20px] bg-stone-900 px-5 py-4 text-white">
+          <LiveIndicator />
+          <span className="text-[15px]">{call.status === "answered" ? t("inProgress") : t("connecting")}</span>
+          <ActionForm action={hangupAction} className="ml-auto">
+            <input type="hidden" name="id" value={call.id} />
+            <SubmitButton variant="danger">{t("hangUp")}</SubmitButton>
+          </ActionForm>
+        </div>
       )}
       {call.goal && (
         <Card>
@@ -83,35 +92,27 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
         </Notice>
       )}
 
-      <Card>
-        <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
-          <div><dt className="text-stone-500">{t("direction")}</dt><dd className="mt-1"><Badge>{t(call.direction === "inbound" ? "directionInbound" : "directionOutbound")}</Badge></dd></div>
-          <div><dt className="text-stone-500">{tc("agent")}</dt><dd className="mt-1 font-medium">{agentName ?? "—"}</dd></div>
-          <div><dt className="text-stone-500">{t("colDuration")}</dt><dd className="mt-1 font-medium tabular-nums">{formatDuration(call.durationSec)}</dd></div>
-          <div><dt className="text-stone-500">{t("colCost")}</dt><dd className="mt-1 font-medium tabular-nums">{call.billedCents != null ? formatCents(call.billedCents, locale) : "—"}</dd></div>
-        </dl>
-      </Card>
 
       {call.status === "completed" && (
         <>
           <Card>
             <CardTitle>{t("summary")}</CardTitle>
-            <p className="text-sm text-stone-700">{call.summary ?? (awaitingResults ? t("generating") : t("noSummary"))}</p>
+            <p className="text-[17px] leading-[27px]">{call.summary ?? (awaitingResults ? t("generating") : t("noSummary"))}</p>
           </Card>
           {call.hasRecording && (
             <Card>
               <CardTitle>{t("recording")}</CardTitle>
-              <audio controls preload="none" src={`/api/calls/${call.id}/recording`} className="w-full" />
+              <RecordingPlayer src={`/api/calls/${call.id}/recording`} seed={call.id} durationSec={call.durationSec} />
             </Card>
           )}
           <Card>
             <CardTitle>{t("transcript")}</CardTitle>
             {call.transcript?.length ? (
-              <ol className="space-y-3">
+              <ol className="space-y-3.5">
                 {call.transcript.map((m, i) => (
                   <li key={i} className={`flex ${m.role === "assistant" ? "" : "justify-end"}`}>
-                    <div className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${m.role === "assistant" ? "bg-stone-100" : "bg-stone-900 text-white"}`}>
-                      <div className={`mb-0.5 text-xs ${m.role === "assistant" ? "text-stone-600" : "text-stone-300"}`}>{m.role === "assistant" ? agentName ?? tc("agent") : t("caller")}</div>
+                    <div className={`max-w-[78%] rounded-[18px] px-4 py-3 text-[15px] leading-[22px] ${m.role === "assistant" ? "bg-stone-100" : "bg-stone-900 text-white"}`}>
+                      <div className={`mb-1 text-xs ${m.role === "assistant" ? "text-emerald-700" : "text-stone-400"}`}>{m.role === "assistant" ? agentName ?? tc("agent") : t("caller")}</div>
                       {m.text}
                     </div>
                   </li>
@@ -122,6 +123,16 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
             )}
           </Card>
         </>
+      )}
+
+      {!live && /^\+\d/.test(other) && (
+        <Card className="flex flex-wrap items-center gap-4">
+          <div className="min-w-0 flex-1">
+            <CardTitle>{t("callBackTitle")}</CardTitle>
+            <p className="-mt-1 text-sm text-stone-600">{t("callBackBody")}</p>
+          </div>
+          <ButtonLink href={`/calls?to=${encodeURIComponent(other)}#place`}>{t("callBackAction")}</ButtonLink>
+        </Card>
       )}
 
       {!live && (

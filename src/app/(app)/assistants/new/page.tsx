@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { Empty, PageHeader } from "@/components/ui";
+import { Empty, focusRing, PageHeader } from "@/components/ui";
 import { AGENT_TEMPLATES, offeredTemplates, toTemplateId } from "@/lib/agent-templates";
 import { config } from "@/lib/config";
 import { listModels, listUserAgents } from "@/server/agents";
@@ -23,7 +23,7 @@ export default async function NewAgentPage({ searchParams }: { searchParams: Pro
   if (agents.length >= max) {
     return (
       <div>
-        <PageHeader back={{ href: "/agents", label: t("all") }} title={t("new")} />
+        <PageHeader back={{ href: "/assistants", label: t("all") }} title={t("new")} />
         <Empty>{t("limitReached", { max })}</Empty>
       </div>
     );
@@ -36,16 +36,16 @@ export default async function NewAgentPage({ searchParams }: { searchParams: Pro
   if (!templateId) {
     return (
       <div>
-        <PageHeader back={{ href: "/agents", label: t("all") }} title={t("new")} description={tt("pick")} />
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <PageHeader back={{ href: "/assistants", label: t("all") }} title={t("new")} description={tt("pick")} />
+        <ul className="grid gap-3 sm:grid-cols-2">
           {offered.map((id) => (
             <li key={id}>
               <Link
-                href={`/agents/new?template=${id}`}
-                className="block h-full rounded-xl border border-stone-200 bg-white p-4 shadow-sm transition hover:border-stone-400 hover:shadow"
+                href={`/assistants/new?template=${id}`}
+                className={`block h-full rounded-[20px] border bg-white p-5 transition-colors hover:border-stone-900 ${focusRing} ${id === "blank" ? "border-dashed border-stone-300" : "border-stone-200"}`}
               >
-                <span className="block text-sm font-semibold text-stone-900">{tt(`${id}.name`)}</span>
-                <span className="mt-1 block text-sm text-stone-500">{tt(`${id}.description`)}</span>
+                <span className="block text-base font-medium text-stone-900">{tt(`${id}.name`)}</span>
+                <span className="mt-1.5 block text-sm leading-[21px] text-stone-600">{tt(`${id}.description`)}</span>
               </Link>
             </li>
           ))}
@@ -67,11 +67,11 @@ export default async function NewAgentPage({ searchParams }: { searchParams: Pro
   return (
     <div>
       <PageHeader
-        back={{ href: "/agents", label: t("all") }}
+        back={{ href: "/assistants", label: t("all") }}
         title={t("new")}
         description={tt("startingFrom", { name: tt(`${templateId}.name`) })}
         action={
-          <Link href="/agents/new" className="text-sm font-medium text-stone-600 underline">
+          <Link href="/assistants/new" className="text-sm font-medium text-stone-600 underline">
             {tt("change")}
           </Link>
         }

@@ -17,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("meta");
   // Pages set their own title, so tabs and history tell them apart, and screen readers announce a
   // client navigation (Next only does so when the title changes).
-  return { title: { template: "%s · Easy Voice", default: "Easy Voice" }, description: t("description") };
+  return { title: { template: "%s · VFi", default: "VFi" }, description: t("description") };
 }
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

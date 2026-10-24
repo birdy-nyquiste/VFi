@@ -302,7 +302,7 @@ describe("disconnecting ElevenLabs", () => {
     await connectElevenLabs(u.id, KEY);
     const v = await elevenLabsClone(u.id);
     await createAgent(u.id, { ...agentInput, voice: `clone:${v.id}` });
-    await expect(disconnectElevenLabs(u.id)).rejects.toThrow(/Change the agent's voice first/);
+    await expect(disconnectElevenLabs(u.id)).rejects.toThrow(/Change the Assistant's voice first/);
   });
 
   it("removes the key, the Telnyx secret and the ElevenLabs voices here, keeping other clones", async () => {

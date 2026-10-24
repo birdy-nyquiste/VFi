@@ -1,0 +1,26 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-10-23T16:10:00Z"},
+  "title": "VFi redesign mocks",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 1180, "title": "Brand: logo concepts and system"},
+    "Landing.dc.html": {"x": 1520, "y": 0, "w": 1440, "h": 4300, "title": "Landing page", "expand": "fill", "is_interactive": true},
+    "SignIn.dc.html": {"x": 3040, "y": 0, "w": 1440, "h": 900, "title": "Sign in", "expand": "fill"},
+    "Overview.dc.html": {"x": 4560, "y": 0, "w": 1440, "h": 1000, "title": "App: Overview", "expand": "fill"},
+    "Assistant.dc.html": {"x": 6080, "y": 0, "w": 1440, "h": 1500, "title": "App: Assistant editor", "expand": "fill"},
+    "CallDetail.dc.html": {"x": 7600, "y": 0, "w": 1440, "h": 1100, "title": "App: Call detail", "expand": "fill"},
+    "Numbers.dc.html": {"x": 9120, "y": 0, "w": 1440, "h": 1000, "title": "App: Numbers", "expand": "fill"},
+    "Billing.dc.html": {"x": 10640, "y": 0, "w": 1440, "h": 1100, "title": "App: Billing", "expand": "fill"},
+    "Email.dc.html": {"x": 0, "y": 1560, "w": 1440, "h": 1160, "title": "Email: sign-in code"}
+  },
+  "order": ["Main.dc.html", "Landing.dc.html", "SignIn.dc.html", "Overview.dc.html", "Assistant.dc.html", "CallDetail.dc.html", "Numbers.dc.html", "Billing.dc.html", "Email.dc.html"],
+  "notes": {
+    "t_brand": {"x": 0, "y": -300, "text": "Brand", "kind": "title1", "maxW": 1440},
+    "t_site": {"x": 1520, "y": -300, "text": "Website", "kind": "title1", "maxW": 2960},
+    "t_app": {"x": 4560, "y": -300, "text": "App", "kind": "title1", "maxW": 7520},
+    "t_email": {"x": 0, "y": 1280, "text": "Email", "kind": "title1", "maxW": 1440}
+  },
+  "designSystems": []
+}

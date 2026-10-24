@@ -51,7 +51,7 @@ describe("per-user isolation", () => {
     await expect(deleteAgent(b.user.id, a.agent.id)).rejects.toThrow(/not found/);
     await expect(releaseNumber(b.user.id, a.number.id)).rejects.toThrow(/not found/);
     await expect(assignAgentToNumber(b.user.id, a.number.id, b.agent.id)).rejects.toThrow(/not found/);
-    await expect(assignAgentToNumber(a.user.id, a.number.id, b.agent.id)).rejects.toThrow(/Agent not found/);
+    await expect(assignAgentToNumber(a.user.id, a.number.id, b.agent.id)).rejects.toThrow(/Assistant not found/);
     await expect(deleteVoice(b.user.id, voice.id)).rejects.toThrow(/not found/);
     await expect(deleteCallRecord(b.user.id, call.id)).rejects.toThrow(/not found/);
   });
@@ -78,7 +78,7 @@ describe("per-user isolation", () => {
 
   it("can't place calls with another user's agent", async () => {
     const { a, b } = await twoUsers();
-    await expect(startOutboundCall(b.user, { agentId: a.agent.id, to: "4155550100" })).rejects.toThrow(/Agent not found/);
+    await expect(startOutboundCall(b.user, { agentId: a.agent.id, to: "4155550100" })).rejects.toThrow(/Assistant not found/);
   });
 
   it("can't use another user's clone as an agent voice", async () => {
@@ -97,7 +97,7 @@ describe("malformed ids", () => {
     await expect(deleteCallRecord(user.id, bad)).rejects.toThrow(/not found/);
     await expect(hangupCall(user.id, bad)).resolves.toBeUndefined();
     expect(await getUserAgent(user.id, bad)).toBeNull();
-    await expect(startOutboundCall(user, { agentId: bad, to: "4155550100" })).rejects.toThrow(/Agent not found/);
+    await expect(startOutboundCall(user, { agentId: bad, to: "4155550100" })).rejects.toThrow(/Assistant not found/);
     const input = { name: "x", instructions: "x", greeting: "x", language: "en", voice: `clone:${bad}` };
     await expect(updateAgent(user.id, agent.id, input)).rejects.toThrow(/Unknown voice/);
     expect(await voicePreview(user.id, `clone:${bad}`)).toBeNull();

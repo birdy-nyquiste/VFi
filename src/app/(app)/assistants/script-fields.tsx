@@ -109,11 +109,11 @@ export function ScriptFields({
           <span className="block text-xs text-stone-500">{t.rich("variablesHint", { code: (c) => <code>{c}</code> })}</span>
         </div>
         {unfilled.length > 0 && (
-          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
             {t("undefinedVariables", { names: unfilled.map((n) => `{{${n}}}`).join(", ") })}
           </p>
         )}
-        <dl className="divide-y divide-stone-100 rounded-lg border border-stone-200 text-sm">
+        <dl className="divide-y divide-stone-100 rounded-xl border border-stone-200 text-sm">
           {BUILT_IN_VARIABLES.map((name) => (
             <div key={name} className="grid gap-1 px-3 py-2 sm:grid-cols-[11rem_1fr]">
               <dt className="font-mono text-xs leading-5 text-stone-700">{`{{${name}}}`}</dt>
@@ -136,7 +136,7 @@ export function ScriptFields({
                   aria-label={t("variableName")}
                   value={r.key}
                   onChange={(e) => update(r.id, { key: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_") })}
-                  placeholder="owner_name"
+                  placeholder="business_name"
                   maxLength={MAX_VARIABLE_KEY_LENGTH}
                   className={`${inputClass} font-mono text-xs`}
                 />

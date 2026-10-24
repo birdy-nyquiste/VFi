@@ -46,7 +46,7 @@ export const config = {
     },
     /** Resend rejects senders on domains it hasn't verified, so production must set its own. */
     get from() {
-      return requiredEnv("EMAIL_FROM", "Easy Voice <login@example.com>");
+      return requiredEnv("EMAIL_FROM", "VFi <login@example.com>");
     },
   },
 

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "description": "Trợ lý giọng nói AI của riêng bạn, với số điện thoại riêng."
+    "description": "Nhận số điện thoại Mỹ và một trợ lý nghe và thực hiện cuộc gọi cho doanh nghiệp của bạn, bằng tiếng Anh và tiếng Quan Thoại. Trả theo mức sử dụng, từ US$10."
   },
   "common": {
     "working": "Đang xử lý…",
@@ -14,8 +14,6 @@
     "remove": "Gỡ bỏ",
     "name": "Tên",
     "agent": "Trợ lý",
-    "inbound": "↙ đến",
-    "outbound": "↗ đi",
     "language": "Ngôn ngữ",
     "sentenceGap": " "
   },
@@ -35,18 +33,18 @@
     "vi": "Tiếng Việt"
   },
   "status": {
-    "active": "đang hoạt động",
-    "ready": "sẵn sàng",
-    "completed": "đã hoàn tất",
-    "succeeded": "thành công",
-    "answered": "đã trả lời",
-    "initiated": "đã khởi tạo",
-    "pending": "đang chờ",
-    "processing": "đang xử lý",
-    "syncing": "đang đồng bộ",
-    "failed": "thất bại",
-    "rejected": "bị từ chối",
-    "released": "đã trả lại"
+    "active": "Đang hoạt động",
+    "ready": "Sẵn sàng",
+    "completed": "Đã hoàn tất",
+    "succeeded": "Thành công",
+    "answered": "Đã trả lời",
+    "initiated": "Đã khởi tạo",
+    "pending": "Đang chờ",
+    "processing": "Đang xử lý",
+    "syncing": "Đang đồng bộ",
+    "failed": "Thất bại",
+    "rejected": "Bị từ chối",
+    "released": "Đã trả lại"
   },
   "gender": {
     "female": "nữ",
@@ -61,6 +59,7 @@
     "stopLabel": "Dừng nghe thử giọng {name}"
   },
   "nav": {
+    "dashboard": "Bảng điều khiển",
     "overview": "Tổng quan",
     "agents": "Trợ lý",
     "voices": "Giọng nói",
@@ -81,8 +80,8 @@
     "banner": "Chế độ mô phỏng: số điện thoại, giọng nói, cuộc gọi và tin nhắn đều là giả lập. Đặt <code>TELNYX_MODE=live</code> để dùng Telnyx."
   },
   "login": {
-    "title": "Đăng nhập Easy Voice",
-    "tagline": "Trợ lý AI của bạn, với số điện thoại riêng.",
+    "title": "Đăng nhập vào VFi",
+    "tagline": "Lần đầu sử dụng? Đăng nhập sẽ tạo tài khoản cho bạn.",
     "google": "Tiếp tục với Google",
     "or": "hoặc",
     "emailLabel": "Email",
@@ -99,22 +98,33 @@
     "googleDisabled": "Đăng nhập bằng Google chưa được cấu hình.",
     "googleState": "Phiên đăng nhập Google đã hết hạn. Hãy thử lại.",
     "googleEmail": "Email tài khoản Google của bạn chưa được xác minh.",
-    "googleFailed": "Đăng nhập bằng Google thất bại. Hãy thử lại."
+    "googleFailed": "Đăng nhập bằng Google thất bại. Hãy thử lại.",
+    "legal": "Khi tiếp tục, bạn đồng ý với <terms>Điều khoản</terms> và <privacy>Chính sách quyền riêng tư</privacy>.",
+    "panelTitle": "Số điện thoại Mỹ của bạn, được trả lời bằng tiếng Anh và tiếng Quan Thoại.",
+    "panelCard": "Trợ lý lễ tân đã trả lời một cuộc gọi",
+    "panelCardDetail": "Hỏi về bán sỉ · đã ghi nhận thông tin liên hệ",
+    "panelNote": "Hình minh họa, không phải cuộc gọi thật.",
+    "footer": "VFi · của Nyquiste"
   },
   "email": {
-    "otpSubject": "Mã Easy Voice của bạn: {code}",
-    "otpBody": "Mã đăng nhập của bạn là {code}. Mã hết hạn sau 10 phút."
+    "otpSubject": "{code} là mã đăng nhập VFi của bạn",
+    "otpPreheader": "Mã hết hạn sau 10 phút. Bạn không yêu cầu mã này? Bạn có thể bỏ qua email này.",
+    "otpHeading": "Mã đăng nhập của bạn",
+    "otpIntro": "Nhập mã này trên trang đăng nhập VFi để tiếp tục với tài khoản {email}.",
+    "otpExpiry": "Mã hết hạn sau 10 phút và chỉ dùng được một lần. Nếu bạn yêu cầu mã mới, chỉ mã mới nhất có hiệu lực.",
+    "otpNotYou": "Bạn không thử đăng nhập? Bạn có thể bỏ qua email này; không ai đăng nhập được nếu không có mã.",
+    "otpFooter": "VFi của Nyquiste Corporation · 12020 Sunrise Valley Dr Ste 100, Reston, VA 20191"
   },
   "dashboard": {
     "title": "Tổng quan",
     "balance": "Số dư",
-    "topUp": "Nạp tiền →",
+    "topUp": "Nạp tiền",
     "number": "Số điện thoại",
     "answeredBy": "Do {name} trả lời",
     "noAgent": "Chưa gán trợ lý",
     "noNumber": "Chưa có số điện thoại",
     "agents": "Trợ lý",
-    "manage": "Quản lý →",
+    "manage": "Quản lý",
     "setup": "Bắt đầu",
     "stepCredit": "Nạp tiền vào tài khoản",
     "stepAgent": "Tạo trợ lý (chọn hoặc nhân bản một giọng nói)",
@@ -122,8 +132,11 @@
     "stepConnect": "Kết nối trợ lý với số của bạn",
     "stepCall": "Thực hiện hoặc nhận cuộc gọi đầu tiên",
     "recentCalls": "Cuộc gọi gần đây",
-    "allCalls": "Tất cả cuộc gọi →",
-    "noCalls": "Chưa có cuộc gọi nào."
+    "allCalls": "Tất cả cuộc gọi",
+    "noCalls": "Chưa có cuộc gọi nào.",
+    "placeCall": "Gọi điện",
+    "liveCall": "{name} đang gọi với {number}",
+    "openCall": "Mở cuộc gọi"
   },
   "agents": {
     "title": "Trợ lý",
@@ -142,7 +155,7 @@
     "deleteConfirmKnowledge": "Xóa {name}? Cơ sở kiến thức của trợ lý này cũng sẽ bị xóa vĩnh viễn và không được hoàn tiền.",
     "deleteConfirmNumberKnowledge": "Xóa {name}? Số của trợ lý này sẽ không trả lời cuộc gọi nữa, và cơ sở kiến thức cũng sẽ bị xóa vĩnh viễn, không được hoàn tiền.",
     "delete": "Xóa trợ lý",
-    "namePlaceholder": "Trợ lý của tôi",
+    "namePlaceholder": "Lễ tân",
     "language": "Ngôn ngữ chính",
     "languageHint": "Người gọi vẫn có thể nói xen tiếng Anh và tiếng Quan Thoại.",
     "voice": "Giọng nói",
@@ -176,8 +189,8 @@
     "backgroundSound": "Âm thanh nền",
     "backgroundNone": "Không có",
     "backgroundOffice": "Văn phòng",
-    "greetingPlaceholder": "Xin chào, bạn đã gọi đến trợ lý của tôi. Tôi có thể giúp gì?",
-    "instructionsPlaceholder": "Mô tả trợ lý là ai, cần làm gì trong cuộc gọi và tuyệt đối không được làm gì.",
+    "greetingPlaceholder": "Cảm ơn quý khách đã gọi. Tôi có thể giúp gì ạ?",
+    "instructionsPlaceholder": "Mô tả vai trò của trợ lý trong doanh nghiệp của bạn, cần làm gì trong cuộc gọi và tuyệt đối không được làm gì.",
     "variables": "Biến",
     "variablesHint": "Viết <code>'{{'name'}}'</code> trong lời chào hoặc hướng dẫn, và nó sẽ được thay bằng giá trị khi mỗi cuộc gọi bắt đầu.",
     "builtIn": {
@@ -188,7 +201,7 @@
     },
     "variableName": "Tên",
     "variableValue": "Giá trị",
-    "variableValuePlaceholder": "ví dụ: Minh",
+    "variableValuePlaceholder": "ví dụ: Lumen Home",
     "variableValueOptional": "Mặc định (không bắt buộc)",
     "askPerCall": "Hỏi mỗi cuộc gọi",
     "askPerCallHint": "Hỏi mỗi cuộc gọi: bạn điền khi thực hiện cuộc gọi. Giá trị ở đây được dùng nếu bạn để trống.",
@@ -230,30 +243,22 @@
       "name": "Trống",
       "description": "Bắt đầu từ đầu và tự viết lời chào và hướng dẫn."
     },
-    "receptionist": {
-      "name": "Lễ tân cá nhân",
-      "description": "Nhận lời nhắn khi bạn không thể nghe máy, và gọi điện thay bạn."
+    "reception": {
+      "name": "Lễ tân",
+      "description": "Chào người gọi, giới thiệu công ty của bạn từ cơ sở kiến thức, và ghi nhận họ là ai, cách liên hệ với họ và họ cần gì."
     },
-    "screener": {
-      "name": "Lọc cuộc gọi",
-      "description": "Từ chối cuộc gọi bán hàng và rác, và nhận lời nhắn từ những người còn lại."
+    "qa": {
+      "name": "Hỏi đáp kinh doanh",
+      "description": "Trả lời câu hỏi về sản phẩm và dịch vụ của bạn từ cơ sở kiến thức, và ghi lại những gì chưa thể xác nhận."
     },
-    "booking": {
-      "name": "Gọi đặt lịch",
-      "description": "Gọi cho các doanh nghiệp để đặt hoặc đổi lịch hẹn và đặt chỗ."
-    },
-    "frontDesk": {
-      "name": "Quầy tiếp đón",
-      "description": "Trả lời câu hỏi về doanh nghiệp của bạn từ cơ sở kiến thức, và nhận lời nhắn."
-    },
-    "bilingual": {
-      "name": "Trợ lý song ngữ",
-      "description": "Nói tiếng Quan Thoại trước, và trả lời bằng tiếng Anh với người gọi dùng tiếng Anh."
+    "outreach": {
+      "name": "Liên hệ kinh doanh",
+      "description": "Gọi cho khách hàng, nhà cung cấp hoặc đối tác tại Mỹ theo mục tiêu bạn đặt cho từng cuộc gọi."
     }
   },
   "knowledge": {
     "title": "Cơ sở kiến thức",
-    "intro": "Tài liệu tham khảo mà trợ lý này có thể tra cứu trong cuộc gọi: ghi chú, tệp hoặc website. Mỗi nguồn tốn {price}, tính một lần.",
+    "intro": "Thông tin công ty và tài liệu tham khảo mà trợ lý này có thể tra cứu trong cuộc gọi: ghi chú, tệp hoặc website. Mỗi nguồn tốn {price}, tính một lần.",
     "privacy": "Người gọi có thể nghe được bất cứ thứ gì bạn thêm vào đây. Đừng thêm những gì bạn không muốn bị đọc to trong cuộc gọi.",
     "mode": "Cách trợ lý sử dụng",
     "modeOff": "Tắt: không tra cứu gì",
@@ -298,14 +303,14 @@
     "labIntro": "Ghi âm hoặc tải lên đoạn ai đó nói, và nhận một giọng nghe giống họ.",
     "connectToClone": "Kết nối một dịch vụ giọng nói để bắt đầu nhân bản.",
     "cloneLimit": "Bạn có thể có tối đa {max} giọng nhân bản cho mỗi dịch vụ. Xóa một giọng để nhân bản giọng khác.",
-    "cloneLimitOrConnect": "Bạn đã đạt giới hạn {max} giọng nhân bản bằng Easy Voice. Hãy xóa một giọng, hoặc kết nối ElevenLabs để nhân bản thêm.",
+    "cloneLimitOrConnect": "Bạn đã đạt giới hạn {max} giọng nhân bản bằng VFi. Hãy xóa một giọng, hoặc kết nối ElevenLabs để nhân bản thêm.",
     "useOwnElevenLabs": "Bạn vẫn có thể nhân bản bằng tài khoản ElevenLabs của riêng bạn: dùng “Thêm dịch vụ” bên dưới.",
     "cloneWith": "Nhân bản bằng",
     "elevenLabsOption": "Tài khoản của bạn. Miễn phí ở đây; cuộc gọi dùng credit ElevenLabs của bạn.",
     "easyVoiceOption": "{price} trừ vào số dư của bạn.",
     "addService": "Thêm dịch vụ",
     "addServiceHint": "Kết nối tài khoản ElevenLabs của riêng bạn.",
-    "namePlaceholder": "Giọng của tôi",
+    "namePlaceholder": "Giọng thương hiệu",
     "sampleLanguage": "Ngôn ngữ của mẫu",
     "voiceType": "Loại giọng",
     "female": "Nữ",
@@ -366,17 +371,17 @@
   "calls": {
     "title": "Cuộc gọi",
     "description": "Cuộc gọi tính phí {price}/phút, làm tròn lên.",
-    "placeTitle": "Để trợ lý gọi cho ai đó",
+    "placeTitle": "Để trợ lý thực hiện một cuộc gọi",
     "needBoth": "Bạn cần <number>một số đang hoạt động</number> và <agent>một trợ lý sẵn sàng</agent> để thực hiện cuộc gọi.",
     "needNumber": "Bạn cần <number>một số đang hoạt động</number> để thực hiện cuộc gọi.",
     "needAgent": "Bạn cần <agent>một trợ lý sẵn sàng</agent> để thực hiện cuộc gọi.",
     "to": "Số cần gọi",
     "goal": "Trợ lý nên làm gì trong cuộc gọi này? (không bắt buộc)",
     "goalHint": "Được truyền cho trợ lý dưới dạng <code>'{{'call_goal'}}'</code> chỉ cho cuộc gọi này. Hướng dẫn của trợ lý quyết định cách dùng nó.",
-    "goalPlaceholder": "ví dụ: Gọi cho phòng khám BS. Lee và dời lịch hẹn 3 giờ chiều thứ Năm của tôi sang tuần sau.",
+    "goalPlaceholder": "ví dụ: Xác nhận cuộc gọi 30 phút với Priya vào tuần sau và đề xuất chiều thứ Ba hoặc thứ Năm.",
     "dialing": "Đang quay số…",
     "call": "Gọi",
-    "callerId": "Cuộc gọi hiển thị số {number} của bạn làm số gọi đến. Chỉ gọi cho những người đang chờ liên lạc từ trợ lý của bạn.",
+    "callerId": "Cuộc gọi hiển thị số {number} của bạn làm số gọi đến. Chỉ gọi cho những người đang chờ liên lạc từ doanh nghiệp của bạn.",
     "empty": "Chưa có cuộc gọi nào.",
     "colCall": "Cuộc gọi",
     "colStatus": "Trạng thái",
@@ -393,8 +398,8 @@
     "hangingUp": "Đang gác máy…",
     "goalTitle": "Mục tiêu của cuộc gọi",
     "direction": "Chiều",
-    "directionInbound": "gọi đến",
-    "directionOutbound": "gọi đi",
+    "directionInbound": "Gọi đến",
+    "directionOutbound": "Gọi đi",
     "summary": "Tóm tắt",
     "generating": "Đang tạo…",
     "noSummary": "Không có bản tóm tắt.",
@@ -405,7 +410,13 @@
     "noTranscript": "Không có bản ghi lời thoại.",
     "deleteConfirm": "Xóa bản ghi âm, bản ghi lời thoại và tóm tắt của cuộc gọi này? Hồ sơ thanh toán vẫn được giữ lại.",
     "delete": "Xóa hồ sơ cuộc gọi",
-    "variableDefault": "Để trống để dùng: {value}"
+    "variableDefault": "Để trống để dùng: {value}",
+    "callBackTitle": "Gọi lại",
+    "callBackBody": "Để trợ lý gọi số này với mục tiêu bạn đặt.",
+    "callBackAction": "Gọi điện",
+    "playRecording": "Phát bản ghi âm",
+    "pauseRecording": "Tạm dừng bản ghi âm",
+    "seekRecording": "Vị trí bản ghi âm"
   },
   "messages": {
     "title": "Tin nhắn",
@@ -422,10 +433,10 @@
     "billed": "Đã tính phí {amount}",
     "deleteConfirm": "Xóa tất cả tin nhắn từ {name}? Không thể hoàn tác.",
     "delete": "Xóa cuộc trò chuyện",
-    "namePlaceholder": "ví dụ: Phòng khám BS. Lee",
+    "namePlaceholder": "ví dụ: Lakeside Packaging",
     "deletedAfter": "Đã bị xóa sau {days} ngày.",
     "noText": "(không có nội dung)",
-    "footer": "Bạn không thể trả lời từ Easy Voice. Tin nhắn bị xóa sau {days} ngày.",
+    "footer": "Bạn không thể trả lời từ VFi. Tin nhắn bị xóa sau {days} ngày.",
     "nameSaved": "Đã lưu tên.",
     "nameRemoved": "Đã gỡ tên."
   },
@@ -441,7 +452,7 @@
     "connectedBadge": "Đã kết nối",
     "rejectedNotice": "ElevenLabs đã từ chối khóa này vào {date}: có thể khóa đã bị thu hồi, hết hạn hoặc mất quyền. Các cuộc gọi dùng giọng ElevenLabs của bạn sẽ bị từ chối cho đến khi ElevenLabs chấp nhận lại khóa (hệ thống kiểm tra vài phút một lần) hoặc bạn thay bằng một khóa hoạt động của cùng tài khoản ở bên dưới.",
     "keyEnding": "Khóa kết thúc bằng <mono>{hint}</mono>. Giọng bạn nhân bản bằng ElevenLabs nằm trong tài khoản ElevenLabs của bạn, và cuộc gọi dùng các giọng đó sẽ dùng credit ElevenLabs của bạn.",
-    "cloneLink": "Nhân bản giọng →",
+    "cloneLink": "Nhân bản giọng",
     "replaceKey": "Thay khóa",
     "replaceHint": "Một khóa mới cho cùng tài khoản ElevenLabs.",
     "replace": "Thay",
@@ -489,7 +500,7 @@
     "columnAmount": "Số tiền",
     "activityLimited": "Đang hiển thị {count} mục gần nhất.",
     "payments": "Thanh toán",
-    "checkoutItem": "Nạp tiền Easy Voice",
+    "checkoutItem": "Nạp tiền VFi",
     "knowledgeSource": "Nguồn kiến thức"
   },
   "stored": {
@@ -581,8 +592,8 @@
     "voiceNoMandarin": "{name} không nói được tiếng Quan Thoại. Hãy chọn giọng được đánh dấu \"Tiếng Quan Thoại + Tiếng Anh\".",
     "cloneNotReady": "Giọng nhân bản đó chưa sẵn sàng.",
     "modelUnavailable": "Mô hình đó không khả dụng. Hãy chọn mô hình khác.",
-    "cloningUnavailable": "Giọng nhân bản của Easy Voice tạm thời không khả dụng.",
-    "cloningUnavailablePickBuiltIn": "Giọng nhân bản của Easy Voice tạm thời không khả dụng. Hãy chọn một giọng có sẵn trong lúc này.",
+    "cloningUnavailable": "Giọng nhân bản của VFi tạm thời không khả dụng.",
+    "cloningUnavailablePickBuiltIn": "Giọng nhân bản của VFi tạm thời không khả dụng. Hãy chọn một giọng có sẵn trong lúc này.",
     "voiceNameRequired": "Hãy đặt tên cho giọng.",
     "consentRequired": "Bạn phải xác nhận đây là giọng của bạn hoặc bạn đã có sự đồng ý của người nói.",
     "audioRequired": "Tải lên hoặc ghi âm một mẫu âm thanh.",
@@ -614,7 +625,7 @@
     "goalTooLong": "Mục tiêu cuộc gọi phải dưới {max} ký tự.",
     "balanceEmptyCall": "Số dư của bạn đã hết. Hãy nạp tiền để thực hiện cuộc gọi.",
     "noActiveNumber": "Bạn cần một số điện thoại đang hoạt động để gọi đi.",
-    "cantCallOwnNumber": "Bạn không thể gọi đến số trợ lý của chính mình.",
+    "cantCallOwnNumber": "Bạn không thể gọi đến số VFi của chính mình.",
     "callInProgress": "Đang có một cuộc gọi khác. Hãy đợi cuộc gọi đó kết thúc.",
     "callNotFound": "Không tìm thấy cuộc gọi.",
     "callStillLive": "Không thể xóa cuộc gọi đang diễn ra.",
@@ -649,6 +660,13 @@
     "variableValueRequired": "Hãy nhập giá trị cho “{key}”, hoặc đánh dấu Hỏi mỗi cuộc gọi.",
     "variableValueTooLong": "Giá trị của “{key}” có thể dài tối đa {max} ký tự.",
     "variableNameRequired": "Hãy đặt tên cho mọi biến."
+  },
+  "comingSoon": {
+    "title": "Sắp ra mắt",
+    "privacy": "Chính sách quyền riêng tư",
+    "terms": "Điều khoản dịch vụ",
+    "body": "Chúng tôi đang soạn {document} của VFi. Trong thời gian này, nếu có câu hỏi, hãy gửi email đến <email>birdyyao@nyquiste.com</email>.",
+    "back": "Quay lại VFi"
   },
   "errorPage": {
     "notFoundTitle": "Không tìm thấy trang",
