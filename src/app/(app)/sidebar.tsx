@@ -146,7 +146,7 @@ export function Sidebar({ account, unread, initialCollapsed }: { account: Accoun
       {/* pt-0.5: the row scrolls, which clips anything outside it, focus rings included. */}
       <nav
         ref={nav}
-        className={`flex gap-1 overflow-x-auto px-2 pb-2 pt-0.5 md:flex-col md:overflow-visible md:px-3 md:pt-0 ${collapsed ? "md:px-2" : ""}`}
+        className={`flex gap-1 overflow-x-auto px-2 pb-2 pt-0.5 md:flex-col md:overflow-visible md:pt-0 ${collapsed ? "md:px-2" : "md:px-3"}`}
       >
         {LINKS.map((l) => {
           const active = isActivePath(path, l.href);
@@ -156,7 +156,7 @@ export function Sidebar({ account, unread, initialCollapsed }: { account: Accoun
               key={l.href}
               href={l.href}
               aria-current={active ? "page" : undefined}
-              className={`group relative flex shrink-0 items-center rounded-[10px] px-3 py-2 text-sm transition-colors ${focusRing} ${active ? "bg-stone-100 font-medium text-stone-900" : "text-stone-700 hover:bg-stone-100/70 hover:text-stone-900"}`}
+              className={`group relative flex shrink-0 items-center rounded-[10px] px-3 py-2 text-sm transition-colors ${collapsed ? "md:px-[13px]" : ""} ${focusRing} ${active ? "bg-stone-100 font-medium text-stone-900" : "text-stone-700 hover:bg-stone-100/70 hover:text-stone-900"}`}
             >
               <span className="flex flex-1 items-center gap-3 overflow-hidden">
                 <span className="relative hidden md:block">

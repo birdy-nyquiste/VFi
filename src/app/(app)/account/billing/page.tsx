@@ -99,14 +99,14 @@ export default async function BillingPage({
         <Card>
           <CardTitle>{t("pricing")}</CardTitle>
           <dl className="divide-y divide-stone-100 border-t border-stone-100 text-[15px]">
-            <div className="flex justify-between gap-4 py-3"><dt>{t("calls")}</dt><dd className="tabular-nums">{t("perMin", { price: formatCents(p.callPerMinuteCents, locale) })}</dd></div>
-            <div className="flex justify-between gap-4 py-3"><dt>{t("number")}</dt><dd className="tabular-nums">{t("perMonth", { price: formatCents(p.numberMonthlyCents, locale) })}</dd></div>
-            <div className="flex justify-between gap-4 py-3"><dt>{t("clone")}</dt><dd className="tabular-nums">{t("each", { price: formatCents(p.voiceCloneCents, locale) })}</dd></div>
+            <div className="flex justify-between gap-4 py-3"><dt>{t("calls")}</dt><dd className="shrink-0 whitespace-nowrap tabular-nums">{t("perMin", { price: formatCents(p.callPerMinuteCents, locale) })}</dd></div>
+            <div className="flex justify-between gap-4 py-3"><dt>{t("number")}</dt><dd className="shrink-0 whitespace-nowrap tabular-nums">{t("perMonth", { price: formatCents(p.numberMonthlyCents, locale) })}</dd></div>
+            <div className="flex justify-between gap-4 py-3"><dt>{t("clone")}</dt><dd className="shrink-0 whitespace-nowrap tabular-nums">{t("each", { price: formatCents(p.voiceCloneCents, locale) })}</dd></div>
             {config.features.knowledgeBase && (
-              <div className="flex justify-between gap-4 py-3"><dt>{t("knowledgeSource")}</dt><dd className="tabular-nums">{t("each", { price: formatCents(p.knowledgeSourceCents, locale) })}</dd></div>
+              <div className="flex justify-between gap-4 py-3"><dt>{t("knowledgeSource")}</dt><dd className="shrink-0 whitespace-nowrap tabular-nums">{t("each", { price: formatCents(p.knowledgeSourceCents, locale) })}</dd></div>
             )}
             {config.features.inboundSms && (
-              <div className="flex justify-between gap-4 py-3"><dt>{t("textReceived")}</dt><dd className="tabular-nums">{t("perSegment", { price: formatCents(p.smsInboundPerPartCents, locale) })}</dd></div>
+              <div className="flex justify-between gap-4 py-3"><dt>{t("textReceived")}</dt><dd className="shrink-0 whitespace-nowrap tabular-nums">{t("perSegment", { price: formatCents(p.smsInboundPerPartCents, locale) })}</dd></div>
             )}
           </dl>
           <p className="mt-4 text-[13px] leading-5 text-stone-500">{t("terms")}{config.features.inboundSms && t("segmentNote")}</p>

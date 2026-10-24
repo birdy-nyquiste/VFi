@@ -75,7 +75,8 @@ How to use this file:
 ## 3. Hero (first screen)
 
 **hero.title** · Changed (your text, translated)
-- EN: Your US customer calls, now handled by a Voice AI Agent.
+- EN: Your US phone Customer Engagement, now handled by a Voice AI Agent.
+> Changed 2026-10-24: 客户互动 is "Customer Engagement" everywhere, matching the page title.
 - 中文: 你的美国客户电话互动现在由 AI 语音智能体接管。
 
 **hero.subtitle** · Changed (your text, translated)
