@@ -7,7 +7,7 @@ import { applyLedger, callChargeCents, hasSpendableBalance } from "@/server/bill
 import { voiceProvider, type AssistantStart, type CallEvent } from "@/server/telnyx";
 import { currentTimeText, readBehavior } from "@/lib/agent-settings";
 import { OUTBOUND_GREETING, variableDefaults } from "@/server/agents";
-import { elevenLabsKeyUsable } from "@/server/elevenlabs-keys";
+import { elevenLabsKeyUsable } from "@/server/elevenlabs/keys";
 import { isElevenLabsVoice } from "@/server/telnyx/stock-voices";
 import { withWebhookDedupe } from "@/server/webhooks";
 import { fetchCallResultsSoon } from "./results";

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { attempt, type ActionState } from "@/lib/action";
 import { requireUser } from "@/server/auth";
-import { connectElevenLabs, disconnectElevenLabs } from "@/server/elevenlabs-keys";
+import { connectElevenLabs, disconnectElevenLabs } from "@/server/elevenlabs/keys";
 
 export async function connectElevenLabsAction(_: ActionState, form: FormData): Promise<ActionState> {
   let problems: string[] = [];

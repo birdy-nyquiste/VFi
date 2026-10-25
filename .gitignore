@@ -40,3 +40,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude code worktrees
+/.claude/worktrees/
+
+# impeccable session state; only its config and the approved mocks are kept
+/.impeccable/*
+!/.impeccable/config.json
+!/.impeccable/design.json
+!/.impeccable/mocks/
+/.impeccable/mocks/*
+!/.impeccable/mocks/approved/

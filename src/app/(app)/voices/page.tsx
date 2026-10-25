@@ -9,7 +9,7 @@ import { config } from "@/lib/config";
 import { formatCents, formatMegabytes } from "@/lib/format";
 import { showStored } from "@/lib/stored-text";
 import { requireUser } from "@/server/auth";
-import { getElevenLabsKey } from "@/server/elevenlabs-keys";
+import { getElevenLabsKey } from "@/server/elevenlabs/keys";
 import { hasCloneSlot, listStockVoices, listUserVoices, refreshProcessingVoices } from "@/server/voices";
 import { cloneVoiceAction, deleteVoiceAction } from "./actions";
 import { SampleInput } from "./sample-input";

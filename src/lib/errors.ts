@@ -6,7 +6,7 @@ export type ErrorValues = Record<string, string | number>;
 
 /**
  * An error meant to be shown to the user. It carries a message key (in the "errors" section of
- * src/messages) so it can be shown in the user's language; `message` is the English text, for logs.
+ * src/i18n/translations) so it can be shown in the user's language; `message` is the English text, for logs.
  */
 export class UserError extends Error {
   constructor(

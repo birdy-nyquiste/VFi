@@ -6,7 +6,7 @@ import { config } from "@/lib/config";
 import { formatPhone } from "@/lib/format";
 import { listUserAgents, resyncStaleAgentsOnView } from "@/server/agents";
 import { requireUser } from "@/server/auth";
-import { getElevenLabsKey } from "@/server/elevenlabs-keys";
+import { getElevenLabsKey } from "@/server/elevenlabs/keys";
 import { isElevenLabsVoice } from "@/server/telnyx/stock-voices";
 import { listUserNumbers } from "@/server/numbers";
 

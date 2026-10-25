@@ -8,7 +8,7 @@ import { config } from "@/lib/config";
 import { getUserAgent, listModels, resyncStaleAgentsOnView } from "@/server/agents";
 import Link from "next/link";
 import { requireUser } from "@/server/auth";
-import { getElevenLabsKey } from "@/server/elevenlabs-keys";
+import { getElevenLabsKey } from "@/server/elevenlabs/keys";
 import { countAgentSources, hasPendingKnowledge, refreshKnowledge } from "@/server/knowledge";
 import { listUserNumbers } from "@/server/numbers";
 import { isElevenLabsVoice } from "@/server/telnyx/stock-voices";

@@ -5,7 +5,7 @@ import { ActionForm, SubmitButton } from "@/components/forms";
 import { Badge, Card, CardTitle, Field, Notice, inputClass } from "@/components/ui";
 import { config } from "@/lib/config";
 import { requireUser } from "@/server/auth";
-import { getElevenLabsKey } from "@/server/elevenlabs-keys";
+import { getElevenLabsKey } from "@/server/elevenlabs/keys";
 import { formatDateTime } from "@/lib/format";
 import { connectElevenLabsAction, disconnectElevenLabsAction } from "./actions";
 import { viewerTimeZone } from "@/server/time-zone";

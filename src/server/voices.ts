@@ -15,7 +15,7 @@ import {
   isKeyRejection,
   recordKeyStatus,
   requireElevenLabsApiKey,
-} from "./elevenlabs-keys";
+} from "./elevenlabs/keys";
 import { decryptSecret } from "./secrets";
 import type { Language } from "@/lib/language";
 import { voiceProvider, type PreviewAudio, type StockVoice } from "./telnyx";

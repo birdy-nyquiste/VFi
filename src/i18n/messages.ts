@@ -1,9 +1,9 @@
 import { createTranslator } from "next-intl";
-import en from "@/messages/en.json";
-import es from "@/messages/es.json";
-import ja from "@/messages/ja.json";
-import vi from "@/messages/vi.json";
-import zh from "@/messages/zh.json";
+import en from "./translations/en.json";
+import es from "./translations/es.json";
+import ja from "./translations/ja.json";
+import vi from "./translations/vi.json";
+import zh from "./translations/zh.json";
 import { BCP47, type Locale } from "./locales";
 
 export type Messages = typeof en;
