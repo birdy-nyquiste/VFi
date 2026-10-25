@@ -5,10 +5,10 @@ import { db, withUserLock } from "@/db";
 import { agents, elevenLabsKeys, voices, type ElevenLabsKey } from "@/db/schema";
 import { config } from "@/lib/config";
 import { UserError } from "@/lib/errors";
-import { syncAgent } from "./agents";
-import { elevenLabs, ElevenLabsError, type ElevenLabsAccount } from "./elevenlabs";
-import { decryptSecret, encryptSecret } from "./secrets";
-import { voiceProvider } from "./telnyx";
+import { syncAgent } from "@/server/agents";
+import { elevenLabs, ElevenLabsError, type ElevenLabsAccount } from "./index";
+import { decryptSecret, encryptSecret } from "@/server/secrets";
+import { voiceProvider } from "@/server/telnyx";
 
 /**
  * Bring-your-own-key ElevenLabs (docs/elevenlabs-notes.md §5). The key is kept twice: encrypted

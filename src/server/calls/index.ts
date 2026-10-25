@@ -9,7 +9,7 @@ import { toE164US } from "@/lib/format";
 import { isUuid } from "@/lib/uuid";
 import { hasSpendableBalance } from "@/server/billing/ledger";
 import { getUserAgent, MAX_CALL_GOAL_LENGTH } from "@/server/agents";
-import { elevenLabsKeyUsable } from "@/server/elevenlabs-keys";
+import { elevenLabsKeyUsable } from "@/server/elevenlabs/keys";
 import { voiceProvider, type DialResult } from "@/server/telnyx";
 import { isElevenLabsVoice } from "@/server/telnyx/stock-voices";
 import { callRef, failedCallFields, hasOtherActiveCall, isCallLive, STALE_CALL_MS } from "./state";

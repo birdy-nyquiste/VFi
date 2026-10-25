@@ -5,7 +5,7 @@ import { agents, calls, elevenLabsKeys, ledgerEntries, users, voices } from "@/d
 import { createAgent, updateAgent } from "@/server/agents";
 import { startOutboundCall } from "@/server/calls";
 import { handleCallEvent } from "@/server/calls/events";
-import { connectElevenLabs, disconnectElevenLabs } from "@/server/elevenlabs-keys";
+import { connectElevenLabs, disconnectElevenLabs } from "@/server/elevenlabs/keys";
 import { liveElevenLabs } from "@/server/elevenlabs/live";
 import { mockElevenLabs } from "@/server/elevenlabs/mock";
 import { ElevenLabsError } from "@/server/elevenlabs/types";
