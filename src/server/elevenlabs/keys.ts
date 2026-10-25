@@ -6,7 +6,8 @@ import { agents, elevenLabsKeys, voices, type ElevenLabsKey } from "@/db/schema"
 import { config } from "@/lib/config";
 import { UserError } from "@/lib/errors";
 import { syncAgent } from "@/server/agents";
-import { elevenLabs, ElevenLabsError, type ElevenLabsAccount } from "./index";
+import { elevenLabs } from ".";
+import { ElevenLabsError, type ElevenLabsAccount } from "./types";
 import { decryptSecret, encryptSecret } from "@/server/secrets";
 import { voiceProvider } from "@/server/telnyx";
 
