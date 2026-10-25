@@ -1,4 +1,4 @@
-# Telnyx v2 API notes (Easy-Voice)
+# Telnyx v2 API notes (VFi)
 
 Researched 2026-10-07. Sources: developers.telnyx.com pages (URLs per section) and the consolidated
 OpenAPI spec that the docs index links to

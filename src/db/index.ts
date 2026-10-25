@@ -4,7 +4,7 @@ import postgres from "postgres";
 import { requiredEnv } from "@/lib/env";
 import * as schema from "./schema";
 
-const url = requiredEnv("DATABASE_URL", "postgres://localhost:5432/easy_voice");
+const url = requiredEnv("DATABASE_URL", "postgres://localhost:5432/vfi");
 
 const globalForDb = globalThis as unknown as { pg?: postgres.Sql };
 // prepare: false — DATABASE_URL on Vercel is Neon's pooled (PgBouncer) endpoint,

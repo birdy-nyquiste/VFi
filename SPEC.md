@@ -1,4 +1,4 @@
-# Easy Voice — 产品与技术基础 Spec
+# VFi — 产品与技术基础 Spec
 
 版本：0.3
 

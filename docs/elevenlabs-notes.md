@@ -1,4 +1,4 @@
-# ElevenLabs as a voice cloning provider (Easy-Voice)
+# ElevenLabs as a voice cloning provider (VFi)
 
 Researched 2026-10-16, not built. Sources: elevenlabs.io docs, pricing pages, Terms of Use (updated 2026-10-09),
 Prohibited Use Policy and OEM Terms (updated 2025-02-28); URLs per section. Nothing here has been checked against a

@@ -6,7 +6,7 @@ VFi (vfi.airppp.com) is the phone service of AirPPP by Nyquiste: a US phone numb
 
 ```bash
 pnpm install
-createdb easy_voice && createdb easy_voice_test
+createdb vfi && createdb vfi_test
 cp .env.example .env.local
 pnpm db:migrate
 pnpm dev
@@ -24,7 +24,7 @@ With `TELNYX_MODE=mock` (the default in dev; production builds default to `live`
 - Outbound calls to numbers ending in `0000` never answer, so you can test the failure path. Other numbers answer and hang up after a few seconds.
 
 ```bash
-pnpm test        # integration tests against the easy_voice_test database
+pnpm test        # integration tests against the vfi_test database
 pnpm typecheck && pnpm lint
 ```
 
