@@ -42,8 +42,8 @@ API details and open questions are in [docs/telnyx-api-notes.md](docs/telnyx-api
 
 ## Models
 
-`TELNYX_LLM_MODEL` (default `moonshotai/Kimi-K2.6`) is the language model for agents left on the default. Users can
-pick another model per agent from the listed ones (`src/server/telnyx/models.ts`; SPEC §16). Speech-to-text is set for
+`TELNYX_LLM_MODEL` (default `zai-org/GLM-5.2`) is the language model for agents left on the default. Users can
+pick another model per agent from a curated list of five (`OFFERED_MODEL_IDS` in `src/server/telnyx/models.ts`; SPEC §16). Speech-to-text is set for
 the whole platform, never per user: `TELNYX_STT_MODEL` (default `assemblyai/universal-3-5-pro`) and
 `TELNYX_STT_LANGUAGE` (default `auto`). Voices are picked per agent from the Telnyx catalog (see
 `src/server/telnyx/stock-voices.ts`). Each agent records which settings it was synced with. After you change these

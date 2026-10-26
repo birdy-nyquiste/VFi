@@ -431,10 +431,24 @@ Docs: https://developers.telnyx.com/api-reference/call-recordings/retrieve-a-cal
   but using the clone fails: assistants answer 403 `10010` "Your account is not permitted to use cloned voices. Please
   complete L2 verification or use a platform voice", and TTS with `Telnyx.Qwen3TTS.<clone id>` answers 403 `10038`
   "Feature not permitted at this account level". The adapter maps the assistant error to `FeatureNotPermittedError`.
-- **Per-agent LLM:** agents may pick any model with `recommended_for_assistants` whose output price is at most
-  $15 / 1M tokens (`MAX_OUTPUT_PRICE_PER_M`). Calls are billed at a flat per-minute rate, so pricier models are not
-  offered. At this check that excluded only `openai/gpt-5.6-sol`; unpriced entries (`google/gemini-2.5-flash`,
-  `openai/gpt-live-1`) are skipped too.
+- **Per-agent LLM:** agents pick from a curated list of five (`OFFERED_MODEL_IDS`): `zai-org/GLM-5.2` (default),
+  `zai-org/GLM-5.3-Flash`, `openai/gpt-5.4-mini`, `openai/gpt-5.2`, `openai/gpt-6-luna`. A listed model is still
+  dropped if the catalog stops recommending it, it's unpriced, or its output price passes $15 / 1M tokens
+  (`MAX_OUTPUT_PRICE_PER_M`), since calls are billed at a flat per-minute rate.
+- **How the five were chosen (2026-10-26):** all 15 offered models ran the Nyquiste Front Desk setup (instructions,
+  2 Knowledge Base sources, strict mode) on 14 caller questions (11 English, 3 Mandarin), twice each, through
+  `POST /v2/ai/assistants/{id}/chat` on temporary clones. Chat runs the retrieval tool like a call does.
+  | Model | Correct | False claims | Searched when needed | Reply s (no search / search) |
+  | --- | --- | --- | --- | --- |
+  | GLM-5.2 | 100% | 0 | 100% | 1.0 / 2.2 |
+  | gpt-5.2 | 100% | 0 | 100% | 2.4 / 4.5 |
+  | GLM-5.3-Flash | 96% | 0 | 100% | 0.8 / 1.8 |
+  | gpt-6-luna | 93% | 0 | 92% | 2.2 / 4.3 |
+  | gpt-5.4-mini | 86% | 0 | 92% | 1.3 / 3.0 |
+  | Kimi-K2.6 | 86% | 0 | 67% | 1.6 / 4.4 |
+  gpt-5.1 and Qwen3-235B-A22B claimed VFi can transfer calls (it can't). gpt-4.1, gpt-4o, gpt-5.6-luna and
+  claude-haiku-4-5 searched the knowledge base in 0–50% of the cases that needed it. GLM-5.3-Flash once looped on
+  its search tool and returned Telnyx's "stuck in a loop" message instead of an answer.
 
 ## 14. Messaging (SMS/MMS) — researched 2026-10-16, not built
 

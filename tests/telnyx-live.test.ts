@@ -354,13 +354,21 @@ describe("assistant config", () => {
 });
 
 describe("LLM catalog", () => {
-  it("offers recommended, priced models up to the output price cap, except ones that need our own key", () => {
+  it("offers only the curated models, in their listed order", () => {
     expect(toOfferedModels(MOCK_MODELS).map((m) => m.id)).toEqual([
-      "anthropic/claude-haiku-4-5",
+      "zai-org/GLM-5.2",
       "zai-org/GLM-5.3-Flash",
       "openai/gpt-5.4-mini",
-      "moonshotai/Kimi-K2.6",
+      "openai/gpt-5.2",
+      "openai/gpt-6-luna",
     ]);
+  });
+
+  it("still drops a curated model the catalog no longer recommends or prices within the cap", () => {
+    const catalog = MOCK_MODELS.map((m) =>
+      m.id === "openai/gpt-5.2" ? { ...m, pricing: { ...m.pricing, output: "20.000000" } } : m.id === "openai/gpt-6-luna" ? { ...m, recommended_for_assistants: false } : m,
+    );
+    expect(toOfferedModels(catalog).map((m) => m.id)).toEqual(["zai-org/GLM-5.2", "zai-org/GLM-5.3-Flash", "openai/gpt-5.4-mini"]);
   });
 });
 
