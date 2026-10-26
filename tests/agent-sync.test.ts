@@ -263,6 +263,22 @@ describe("voice languages", () => {
   });
 });
 
+describe("agent instructions", () => {
+  it("counts a line break as one character, as the text box does, though forms send CRLF", async () => {
+    const u = await makeUser();
+    const lines = "a\n".repeat(4000); // at the 8,000-character limit in the text box
+    const create = vi.spyOn(mockProvider, "createAssistant");
+    const a = await createAgent(u.id, { ...input, instructions: lines.replace(/\n/g, "\r\n") });
+    expect(a.instructions).toBe(lines.trim());
+    expect(create.mock.calls[0][0].instructions).not.toContain("\r");
+  });
+
+  it("still rejects instructions over the limit", async () => {
+    const u = await makeUser();
+    await expect(createAgent(u.id, { ...input, instructions: "x".repeat(8001) })).rejects.toThrow();
+  });
+});
+
 describe("agent model", () => {
   it("uses the platform default when none is picked", async () => {
     const u = await makeUser();

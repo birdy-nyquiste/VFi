@@ -52,7 +52,11 @@ const INPUT_ERRORS = {
 
 export const agentInput = z.object({
   name: z.string().trim().min(1, "nameRequired").max(80),
-  instructions: z.string().trim().min(1, "instructionsRequired").max(8000),
+  // Forms send line breaks as CRLF, which the text box's maxLength counts as one character.
+  instructions: z
+    .string()
+    .transform((s) => s.replace(/\r\n?/g, "\n"))
+    .pipe(z.string().trim().min(1, "instructionsRequired").max(8000)),
   greeting: z.string().trim().min(1, "greetingRequired").max(500),
   language: z.enum(LANGUAGES),
   /** "stock:<ref>" or "clone:<voice uuid>" */

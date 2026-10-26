@@ -51,7 +51,8 @@ export async function startOutboundCall(
 ): Promise<Call> {
   const to = toE164US(input.to);
   if (!to) throw new UserError("invalidPhone");
-  const goal = input.goal?.trim() || null;
+  // Forms send line breaks as CRLF, which the text box's maxLength counts as one character.
+  const goal = input.goal?.replace(/\r\n?/g, "\n").trim() || null;
   if (goal && goal.length > MAX_CALL_GOAL_LENGTH) {
     throw new UserError("goalTooLong", { max: MAX_CALL_GOAL_LENGTH });
   }
