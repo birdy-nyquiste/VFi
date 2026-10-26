@@ -427,4 +427,103 @@ API 请求已接受、资源已创建、资源已可用和实际操作成功，�
 
 ### 19.4 不纳入
 
-控制台的 Avatar、Workflow、Integrations（含 MCP、A2A）、Analysis、Messaging、Widget、Observability、Advanced、Simulation 部分，以及 Calling 中的录音、TeXML 与外呼配置。转人工、外呼语音信箱检测、降噪（待确认费用）、“优化指令”（`/instructions/enhance`）与浏览器试聊另行决定。
+控制台的 Avatar、Workflow、Integrations（含 MCP、A2A）、Messaging、Widget、Observability、Advanced 部分，以及 Calling 中的录音、TeXML 与外呼配置。转人工、外呼语音信箱检测、降噪（待确认费用）与“优化指令”（`/instructions/enhance`）另行决定。Analysis、Simulation 与试聊已在 §20 纳入。
+
+## 20. Assistant 第二轮能力〔范围已确认，2026-10-26；实现前需完成 §20.6 的 Telnyx 验证与 §20.7 的产品决定〕
+
+来源：搭建并彩排 Nyquiste 前台助理（Nyquiste Front Desk，7 通真实来电 + 15 个文字场景各跑两遍）时暴露的问题，以及与 Telnyx 控制台 Assistant 页面的逐项对照。只挑选能解决彩排中实际问题的 4 项，不复制控制台。本节取代 §19.4 中关于 Analysis、Simulation 与浏览器试聊“不纳入”的部分；§19.4 其余不纳入项不变。
+
+| 能力 | 解决的问题（彩排证据） |
+| --- | --- |
+| A. 通话结果字段与送达 | 每通电话只有一段通用摘要；团队必须自己去通话页查看，没有任何提醒 |
+| B. 不打电话也能测试 | 调整一次指令就要打一通电话验证；文字彩排几分钟就发现了多通电话没暴露的问题（反复追问、编造邮箱） |
+| C. 名称的发音与识别 | 指令里只能让模型写“V Fi”“Air P P P”来纠正发音，占用指令字数，转写和摘要里也留下怪拼写；“VFi”几乎每次被识别成“Wi-Fi” |
+| D. 草稿与上线版本 | 彩排期间改了 9 次正在接听的 Assistant，任何来电都可能听到未经测试的版本 |
+
+### 20.1 A. 通话结果字段与送达
+
+**范围**
+
+- 每个 Assistant 可设置“通话后要记录的信息”：最多 8 个字段，每个字段有名称、简短说明（告诉模型要记录什么）和类型（文字 / 几个选项之一 / 是否）。
+- 模板预填字段：来电接待 = 来电类型、姓名、公司、需求、是否紧急；业务咨询 = 问题、是否已回答、姓名、公司；商务外联 = 是否达成目标、约定的事项、下一步。空白模板没有字段。
+- 通话结束后，在通话详情页摘要上方以表格显示这些字段；通话列表显示一个“紧急”或“需跟进”标记（当对应字段为是时）。
+- 每通电话结束、结果确定后，发一封邮件给账户邮箱：来电号码、助理名称、字段、摘要、通话页链接。每个 Assistant 可关闭（默认值见 §20.7）。
+
+**产品规则**
+
+- 字段只在设置之后的通话中生效，不回填旧通话。
+- 字段结果和摘要一样，随通话记录按 §16 的 30 天规则删除；邮件内容不含录音和完整转写。
+- 字段或摘要在 `RESULTS_WAIT_MS` 内没有生成时，邮件照常发出，只写“摘要未生成”。
+- 邮件发件人沿用现有登录邮件的发件设置（Resend 尚无自有域名，见 vfi-rebrand 决定）。
+
+**方案**
+
+- 每个 Assistant 在 Telnyx 有自己的 insight group：一个摘要 insight（沿用现有摘要说明）+ 一个带 `json_schema` 的字段 insight（由字段生成）。通过 `insight_settings.insight_group_id` 关联到 Assistant。没有字段的 Assistant 只关联摘要 insight。
+- 读取结果沿用 `getCallResults` 与 `fetchCallResults` 的等待逻辑（§16、#31/#33/#34）：摘要与字段都完成，或 `RESULTS_WAIT_MS` 到期，才算最终结果。注意当前代码取“第一个已完成的 insight”作为摘要，有两个 insight 后必须按 insight id 区分。
+- 结果确定的那一次写库触发发信，用数据库标记保证每通电话只发一次（与日常任务、页面刷新的并发写入一致）。
+
+### 20.2 B. 不打电话也能测试
+
+**范围（按顺序交付）**
+
+1. **文字试聊**：Assistant 页面上的聊天面板，用 Telnyx 的 `POST /v2/ai/assistants/{id}/chat`（2026-10-26 已验证：同一 `conversation_id` 可多轮，检索工具会被调用）。回复下方标出“查阅了知识库”。可清空重来。
+2. **保存的测试**：用户保存若干测试对话（来电方的几句话 + 应该出现 / 不应出现的内容），一键全部运行，逐条显示通过或失败及助理的回复。优先使用 Telnyx 的 Tests / Simulation（控制台 Tests 页面、`*_assistants_ai_tests` 系列 API）；若 §20.6 验证不适合，则用试聊接口自建（规则同上，用简单的包含 / 不包含检查，不引入额外的评分模型）。
+3. **浏览器语音试拨**：在浏览器里用麦克风直接和助理通话，用于检查声音、发音和节奏。依赖 `telephony_settings.supports_unauthenticated_web_calls` 与 Telnyx WebRTC，见 §20.6。
+
+**产品规则**
+
+- 试聊与测试针对草稿版本（见 D）；D 交付前针对当前版本。
+- 试聊不产生通话记录，不出现在通话列表中。
+- 收费见 §20.7。
+
+### 20.3 C. 名称的发音与识别
+
+**范围**
+
+- **发音**：每个 Assistant 一份“发音”列表，最多 30 条，每条为“写法 → 读法”（例如 VFi → V Fi，Airppp → Air P P P）。放在“基本信息”的声音旁边，可用当前声音试听一句包含该词的话。
+- **识别提示**：在“对话”部分的关键词旁边加一段识别提示（例如“来电者会提到 VFi，听起来像 Wi-Fi”），长度上限以 Telnyx 为准（控制台显示 1,750 字符）。
+
+**方案**
+
+- 发音用 Telnyx Pronunciation Dictionary（控制台 AI Suite → Pronunciation Dictionaries；Assistant 的 `voice_settings.pronunciation_dict_id`）。每个 Assistant 一份，随 Assistant 删除。
+- 识别提示写入 `transcription.settings.prompt`。
+- 完成后更新 Nyquiste 前台助理：从指令中删除“V Fi”“Air P P P”“Wi-Fi”三条规则，改用发音列表和识别提示，并重新彩排。
+
+### 20.4 D. 草稿与上线版本
+
+**范围**
+
+- Assistant 页面的“保存”只保存草稿；新增“上线”按钮，把草稿发布为来电和外呼使用的版本。
+- 页面显示当前是否有未上线的修改，并可放弃草稿。
+- 保留最近上线过的版本（数量见 §20.7），可恢复为草稿。
+- 范围只包括配置（名称、语言、声音、开场白、指令、变量、通话行为、模型、A 的字段、C 的发音与识别提示）。知识库资料的增删仍立即生效（已收费且处理需要时间），在页面上说明。
+
+**方案**
+
+- 优先使用 Telnyx 版本：更新时 `promote_to_main=false` 生成非主版本，测试针对该版本，上线时 promote（控制台“Save as new version”“Switch version”，API `*_assistants_ai_versions`）。若 §20.6 验证试聊无法指定版本，则草稿测试使用隐藏的克隆 Assistant（2026-10-26 模型评测中已验证克隆可用，测试后删除）。
+- 现有的平台配置重新同步（`platformFingerprint`、`resyncStaleAgents`）只作用于已上线版本，不得把草稿推上线。
+
+### 20.5 实现顺序
+
+C → A → B1（先针对当前版本）→ D → B2、B3（针对草稿）。每项单独 PR。所有界面改动先出 mock，确认后再实现；文案 5 种语言；不使用全大写；设置放在它所服务的位置（§19.2）。
+
+### 20.6 待 Telnyx 验证（实现前）
+
+- A：每个 Assistant 一个 insight group 是否有数量限制或费用；insight 结果是否按 insight id 返回；字段 insight 用的模型与费用；`post_conversation_settings` 的作用（控制台 Post-Conversation Processing），是否比我们轮询更合适。
+- B：Tests / Simulation 的 API 能力（能否定义多轮来电内容和判断标准、能否指定版本、费用）；试聊接口能否指定版本；浏览器语音试拨的 WebRTC 接入方式、鉴权（不能把 API key 暴露给浏览器）与计费。
+- C：Pronunciation Dictionary 的 API（创建、更新、条目格式）；哪些 TTS 模型支持（Telnyx Ultra、KokoroTTS、ElevenLabs、克隆声音）；中文句子中的英文词是否生效；`transcription.settings.prompt` 对 `assemblyai/universal-3-5-pro` 是否有效。
+- D：非主版本是否接听来电；promote 是否原子；版本数量上限；版本与知识库、工具的关系。
+
+### 20.7 待产品决定（实现前请产品负责人确认）
+
+1. 每通电话后的邮件默认开启还是关闭；是否允许填写其他收件人。
+2. 文字试聊与保存的测试是否收费；若免费，每位用户每天的上限。
+3. 浏览器语音试拨是否按通话价格（每分钟 0.15 美元）计费。
+4. 保留最近几个上线版本。
+
+### 20.8 实现影响（粗估）
+
+- A：新增字段配置（表结构 + 表单）、per-Assistant insight 同步、结果解析、通话页展示、发信与去重。中等。
+- B1：聊天面板 + 服务端代理（不暴露 key）+ 用量限制。中等偏小。B2：取决于 Telnyx Tests；自建为中等。B3：WebRTC 接入，中等偏大。
+- C：发音列表（表结构 + 表单 + 同步）、识别提示（一个字段）。小。
+- D：草稿与上线两套状态、版本列表、与重新同步逻辑的配合。中等偏大，牵涉最广。
