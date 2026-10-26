@@ -5,6 +5,7 @@ import { agents, calls, ledgerEntries, users } from "@/db/schema";
 import { showStored } from "@/lib/stored-text";
 import { callAgentName, deleteCallRecord, startOutboundCall } from "@/server/calls";
 import { handleCallEvent } from "@/server/calls/events";
+import { reopenCallsMissingSummary } from "@/server/calls/backfill";
 import { fetchCallResults } from "@/server/calls/results";
 import { isAwaitingResults, RESULTS_WAIT_MS } from "@/server/calls/state";
 import { withWebhookDedupe } from "@/server/webhooks";
@@ -509,6 +510,31 @@ describe("call results", () => {
     const pending = await endedCall(RESULTS_WAIT_MS + 60_000, "cc-pending");
     vi.mocked(mockProvider.getCallResults).mockResolvedValueOnce({ transcript, summaryPending: true });
     expect(await fetchCallResults(pending)).toMatchObject({ resultsFetched: true, transcript, summary: null });
+  });
+
+  it("reopens fetched calls still missing a summary inside the retention window, only when applied", async () => {
+    const DAY = 24 * 60 * 60 * 1000;
+    const missing = await endedCall(DAY, "cc-missing");
+    const old = await endedCall(31 * DAY, "cc-old");
+    const purged = await endedCall(DAY, "cc-purged");
+    const deleted = await endedCall(DAY, "cc-deleted");
+    const summarized = await endedCall(DAY, "cc-summarized");
+    const fetched = { resultsFetched: true, transcript };
+    await db.update(calls).set(fetched).where(eq(calls.id, missing.id));
+    await db.update(calls).set({ ...fetched, createdAt: new Date(Date.now() - 31 * DAY) }).where(eq(calls.id, old.id));
+    await db.update(calls).set({ ...fetched, purgedAt: new Date() }).where(eq(calls.id, purged.id));
+    await db.update(calls).set({ ...fetched, deletedAt: new Date() }).where(eq(calls.id, deleted.id));
+    await db.update(calls).set({ ...fetched, summary: "Said hi." }).where(eq(calls.id, summarized.id));
+
+    expect((await reopenCallsMissingSummary()).map((c) => c.id)).toEqual([missing.id]);
+    expect(await callByCcid("cc-missing")).toMatchObject({ resultsFetched: true });
+
+    expect((await reopenCallsMissingSummary({ apply: true })).map((c) => c.id)).toEqual([missing.id]);
+    expect(await callByCcid("cc-missing")).toMatchObject({ resultsFetched: false });
+
+    // The next fetch is final: it keeps the transcript and adds the summary that has arrived since.
+    vi.mocked(mockProvider.getCallResults).mockResolvedValueOnce({ transcript, summary: "Said hi." });
+    expect(await fetchCallResults(await callByCcid("cc-missing"))).toMatchObject({ transcript, summary: "Said hi.", resultsFetched: true });
   });
 });
 
