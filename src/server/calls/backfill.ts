@@ -10,8 +10,10 @@ import { config } from "@/lib/config";
  * cron, whose next fetch is final: it stores the summary if there is one now, and otherwise only marks
  * the call fetched again. Lists them without changing anything unless `apply`.
  */
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 export async function reopenCallsMissingSummary({ apply = false, now = new Date() } = {}) {
-  const retentionCutoff = new Date(now.getTime() - config.policy.retentionDays * 24 * 60 * 60 * 1000);
+  const retentionCutoff = new Date(now.getTime() - config.policy.retentionDays * DAY_MS);
   const where = and(
     eq(calls.status, "completed"),
     eq(calls.resultsFetched, true),

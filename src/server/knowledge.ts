@@ -15,6 +15,7 @@ import { config } from "@/lib/config";
 import { UserError } from "@/lib/errors";
 import { toMegabytes } from "@/lib/format";
 import { failureColumns, stored, type StoredText } from "@/lib/stored-text";
+import { normalizeLineBreaks } from "@/lib/text";
 import { agentFingerprint, DELETED_SOURCE, desiredKnowledge, resyncAgentIfStale, syncAgentQuietly } from "./agents";
 import { chargePurchase, refundPurchase, type Purchase } from "./billing/ledger";
 import { voiceProvider } from "./telnyx";
@@ -275,8 +276,7 @@ async function removeLateWrite(s: KnowledgeSource, bucket: string): Promise<void
 
 export async function addTextSource(userId: string, agentId: string, raw: { title: unknown; text: unknown }): Promise<KnowledgeSource> {
   const title = String(raw.title ?? "").trim();
-  // Forms send line breaks as CRLF, which the textarea's maxLength counts as one character.
-  const text = String(raw.text ?? "").replace(/\r\n?/g, "\n").trim();
+  const text = normalizeLineBreaks(String(raw.text ?? "")).trim();
   if (!title || title.length > 80) throw new UserError("knowledgeTitleRequired");
   if (!text) throw new UserError("knowledgeTextRequired");
   if (text.length > config.limits.knowledgeTextChars) throw new UserError("knowledgeTextTooLong", { max: config.limits.knowledgeTextChars });

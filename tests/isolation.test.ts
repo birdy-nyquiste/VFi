@@ -113,6 +113,14 @@ describe("outbound call goal", () => {
     await db.update(calls).set({ status: "completed" }).where(eq(calls.id, call.id));
     await expect(startOutboundCall(user, { agentId: agent.id, to: "4155550101", goal: "x".repeat(1001) })).rejects.toThrow(/under 1000/);
   });
+
+  it("counts a line break as one character, as the text box does, though forms send CRLF", async () => {
+    const { user, agent } = await makeLine(1000);
+    vi.spyOn(mockProvider, "dial").mockResolvedValue({ callControlId: "cc-goal-lines" });
+    const lines = "a\n".repeat(499) + "ab"; // exactly 1,000 characters in the text box
+    const call = await startOutboundCall(user, { agentId: agent.id, to: "4155550100", goal: lines.replace(/\n/g, "\r\n") });
+    expect(call.goal).toBe(lines);
+  });
 });
 
 describe("outbound call variables", () => {
