@@ -18,6 +18,7 @@ import { config } from "@/lib/config";
 import { UserError, type ErrorKey } from "@/lib/errors";
 import { failureColumns, stored, storedFromError } from "@/lib/stored-text";
 import { LANGUAGES, type Language } from "@/lib/language";
+import { normalizeLineBreaks } from "@/lib/text";
 import { isUuid } from "@/lib/uuid";
 import { FeatureNotPermittedError, voiceProvider, type AssistantSpec } from "./telnyx";
 import { isElevenLabsVoice, voiceSpeaks } from "./telnyx/stock-voices";
@@ -52,10 +53,9 @@ const INPUT_ERRORS = {
 
 export const agentInput = z.object({
   name: z.string().trim().min(1, "nameRequired").max(80),
-  // Forms send line breaks as CRLF, which the text box's maxLength counts as one character.
   instructions: z
     .string()
-    .transform((s) => s.replace(/\r\n?/g, "\n"))
+    .transform(normalizeLineBreaks)
     .pipe(z.string().trim().min(1, "instructionsRequired").max(8000)),
   greeting: z.string().trim().min(1, "greetingRequired").max(500),
   language: z.enum(LANGUAGES),

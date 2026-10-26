@@ -244,6 +244,23 @@ describe("call results", () => {
     });
   });
 
+  it("keeps the transcript and leaves the summary pending when the insights request fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.includes("conversations-insights")
+          ? new Response(JSON.stringify({ errors: [{ code: "10007" }] }), { status: 503 })
+          : new Response(JSON.stringify({ data: [{ role: "user", text: "Hi" }] }), { status: 200 }),
+      ),
+    );
+    expect(await provider.getCallResults({ callControlId: "cc", conversationId: "conv-1" })).toEqual({
+      transcript: [{ role: "user", text: "Hi" }],
+      summary: undefined,
+      summaryPending: true,
+    });
+  });
+
   // Without TELNYX_INSIGHT_GROUP_ID too: Telnyx gives assistants the account's Default insight group.
   it.each([
     ["without our insight group", provider],

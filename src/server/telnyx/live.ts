@@ -483,10 +483,14 @@ export function createTelnyxProvider(cfg: TelnyxConfig): VoiceProvider {
 
       // Asked whether or not TELNYX_INSIGHT_GROUP_ID is set: an assistant without our insight group still
       // gets the account's "Default" group from Telnyx, whose Summary insight is the summary.
+      // A failed request leaves the summary pending rather than losing the transcript fetched above.
       const ins = await api<{ data: { status: string; conversation_insights?: { result: string }[] }[] }>(
         "GET",
         `/ai/conversations/${encodeURIComponent(conversationId)}/conversations-insights`,
-      );
+      ).catch((err) => {
+        console.error("conversation insights unavailable", conversationId, err);
+        return { data: [] };
+      });
       const done = ins.data.find((i) => i.status === "completed");
       // Not completed yet, including before Telnyx has created any insight entry right after hangup: the
       // transcript is returned anyway, and the summary is fetched again until RESULTS_WAIT_MS makes it final.

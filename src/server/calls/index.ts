@@ -5,6 +5,7 @@ import { agents, calls, phoneNumbers, type Agent, type Call, type User } from "@
 import { MAX_VARIABLE_VALUE_LENGTH, readVariables } from "@/lib/agent-settings";
 import { UserError } from "@/lib/errors";
 import { outcomeColumns, stored } from "@/lib/stored-text";
+import { normalizeLineBreaks } from "@/lib/text";
 import { toE164US } from "@/lib/format";
 import { isUuid } from "@/lib/uuid";
 import { hasSpendableBalance } from "@/server/billing/ledger";
@@ -51,8 +52,7 @@ export async function startOutboundCall(
 ): Promise<Call> {
   const to = toE164US(input.to);
   if (!to) throw new UserError("invalidPhone");
-  // Forms send line breaks as CRLF, which the text box's maxLength counts as one character.
-  const goal = input.goal?.replace(/\r\n?/g, "\n").trim() || null;
+  const goal = normalizeLineBreaks(input.goal ?? "").trim() || null;
   if (goal && goal.length > MAX_CALL_GOAL_LENGTH) {
     throw new UserError("goalTooLong", { max: MAX_CALL_GOAL_LENGTH });
   }
