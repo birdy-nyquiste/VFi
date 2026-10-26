@@ -70,7 +70,7 @@ export const config = {
      * STT: deepgram/nova-3 in "auto" mode transcribed Mandarin as English words in a
      * live test; AssemblyAI handled English, Mandarin and mixed speech.
      */
-    llmModel: process.env.TELNYX_LLM_MODEL || "moonshotai/Kimi-K2.6",
+    llmModel: process.env.TELNYX_LLM_MODEL || "zai-org/GLM-5.2",
     sttModel: process.env.TELNYX_STT_MODEL || "assemblyai/universal-3-5-pro",
     sttLanguage: process.env.TELNYX_STT_LANGUAGE || "auto",
     cloneModel: process.env.TELNYX_CLONE_MODEL || "Qwen3TTS",

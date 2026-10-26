@@ -84,7 +84,7 @@ describe("assistant ids", () => {
 
 describe("platform model settings", () => {
   it("pins the models verified on a live call", () => {
-    expect(config.telnyx.llmModel).toBe("moonshotai/Kimi-K2.6");
+    expect(config.telnyx.llmModel).toBe("zai-org/GLM-5.2");
     expect(config.telnyx.sttModel).toBe("assemblyai/universal-3-5-pro");
   });
 
