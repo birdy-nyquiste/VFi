@@ -489,8 +489,9 @@ export function createTelnyxProvider(cfg: TelnyxConfig): VoiceProvider {
           `/ai/conversations/${encodeURIComponent(conversationId)}/conversations-insights`,
         );
         const done = ins.data.find((i) => i.status === "completed");
-        // Still being generated: the transcript is returned anyway, and the summary is fetched again later.
-        summaryPending = !done && ins.data.some((i) => i.status === "pending" || i.status === "in_progress");
+        // Not completed yet, including before Telnyx has created any insight entry right after hangup: the
+        // transcript is returned anyway, and the summary is fetched again until RESULTS_WAIT_MS makes it final.
+        summaryPending = !done;
         summary = done?.conversation_insights?.[0]?.result;
       }
       return { transcript, summary, summaryPending };
