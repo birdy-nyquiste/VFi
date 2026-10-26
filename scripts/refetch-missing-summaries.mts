@@ -1,16 +1,10 @@
-// One-off: re-fetch summaries for calls marked fetched before Telnyx had created their summary insight.
+// One-off: re-fetch summaries for calls marked fetched without one: fetched before Telnyx had created the
+// summary insight, or while summaries were only asked for with TELNYX_INSIGHT_GROUP_ID set.
 // Lists the calls by default; with --apply, hands them back to the daily cron, which fetches them again.
 //   npx tsx --env-file=.env.local scripts/refetch-missing-summaries.mts [--apply]
-import { config } from "@/lib/config";
 import { reopenCallsMissingSummary } from "@/server/calls/backfill";
 
 const apply = process.argv.includes("--apply");
-
-// Without an insight group no call has a summary, so there is nothing to repair.
-if (!config.telnyx.insightGroupId) {
-  console.error("[refetch-missing-summaries] TELNYX_INSIGHT_GROUP_ID is not set");
-  process.exit(1);
-}
 
 const reopened = await reopenCallsMissingSummary({ apply });
 for (const c of reopened) console.log(c.id, c.endedAt?.toISOString());

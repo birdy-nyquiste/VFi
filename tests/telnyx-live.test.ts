@@ -212,6 +212,7 @@ describe("call results", () => {
   it("pages through conversation messages at Telnyx's 100-per-page limit", async () => {
     const msg = (i: number) => ({ role: i % 2 ? "user" : "assistant", text: `m${i}`, sent_at: `2026-10-07T10:00:${String(i).padStart(2, "0")}Z` });
     const fetchMock = vi.fn(async (url: string) => {
+      if (url.includes("conversations-insights")) return new Response(JSON.stringify({ data: [] }), { status: 200 });
       const page = Number(new URL(url).searchParams.get("page[number]"));
       const data = page === 1 ? [msg(2), msg(1)] : [msg(3)];
       return new Response(JSON.stringify({ data, meta: { total_pages: 2 } }), { status: 200 });
@@ -219,8 +220,9 @@ describe("call results", () => {
     vi.stubGlobal("fetch", fetchMock);
     const res = await provider.getCallResults({ callControlId: "cc", conversationId: "conv-1" });
     expect(res?.transcript.map((m) => m.text)).toEqual(["m1", "m2", "m3"]);
-    for (const [url] of fetchMock.mock.calls) expect(new URL(url).searchParams.get("page[size]")).toBe("100");
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const pages = fetchMock.mock.calls.map(([url]) => url).filter((url) => url.includes("/messages"));
+    for (const url of pages) expect(new URL(url).searchParams.get("page[size]")).toBe("100");
+    expect(pages).toHaveLength(2);
   });
 
   it.each([
@@ -228,7 +230,6 @@ describe("call results", () => {
     // Right after hangup Telnyx may not have created the insight entry yet.
     ["has no insight entry yet", []],
   ])("returns the transcript while the summary %s", async (_, insights) => {
-    const withInsights = createTelnyxProvider({ ...telnyxConfig, insightGroupId: "ig-1" });
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
@@ -236,15 +237,18 @@ describe("call results", () => {
         return new Response(JSON.stringify({ data }), { status: 200 });
       }),
     );
-    expect(await withInsights.getCallResults({ callControlId: "cc", conversationId: "conv-1" })).toEqual({
+    expect(await provider.getCallResults({ callControlId: "cc", conversationId: "conv-1" })).toEqual({
       transcript: [{ role: "user", text: "Hi" }],
       summary: undefined,
       summaryPending: true,
     });
   });
 
-  it("returns a completed summary as final", async () => {
-    const withInsights = createTelnyxProvider({ ...telnyxConfig, insightGroupId: "ig-1" });
+  // Without TELNYX_INSIGHT_GROUP_ID too: Telnyx gives assistants the account's Default insight group.
+  it.each([
+    ["without our insight group", provider],
+    ["with our insight group", createTelnyxProvider({ ...telnyxConfig, insightGroupId: "ig-1" })],
+  ])("returns a completed summary as final %s", async (_, withInsights) => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {

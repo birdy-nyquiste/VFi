@@ -4,10 +4,11 @@ import { calls } from "@/db/schema";
 import { config } from "@/lib/config";
 
 /**
- * One-off repair for calls a premature fetch marked fetched before Telnyx had created their summary
- * insight (fixed 2026-10-26). Hands completed calls still inside the retention window with no summary
- * back to the daily cron, whose next fetch is final: it stores the summary if there is one now, and
- * otherwise only marks the call fetched again. Lists them without changing anything unless `apply`.
+ * One-off repair for calls marked fetched without their summary: fetched before Telnyx had created the
+ * summary insight, or while summaries were only asked for with TELNYX_INSIGHT_GROUP_ID set (both fixed
+ * 2026-10-26). Hands completed calls still inside the retention window with no summary back to the daily
+ * cron, whose next fetch is final: it stores the summary if there is one now, and otherwise only marks
+ * the call fetched again. Lists them without changing anything unless `apply`.
  */
 export async function reopenCallsMissingSummary({ apply = false, now = new Date() } = {}) {
   const retentionCutoff = new Date(now.getTime() - config.policy.retentionDays * 24 * 60 * 60 * 1000);

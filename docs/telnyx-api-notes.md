@@ -332,8 +332,11 @@ Docs: https://developers.telnyx.com/api-reference/conversations/list-conversatio
   `POST /v2/ai/conversations/insights {name, instructions, json_schema?, webhook?}` and
   `POST /v2/ai/conversations/insight-groups {name, description?, webhook?}`, link with
   `POST /v2/ai/conversations/insight-groups/{group_id}/insights/{insight_id}/assign`, then set
-  `insight_settings.insight_group_id`. Telnyx also has "Telnyx-managed" default quality insights.
-  Whether those include a summary is **UNCONFIRMED**.
+  `insight_settings.insight_group_id`.
+- Observed 2026-10-26: an assistant created without `insight_settings` gets the account's "Default"
+  insight group (created with the account), holding a Telnyx-managed `Summary` insight
+  (`insight_type: default`). Its result arrives as a completed `conversations-insights` entry about
+  30 s after hangup; right after hangup the list is still empty.
 - `privacy_settings.data_retention=false` means no history or insights are stored.
 
 ## 9. Voices and cloning
