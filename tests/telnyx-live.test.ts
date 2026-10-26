@@ -223,12 +223,16 @@ describe("call results", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it("returns the transcript while the summary is still being generated", async () => {
+  it.each([
+    ["is still being generated", [{ status: "in_progress" }]],
+    // Right after hangup Telnyx may not have created the insight entry yet.
+    ["has no insight entry yet", []],
+  ])("returns the transcript while the summary %s", async (_, insights) => {
     const withInsights = createTelnyxProvider({ ...telnyxConfig, insightGroupId: "ig-1" });
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
-        const data = url.includes("conversations-insights") ? [{ status: "in_progress" }] : [{ role: "user", text: "Hi" }];
+        const data = url.includes("conversations-insights") ? insights : [{ role: "user", text: "Hi" }];
         return new Response(JSON.stringify({ data }), { status: 200 });
       }),
     );
@@ -237,6 +241,21 @@ describe("call results", () => {
       summary: undefined,
       summaryPending: true,
     });
+  });
+
+  it("returns a completed summary as final", async () => {
+    const withInsights = createTelnyxProvider({ ...telnyxConfig, insightGroupId: "ig-1" });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        const data = url.includes("conversations-insights")
+          ? [{ status: "completed", conversation_insights: [{ result: "Caller booked a visit." }] }]
+          : [{ role: "user", text: "Hi" }];
+        return new Response(JSON.stringify({ data }), { status: 200 });
+      }),
+    );
+    const res = await withInsights.getCallResults({ callControlId: "cc", conversationId: "conv-1" });
+    expect(res).toMatchObject({ summary: "Caller booked a visit.", summaryPending: false });
   });
 });
 
