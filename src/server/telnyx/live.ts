@@ -481,19 +481,17 @@ export function createTelnyxProvider(cfg: TelnyxConfig): VoiceProvider {
         .sort((a, b) => (a.sent_at ?? a.created_at ?? "").localeCompare(b.sent_at ?? b.created_at ?? ""))
         .map((m) => ({ role: m.role, text: m.text! }));
 
-      let summary: string | undefined;
-      let summaryPending = false;
-      if (cfg.insightGroupId) {
-        const ins = await api<{ data: { status: string; conversation_insights?: { result: string }[] }[] }>(
-          "GET",
-          `/ai/conversations/${encodeURIComponent(conversationId)}/conversations-insights`,
-        );
-        const done = ins.data.find((i) => i.status === "completed");
-        // Not completed yet, including before Telnyx has created any insight entry right after hangup: the
-        // transcript is returned anyway, and the summary is fetched again until RESULTS_WAIT_MS makes it final.
-        summaryPending = !done;
-        summary = done?.conversation_insights?.[0]?.result;
-      }
+      // Asked whether or not TELNYX_INSIGHT_GROUP_ID is set: an assistant without our insight group still
+      // gets the account's "Default" group from Telnyx, whose Summary insight is the summary.
+      const ins = await api<{ data: { status: string; conversation_insights?: { result: string }[] }[] }>(
+        "GET",
+        `/ai/conversations/${encodeURIComponent(conversationId)}/conversations-insights`,
+      );
+      const done = ins.data.find((i) => i.status === "completed");
+      // Not completed yet, including before Telnyx has created any insight entry right after hangup: the
+      // transcript is returned anyway, and the summary is fetched again until RESULTS_WAIT_MS makes it final.
+      const summaryPending = !done;
+      const summary = done?.conversation_insights?.[0]?.result;
       return { transcript, summary, summaryPending };
     },
 
