@@ -14,7 +14,7 @@ import { startCallAction } from "./actions";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { readVariables } from "@/lib/agent-settings";
 import type { Agent, PhoneNumber } from "@/db/schema";
-import { defaultCallerNumber } from "@/lib/caller-number";
+import { activeNumbersByAge, defaultCallerNumber, ourNumber } from "@/lib/phone-numbers";
 import { isUuid } from "@/lib/uuid";
 import { AgentFields, type CallAgent } from "./agent-fields";
 import { viewerTimeZone } from "@/server/time-zone";
@@ -22,11 +22,6 @@ import { viewerTimeZone } from "@/server/time-zone";
 function callAgent(a: Agent, numbers: PhoneNumber[]): CallAgent {
   const ask = readVariables(a.variables).filter((v) => v.askPerCall);
   return { id: a.id, name: a.name, ask: ask.map(({ key, value }) => ({ key, value })), numberId: defaultCallerNumber(numbers, a.id)?.id ?? "" };
-}
-
-/** The user's own number on the call: the one called, or the one it was placed from. */
-function ourNumber(call: { direction: string; fromNumber: string; toNumber: string }): string {
-  return call.direction === "inbound" ? call.toNumber : call.fromNumber;
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -38,13 +33,13 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
   // "Call them back" on a call page opens this form with the number filled in.
   const { to, number } = await searchParams;
   const [agents, numbers] = await Promise.all([listUserAgents(user.id), listUserNumbers(user.id)]);
-  // The list is filtered by one of the user's numbers once they have more than one.
-  const filterNumbers = numbers.filter((n) => n.status === "active").sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-  const showNumbers = filterNumbers.length > 1;
-  const filter = showNumbers && number && isUuid(number) ? filterNumbers.find((n) => n.id === number) : undefined;
+  // Once the user has more than one number, calls can go from any of them and the list shows and filters by them.
+  const activeNumbers = activeNumbersByAge(numbers);
+  const showNumbers = activeNumbers.length > 1;
+  const filter = showNumbers && number && isUuid(number) ? activeNumbers.find((n) => n.id === number) : undefined;
   const rows = await listUserCalls(user.id, 50, filter?.id);
   const readyAgents = agents.filter((a) => a.status === "ready");
-  const activeNumber = numbers.find((n) => n.status === "active");
+  const activeNumber = activeNumbers[0];
   const agentNames = new Map(agents.map((a) => [a.id, a.name]));
   const [t, tc, locale] = await Promise.all([getTranslations("calls"), getTranslations("common"), getLocale()]);
   const tz = await viewerTimeZone();
@@ -81,7 +76,7 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
             {/* The number's agent only if it's ready: an id not in the list would hide the shown agent's per-call fields. */}
             <AgentFields
               agents={readyAgents.map((a) => callAgent(a, numbers))}
-              numbers={filterNumbers.map((n) => {
+              numbers={activeNumbers.map((n) => {
                 const name = n.agentId ? agentNames.get(n.agentId) : undefined;
                 return { id: n.id, number: formatPhone(n.e164), label: name ? `${formatPhone(n.e164)} · ${name}` : formatPhone(n.e164) };
               })}
@@ -122,7 +117,7 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
           label={tc("filterByNumber")}
           chips={[
             { href: "/calls", label: tc("allNumbers"), active: !filter },
-            ...filterNumbers.map((n) => ({ href: `/calls?number=${n.id}`, label: formatPhone(n.e164), active: filter?.id === n.id })),
+            ...activeNumbers.map((n) => ({ href: `/calls?number=${n.id}`, label: formatPhone(n.e164), active: filter?.id === n.id })),
           ]}
         />
       )}

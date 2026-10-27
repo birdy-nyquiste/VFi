@@ -9,6 +9,7 @@ import { listUserAgents } from "@/server/agents";
 import { requireUser } from "@/server/auth";
 import { listUserCalls } from "@/server/calls";
 import { listUserNumbers } from "@/server/numbers";
+import { activeNumbersByAge } from "@/lib/phone-numbers";
 import { viewerTimeZone } from "@/server/time-zone";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -31,18 +32,15 @@ export default async function DashboardPage() {
     listUserAgents(user.id),
     listUserCalls(user.id, 5),
   ]);
-  const activeNumbers = numbers.filter((n) => n.status === "active").sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-  const activeNumber = activeNumbers[0];
-  const linkedAgent = agents.find((a) => a.id === activeNumber?.agentId);
-  // Inbound calls are turned away unless the assigned agent is ready.
-  const answering = linkedAgent?.status === "ready";
+  const activeNumbers = activeNumbersByAge(numbers);
   const agentOf = (agentId: string | null) => agents.find((a) => a.id === agentId);
+  // Inbound calls are turned away unless the assigned agent is ready.
   const anyAnswering = activeNumbers.some((n) => agentOf(n.agentId)?.status === "ready");
 
   const steps = [
     { done: user.balanceCents > 0, label: t("stepCredit"), href: "/account/billing" },
     { done: agents.some((a) => a.status === "ready"), label: t("stepAgent"), href: "/assistants/new" },
-    { done: Boolean(activeNumber), label: t("stepNumber"), href: "/numbers" },
+    { done: activeNumbers.length > 0, label: t("stepNumber"), href: "/numbers" },
     { done: anyAnswering, label: t("stepConnect"), href: "/numbers" },
     { done: recent.length > 0, label: t("stepCall"), href: "/calls" },
   ];
@@ -101,45 +99,44 @@ export default async function DashboardPage() {
             {t("topUp")}
           </Link>
         </Card>
-        {activeNumbers.length > 1 ? (
-          <Card className="flex flex-col gap-3">
-            <h2 className="text-sm text-stone-500">{t("numbers")}</h2>
+        <Card className="flex flex-col gap-3">
+          <h2 className="text-sm text-stone-500">{activeNumbers.length > 1 ? t("numbers") : t("number")}</h2>
+          {activeNumbers.length === 0 ? (
+            <>
+              <p className="whitespace-nowrap text-2xl leading-[38px] tracking-[-0.01em] tabular-nums">—</p>
+              <p className="text-sm text-stone-700">{t("noNumber")}</p>
+            </>
+          ) : (
             <ul className="flex flex-col gap-2">
               {activeNumbers.map((n) => {
                 const agent = agentOf(n.agentId);
                 return (
-                  <li key={n.id} className="flex flex-col">
-                    <span className="whitespace-nowrap text-[17px] tabular-nums">{formatPhone(n.e164)}</span>
-                    <span className={`text-[13px] ${!agent ? "text-stone-500" : agent.status === "ready" ? "text-stone-600" : agent.status === "failed" ? "text-red-600" : "text-amber-700"}`}>
-                      {!agent ? t("noAgent") : agent.status === "ready" ? t("answeredBy", { name: agent.name }) : tn("agentStatus", { name: agent.name, status: ts(agent.status) })}
+                  <li key={n.id} className="flex flex-col gap-1">
+                    {/* One number gets the large figure; several are listed smaller so the card stays short. */}
+                    <span className={`whitespace-nowrap tabular-nums ${activeNumbers.length > 1 ? "text-[17px]" : "text-2xl leading-[38px] tracking-[-0.01em]"}`}>
+                      {formatPhone(n.e164)}
                     </span>
+                    {agent && agent.status !== "ready" ? (
+                      <Link href={`/assistants/${agent.id}`} className={`text-sm hover:underline ${agent.status === "failed" ? "text-red-600" : "text-amber-700"}`}>
+                        {tn("agentStatus", { name: agent.name, status: ts(agent.status) })}
+                      </Link>
+                    ) : (
+                      <p className="flex items-center gap-2 text-sm text-stone-700">
+                        {agent && <span aria-hidden className="h-[7px] w-[7px] rounded-full bg-emerald-500" />}
+                        {agent ? t("answeredBy", { name: agent.name }) : t("noAgent")}
+                      </p>
+                    )}
                   </li>
                 );
               })}
             </ul>
+          )}
+          {activeNumbers.length > 1 && (
             <Link href="/numbers" className="self-start text-sm underline hover:text-stone-600">
               {t("manage")}
             </Link>
-          </Card>
-        ) : (
-          <Card className="flex flex-col gap-3">
-            <h2 className="text-sm text-stone-500">{t("number")}</h2>
-            <p className="whitespace-nowrap text-2xl leading-[38px] tracking-[-0.01em] tabular-nums">{activeNumber ? formatPhone(activeNumber.e164) : "—"}</p>
-            {linkedAgent && !answering ? (
-              <Link
-                href={`/assistants/${linkedAgent.id}`}
-                className={`text-sm hover:underline ${linkedAgent.status === "failed" ? "text-red-600" : "text-amber-700"}`}
-              >
-                {tn("agentStatus", { name: linkedAgent.name, status: ts(linkedAgent.status) })}
-              </Link>
-            ) : (
-              <p className="flex items-center gap-2 text-sm text-stone-700">
-                {answering && <span aria-hidden className="h-[7px] w-[7px] rounded-full bg-emerald-500" />}
-                {linkedAgent ? t("answeredBy", { name: linkedAgent.name }) : activeNumber ? t("noAgent") : t("noNumber")}
-              </p>
-            )}
-          </Card>
-        )}
+          )}
+        </Card>
         <Card className="flex flex-col gap-3">
           <h2 className="text-sm text-stone-500">{t("agents")}</h2>
           {agents.length === 0 ? (

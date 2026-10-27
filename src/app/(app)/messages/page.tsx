@@ -11,6 +11,7 @@ import { AutoRefresh } from "@/components/auto-refresh";
 import { messagePreview, threadHref } from "./format";
 import { viewerTimeZone } from "@/server/time-zone";
 import { isUuid } from "@/lib/uuid";
+import { activeNumbersByAge } from "@/lib/phone-numbers";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getTranslations("messages"))("title") };
@@ -20,7 +21,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
   const user = await requireUser();
   const { number } = await searchParams;
   const numbers = await listUserNumbers(user.id);
-  const activeNumbers = numbers.filter((n) => n.status === "active").sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  const activeNumbers = activeNumbersByAge(numbers);
   const active = activeNumbers[0];
   // Conversations say which of the user's numbers they were sent to, and can be filtered by it, once there's more than one.
   const showNumbers = activeNumbers.length > 1;
@@ -72,7 +73,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
           <ul className="divide-y divide-stone-100">
             {conversations.map((c) => (
               <li key={`${c.from} ${c.to}`}>
-                <Link href={threadHref(c.from, c.to)} className="flex items-start justify-between gap-4 px-5 py-3 hover:bg-stone-50">
+                <Link href={threadHref(c)} className="flex items-start justify-between gap-4 px-5 py-3 hover:bg-stone-50">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       {/* Names run up to 60 characters, so they truncate instead of pushing past the card on phones. */}

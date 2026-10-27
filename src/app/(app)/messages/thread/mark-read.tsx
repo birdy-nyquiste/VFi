@@ -15,7 +15,7 @@ export function MarkRead({ from, to, upTo, hasUnread }: { from: string; to?: str
       document.removeEventListener("visibilitychange", mark);
       // The action revalidates the layout, which refreshes the nav badge. If it fails, the texts
       // just stay unread until the next visit.
-      markReadAction(from, to, upTo).catch(() => {});
+      markReadAction({ from, to }, upTo).catch(() => {});
     };
     document.addEventListener("visibilitychange", mark);
     mark();

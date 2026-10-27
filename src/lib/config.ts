@@ -157,8 +157,6 @@ export const config = {
     // Vercel rejects function request bodies over 4.5 MB (serverActions.bodySizeLimit matches);
     // leave headroom for the other form fields and multipart overhead.
     cloneSampleBytes: 4.4 * 1024 * 1024,
-    /** Each number takes one call at a time; an account's numbers each have their own line. */
-    callsPerNumber: 1,
     /** Knowledge sources per user, across all agents (SPEC §8.2). */
     knowledgeSources: 5,
     /** Sources a user can add in any 24 hours; deleting one doesn't give it back. */

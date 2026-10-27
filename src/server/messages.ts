@@ -141,33 +141,41 @@ export async function countUnreadMessages(userId: string): Promise<number> {
   return db.$count(messages, and(eq(messages.userId, userId), isNull(messages.deletedAt), isNull(messages.readAt)));
 }
 
-/** A conversation's texts: from one sender, to one of the user's numbers (any of them when `to` is omitted). */
-function conversationTexts(userId: string, from: string, to?: string) {
+/**
+ * Which conversation: one sender's texts to one of the user's numbers, or to any of them when `to` is
+ * omitted (links from before texts were split by the number they went to).
+ */
+export interface ConversationKey {
+  from: string;
+  to?: string;
+}
+
+function conversationTexts(userId: string, { from, to }: ConversationKey) {
   return and(eq(messages.userId, userId), eq(messages.fromNumber, from), to ? eq(messages.toNumber, to) : undefined, isNull(messages.deletedAt));
 }
 
 /** Every text in a conversation, oldest first. */
-export async function getConversation(userId: string, from: string, to?: string): Promise<Message[]> {
-  return db.select().from(messages).where(conversationTexts(userId, from, to)).orderBy(asc(messages.receivedAt));
+export async function getConversation(userId: string, key: ConversationKey): Promise<Message[]> {
+  return db.select().from(messages).where(conversationTexts(userId, key)).orderBy(asc(messages.receivedAt));
 }
 
 /** Marks texts read, up to the newest one the user has seen. Returns how many changed. */
-export async function markConversationRead(userId: string, from: string, upTo: Date, to?: string): Promise<number> {
+export async function markConversationRead(userId: string, key: ConversationKey, upTo: Date): Promise<number> {
   const changed = await db
     .update(messages)
     .set({ readAt: new Date() })
-    .where(and(conversationTexts(userId, from, to), isNull(messages.readAt), lte(messages.receivedAt, upTo)))
+    .where(and(conversationTexts(userId, key), isNull(messages.readAt), lte(messages.receivedAt, upTo)))
     .returning({ id: messages.id });
   return changed.length;
 }
 
 /** Deletes the text content of a conversation; billing rows stay. */
-export async function deleteConversation(userId: string, from: string, to?: string): Promise<void> {
+export async function deleteConversation(userId: string, key: ConversationKey): Promise<void> {
   const now = new Date();
   const deleted = await db
     .update(messages)
     .set({ body: null, purgedAt: now, deletedAt: now })
-    .where(conversationTexts(userId, from, to))
+    .where(conversationTexts(userId, key))
     .returning({ id: messages.id });
   if (deleted.length === 0) throw new UserError("conversationNotFound");
 }

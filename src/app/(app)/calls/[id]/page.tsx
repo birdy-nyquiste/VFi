@@ -11,6 +11,7 @@ import { showStored, type StoredMessage } from "@/lib/stored-text";
 import { requireUser } from "@/server/auth";
 import { callAgentName, getUserCall } from "@/server/calls";
 import { listUserNumbers } from "@/server/numbers";
+import { activeNumbersByAge, ourNumber } from "@/lib/phone-numbers";
 import { isAwaitingResults, isCallLive } from "@/server/calls/state";
 import { deleteCallAction, hangupAction } from "../actions";
 import { AutoRefresh } from "@/components/auto-refresh";
@@ -48,8 +49,8 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
   const call = await loadCall(id); // signs the viewer in, or redirects
   if (!call) notFound();
   const [agentName, numbers] = await Promise.all([callAgentName(call), listUserNumbers(call.userId)]);
-  // Which of the user's numbers took or placed the call, once they have more than one.
-  const ours = numbers.filter((n) => n.status === "active").length > 1 ? (call.direction === "inbound" ? call.toNumber : call.fromNumber) : null;
+  // Which of the user's numbers took or placed the call; shown only once they have more than one.
+  const shownOurNumber = activeNumbersByAge(numbers).length > 1 ? ourNumber(call) : null;
   const live = isCallLive(call);
   const awaitingResults = isAwaitingResults(call);
   const [t, tc, locale] = await Promise.all([getTranslations("calls"), getTranslations("common"), getLocale()]);
@@ -58,7 +59,7 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
   const meta = [
     t(call.direction === "inbound" ? "directionInbound" : "directionOutbound"),
     agentName,
-    ours ? t("yourNumber", { number: formatPhone(ours) }) : null,
+    shownOurNumber ? t("yourNumber", { number: formatPhone(shownOurNumber) }) : null,
     call.durationSec != null ? formatDuration(call.durationSec) : null,
     call.billedCents != null ? formatCents(call.billedCents, locale) : null,
     formatDateTime(call.createdAt, locale, tz),

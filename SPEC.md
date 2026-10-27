@@ -230,7 +230,7 @@ Fixed retail prices, configurable. Telnyx's cost is recorded separately and neve
 | Phone numbers | 3 (§9.1) | `limits.numbersPerUser` |
 | Assistants | 3 | `limits.agentsPerUser` |
 | Cloned voices | 2 | `limits.clonedVoicesPerUser` |
-| Calls at the same time | 1 per number, so up to 3 per account (§9.1) | `limits.callsPerNumber` |
+| Calls at the same time | 1 per number, so up to 3 per account (§9.1) | `hasOtherActiveCall` (a rule, not a setting) |
 | Knowledge sources | 5 across all Assistants; 5 added per 24 hours (§8) | `limits.knowledgeSources`, `limits.knowledgeAddsPerDay` |
 
 ---
@@ -641,8 +641,8 @@ today. All text in five languages.
   number). No new tables or columns.
 - `startOutboundCall` takes an optional number id and checks it's the user's and active; without one,
   `defaultCallerNumber` (`src/lib/caller-number.ts`) picks it, and the call form uses the same rule for its default.
-- `hasOtherActiveCall` checks per number instead of per account (`limits.callsPerNumber`). Admission still runs under
-  the per-user lock.
+- `hasOtherActiveCall` checks per number instead of per account; one call per number is a rule, not a setting.
+  Admission still runs under the per-user lock.
 - The calls list and Messages take `?number=<number id>` to filter.
 - Messages: conversations are keyed by (sender, our number). Thread links carry `to`; an old link without it shows
   all of the sender's texts.

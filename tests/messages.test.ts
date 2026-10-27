@@ -135,21 +135,21 @@ describe("conversations", () => {
     ]);
     expect(await countUnreadMessages(user.id)).toBe(3);
 
-    const thread = await getConversation(user.id, "+12025550001");
+    const thread = await getConversation(user.id, { from: "+12025550001" });
     expect(thread.map((m) => m.body)).toEqual(["a1", "a2"]);
     expect(await countUnreadMessages(user.id)).toBe(3);
     // Only texts the user has seen are marked read; one arriving later stays unread.
-    expect(await markConversationRead(user.id, "+12025550001", thread[0].receivedAt)).toBe(1);
-    expect(await markConversationRead(user.id, "+12025550001", thread[1].receivedAt)).toBe(1);
+    expect(await markConversationRead(user.id, { from: "+12025550001" }, thread[0].receivedAt)).toBe(1);
+    expect(await markConversationRead(user.id, { from: "+12025550001" }, thread[1].receivedAt)).toBe(1);
     expect(await countUnreadMessages(user.id)).toBe(1);
 
     // Another user can't see or delete them.
     const other = await makeUser();
-    expect(await getConversation(other.id, "+12025550001")).toEqual([]);
-    expect(await markConversationRead(other.id, "+12025550002", new Date())).toBe(0);
-    await expect(deleteConversation(other.id, "+12025550001")).rejects.toThrow("not found");
+    expect(await getConversation(other.id, { from: "+12025550001" })).toEqual([]);
+    expect(await markConversationRead(other.id, { from: "+12025550002" }, new Date())).toBe(0);
+    await expect(deleteConversation(other.id, { from: "+12025550001" })).rejects.toThrow("not found");
 
-    await deleteConversation(user.id, "+12025550001");
+    await deleteConversation(user.id, { from: "+12025550001" });
     expect((await listConversations(user.id)).map((c) => c.from)).toEqual(["+12025550002"]);
     const deleted = await db.select().from(messages).where(eq(messages.fromNumber, "+12025550001"));
     expect(deleted.every((m) => m.body === null && m.deletedAt)).toBe(true);
@@ -169,13 +169,13 @@ describe("conversations", () => {
       [number.e164, "to first"],
     ]);
     expect((await listConversations(user.id, 500, number.e164)).map((c) => c.last.body)).toEqual(["to first"]);
-    expect((await getConversation(user.id, "+12025550001", second.e164)).map((m) => m.body)).toEqual(["to second"]);
+    expect((await getConversation(user.id, { from: "+12025550001", to: second.e164 })).map((m) => m.body)).toEqual(["to second"]);
     // A link without the receiving number shows all of the sender's texts.
-    expect(await getConversation(user.id, "+12025550001")).toHaveLength(2);
+    expect(await getConversation(user.id, { from: "+12025550001" })).toHaveLength(2);
 
-    expect(await markConversationRead(user.id, "+12025550001", new Date(t0 + 5000), number.e164)).toBe(1);
+    expect(await markConversationRead(user.id, { from: "+12025550001", to: number.e164 }, new Date(t0 + 5000))).toBe(1);
     expect(await countUnreadMessages(user.id)).toBe(1);
-    await deleteConversation(user.id, "+12025550001", number.e164);
+    await deleteConversation(user.id, { from: "+12025550001", to: number.e164 });
     expect((await listConversations(user.id)).map((c) => c.to)).toEqual([second.e164]);
   });
 
@@ -270,7 +270,7 @@ describe("contact names", () => {
     }
     expect(await db.select().from(contacts)).toHaveLength(0);
 
-    await deleteConversation(user.id, "+12025550001");
+    await deleteConversation(user.id, { from: "+12025550001" });
     await setContactName(user.id, "+12025550001", "Dentist");
     expect(await getContactName(user.id, "+12025550001")).toBe("Dentist");
   });

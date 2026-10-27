@@ -8,6 +8,7 @@ import { formatCents, formatDateTime, formatPhone } from "@/lib/format";
 import { requireUser } from "@/server/auth";
 import { getContactName, getConversation, MAX_CONTACT_NAME_LENGTH } from "@/server/messages";
 import { listUserNumbers } from "@/server/numbers";
+import { activeNumbersByAge } from "@/lib/phone-numbers";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { deleteConversationAction, saveContactNameAction } from "../actions";
 import { messageBody } from "../format";
@@ -25,7 +26,7 @@ export default async function ThreadPage({ searchParams }: { searchParams: Promi
   // Without `to` (links from before a sender's texts were split by the number they went to) all their texts show.
   const { from, to } = await searchParams;
   if (!from) notFound();
-  const [texts, name, numbers] = await Promise.all([getConversation(user.id, from, to), getContactName(user.id, from), listUserNumbers(user.id)]);
+  const [texts, name, numbers] = await Promise.all([getConversation(user.id, { from, to }), getContactName(user.id, from), listUserNumbers(user.id)]);
   if (texts.length === 0) notFound();
   const billed = texts.reduce((sum, m) => sum + m.billedCents, 0);
   const [t, tc, locale] = await Promise.all([getTranslations("messages"), getTranslations("common"), getLocale()]);
@@ -41,7 +42,7 @@ export default async function ThreadPage({ searchParams }: { searchParams: Promi
         title={t("threadTitle", { name: who })}
         description={[
           name && formatPhone(from),
-          to && numbers.filter((n) => n.status === "active").length > 1 && t("toNumber", { number: formatPhone(to) }),
+          to && activeNumbersByAge(numbers).length > 1 && t("toNumber", { number: formatPhone(to) }),
           t("textCount", { count: texts.length }),
           t("billed", { amount: formatCents(billed, locale) }),
         ]

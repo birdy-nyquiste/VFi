@@ -7,7 +7,7 @@ import { UserError } from "@/lib/errors";
 import { outcomeColumns, stored } from "@/lib/stored-text";
 import { normalizeLineBreaks } from "@/lib/text";
 import { toE164US } from "@/lib/format";
-import { defaultCallerNumber } from "@/lib/caller-number";
+import { defaultCallerNumber } from "@/lib/phone-numbers";
 import { isUuid } from "@/lib/uuid";
 import { hasSpendableBalance } from "@/server/billing/ledger";
 import { getUserAgent, MAX_CALL_GOAL_LENGTH } from "@/server/agents";
