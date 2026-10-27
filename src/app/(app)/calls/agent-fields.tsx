@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useState, type ReactNode } from "react";
 import { Field, inputClass } from "@/components/ui";
 import { MAX_VARIABLE_VALUE_LENGTH } from "@/lib/agent-settings";
+import { Counted } from "@/components/counted";
 
 export interface CallAgent {
   id: string;
@@ -79,7 +80,7 @@ export function AgentFields({
       </div>
       {ask.map((v) => (
         <Field key={`${agentId}:${v.key}`} label={`{{${v.key}}}`} hint={v.value ? t("variableDefault", { value: v.value }) : undefined}>
-          <input name={`var.${v.key}`} maxLength={MAX_VARIABLE_VALUE_LENGTH} placeholder={v.value} className={inputClass} />
+          <Counted><input name={`var.${v.key}`} maxLength={MAX_VARIABLE_VALUE_LENGTH} placeholder={v.value} className={inputClass} /></Counted>
         </Field>
       ))}
       {after}

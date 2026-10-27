@@ -17,6 +17,7 @@ import { ModelRow } from "./model-row";
 import { ResultsSection } from "./results-section";
 import { ScriptFields } from "./script-fields";
 import { VoiceFields } from "./voice-fields";
+import { Counted } from "@/components/counted";
 
 /**
  * The agent's settings, in setup order: who answers and how it sounds, what it says, how it handles
@@ -104,7 +105,7 @@ export function AgentForm({
       <Section title={t("sectionIdentity")} description={t("sectionIdentityHint")}>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label={tc("name")}>
-            <input name="name" required maxLength={80} defaultValue={agent?.name ?? templateName} placeholder={t("namePlaceholder")} className={inputClass} />
+            <Counted><input name="name" required maxLength={80} defaultValue={agent?.name ?? templateName} placeholder={t("namePlaceholder")} className={inputClass} /></Counted>
           </Field>
           <Field label={t("language")} hint={t("languageHint")}>
             <select name="language" defaultValue={initial?.language ?? "en"} className={inputClass}>
@@ -195,13 +196,15 @@ export function AgentForm({
           <span className="font-medium">{sttModelName(config.telnyx.sttModel)}</span>
         </ModelRow>
         <Field label={t("keyTerms")} hint={t("keyTermsHint")}>
-          <input
-            name="keyTerms"
-            maxLength={MAX_KEY_TERMS_LENGTH}
-            defaultValue={behavior.keyTerms}
-            placeholder={t("keyTermsPlaceholder")}
-            className={inputClass}
-          />
+          <Counted>
+            <input
+              name="keyTerms"
+              maxLength={MAX_KEY_TERMS_LENGTH}
+              defaultValue={behavior.keyTerms}
+              placeholder={t("keyTermsPlaceholder")}
+              className={inputClass}
+            />
+          </Counted>
         </Field>
       </Section>
 

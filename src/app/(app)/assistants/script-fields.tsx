@@ -13,6 +13,7 @@ import {
   variableKeyProblem,
   type AgentVariable,
 } from "@/lib/agent-settings";
+import { Counted } from "@/components/counted";
 
 type Row = AgentVariable & { id: number };
 type TextField = HTMLInputElement | HTMLTextAreaElement;
@@ -66,40 +67,44 @@ export function ScriptFields({
     <>
       <div className="space-y-1.5">
         <LabelRow htmlFor={ids.greeting} label={t("greeting")} insert={<InsertVariable names={names} target={greetingRef} />} />
-        <input
-          id={ids.greeting}
-          ref={greetingRef}
-          name="greeting"
-          required
-          maxLength={500}
-          defaultValue={greeting}
-          onInput={(e) => {
-            const value = e.currentTarget.value;
-            setTexts((x) => ({ ...x, greeting: value }));
-          }}
-          placeholder={t("greetingPlaceholder")}
-          className={inputClass}
-        />
+        <Counted>
+          <input
+            id={ids.greeting}
+            ref={greetingRef}
+            name="greeting"
+            required
+            maxLength={500}
+            defaultValue={greeting}
+            onInput={(e) => {
+              const value = e.currentTarget.value;
+              setTexts((x) => ({ ...x, greeting: value }));
+            }}
+            placeholder={t("greetingPlaceholder")}
+            className={inputClass}
+          />
+        </Counted>
         <span className="block text-xs text-stone-500">{greetingHint}</span>
       </div>
 
       <div className="space-y-1.5">
         <LabelRow htmlFor={ids.instructions} label={t("instructions")} insert={<InsertVariable names={names} target={instructionsRef} />} />
-        <textarea
-          id={ids.instructions}
-          ref={instructionsRef}
-          name="instructions"
-          required
-          rows={10}
-          maxLength={8000}
-          defaultValue={instructions}
-          onInput={(e) => {
-            const value = e.currentTarget.value;
-            setTexts((x) => ({ ...x, instructions: value }));
-          }}
-          placeholder={t("instructionsPlaceholder")}
-          className={`${inputClass} font-mono text-xs leading-relaxed`}
-        />
+        <Counted>
+          <textarea
+            id={ids.instructions}
+            ref={instructionsRef}
+            name="instructions"
+            required
+            rows={10}
+            maxLength={8000}
+            defaultValue={instructions}
+            onInput={(e) => {
+              const value = e.currentTarget.value;
+              setTexts((x) => ({ ...x, instructions: value }));
+            }}
+            placeholder={t("instructionsPlaceholder")}
+            className={`${inputClass} font-mono text-xs leading-relaxed`}
+          />
+        </Counted>
         <span className="block text-xs text-stone-500">{t("instructionsHint")}</span>
       </div>
 
@@ -132,23 +137,27 @@ export function ScriptFields({
             </div>
             {rows.map((r) => (
               <div key={r.id} className={`grid items-center gap-2 ${VARIABLE_COLUMNS}`}>
-                <input
-                  aria-label={t("variableName")}
-                  value={r.key}
-                  onChange={(e) => update(r.id, { key: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_") })}
-                  placeholder="business_name"
-                  maxLength={MAX_VARIABLE_KEY_LENGTH}
-                  className={`${inputClass} font-mono text-xs`}
-                />
-                <input
-                  aria-label={t("variableValue")}
-                  value={r.value}
-                  onChange={(e) => update(r.id, { value: e.target.value })}
-                  placeholder={r.askPerCall ? t("variableValueOptional") : t("variableValuePlaceholder")}
-                  required={!r.askPerCall}
-                  maxLength={MAX_VARIABLE_VALUE_LENGTH}
-                  className={inputClass}
-                />
+                <Counted>
+                  <input
+                    aria-label={t("variableName")}
+                    value={r.key}
+                    onChange={(e) => update(r.id, { key: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_") })}
+                    placeholder="business_name"
+                    maxLength={MAX_VARIABLE_KEY_LENGTH}
+                    className={`${inputClass} font-mono text-xs`}
+                  />
+                </Counted>
+                <Counted>
+                  <input
+                    aria-label={t("variableValue")}
+                    value={r.value}
+                    onChange={(e) => update(r.id, { value: e.target.value })}
+                    placeholder={r.askPerCall ? t("variableValueOptional") : t("variableValuePlaceholder")}
+                    required={!r.askPerCall}
+                    maxLength={MAX_VARIABLE_VALUE_LENGTH}
+                    className={inputClass}
+                  />
+                </Counted>
                 <label className="flex items-center gap-2 text-sm text-stone-600 sm:justify-center">
                   <input
                     type="checkbox"

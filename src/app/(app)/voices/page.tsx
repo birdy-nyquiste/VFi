@@ -13,6 +13,7 @@ import { getElevenLabsKey } from "@/server/elevenlabs/keys";
 import { hasCloneSlot, listStockVoices, listUserVoices, refreshProcessingVoices } from "@/server/voices";
 import { cloneVoiceAction, deleteVoiceAction } from "./actions";
 import { SampleInput } from "./sample-input";
+import { Counted } from "@/components/counted";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getTranslations("voices"))("title") };
@@ -186,7 +187,7 @@ export default async function VoicesPage({ searchParams }: { searchParams: Promi
                 <>
                   <div className="grid gap-4 sm:grid-cols-3">
                     <Field label={tc("name")}>
-                      <input name="name" required maxLength={60} placeholder={t("namePlaceholder")} className={inputClass} />
+                      <Counted><input name="name" required maxLength={60} placeholder={t("namePlaceholder")} className={inputClass} /></Counted>
                     </Field>
                     <Field label={t("sampleLanguage")}>
                       <select name="language" className={inputClass}>

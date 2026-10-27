@@ -14,6 +14,7 @@ import { deleteConversationAction, saveContactNameAction } from "../actions";
 import { messageBody } from "../format";
 import { MarkRead } from "./mark-read";
 import { viewerTimeZone } from "@/server/time-zone";
+import { Counted } from "@/components/counted";
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ from?: string }> }): Promise<Metadata> {
   const [user, { from }, t] = await Promise.all([requireUser(), searchParams, getTranslations("messages")]);
@@ -64,14 +65,16 @@ export default async function ThreadPage({ searchParams }: { searchParams: Promi
         <label htmlFor="contact-name" className="text-sm font-medium text-stone-700">{tc("name")}</label>
         {/* inputClass is w-full, so the wrapper sets the width. */}
         <div className="w-64 max-w-full">
-          <input
-            id="contact-name"
-            name="name"
-            defaultValue={name ?? ""}
-            maxLength={MAX_CONTACT_NAME_LENGTH}
-            placeholder={t("namePlaceholder")}
-            className={inputClass}
-          />
+          <Counted>
+            <input
+              id="contact-name"
+              name="name"
+              defaultValue={name ?? ""}
+              maxLength={MAX_CONTACT_NAME_LENGTH}
+              placeholder={t("namePlaceholder")}
+              className={inputClass}
+            />
+          </Counted>
         </div>
         <SubmitButton variant="secondary">{tc("save")}</SubmitButton>
       </ActionForm>

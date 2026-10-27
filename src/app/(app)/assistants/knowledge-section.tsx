@@ -16,6 +16,7 @@ import {
   setKnowledgeModeAction,
 } from "./knowledge-actions";
 import { KnowledgeFileInput } from "./knowledge-file-input";
+import { Counted } from "@/components/counted";
 
 /** The agent's knowledge base: how it's used, its sources, and forms to add more (SPEC §8). */
 export async function KnowledgeSection({ agent }: { agent: Agent }) {
@@ -127,10 +128,10 @@ export async function KnowledgeSection({ agent }: { agent: Agent }) {
               <ActionForm action={addKnowledgeTextAction} className="mt-3 space-y-3">
                 <input type="hidden" name="agentId" value={agent.id} />
                 <Field label={t("titleLabel")}>
-                  <input name="title" required maxLength={80} className={inputClass} />
+                  <Counted><input name="title" required maxLength={80} className={inputClass} /></Counted>
                 </Field>
                 <Field label={t("textLabel")} hint={t("textHint", { max: formatNumber(config.limits.knowledgeTextChars, locale) })}>
-                  <textarea name="text" required rows={6} maxLength={config.limits.knowledgeTextChars} className={inputClass} />
+                  <Counted><textarea name="text" required rows={6} maxLength={config.limits.knowledgeTextChars} className={inputClass} /></Counted>
                 </Field>
                 <SubmitButton>{t("addFor", { price })}</SubmitButton>
               </ActionForm>
@@ -166,7 +167,7 @@ export async function KnowledgeSection({ agent }: { agent: Agent }) {
                 <ActionForm action={addKnowledgeUrlAction} className="mt-3 space-y-3">
                   <input type="hidden" name="agentId" value={agent.id} />
                   <Field label={t("urlLabel")} hint={t("urlHint", { size: formatNumber(toMegabytes(config.limits.knowledgeCrawlBytes), locale) })}>
-                    <input name="url" type="url" required placeholder="https://" className={inputClass} />
+                    <Counted><input name="url" type="url" required maxLength={2000} placeholder="https://" className={inputClass} /></Counted>
                   </Field>
                   <SubmitButton>{t("addFor", { price })}</SubmitButton>
                 </ActionForm>

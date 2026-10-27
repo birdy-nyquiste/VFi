@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { Messages } from "@/i18n/messages";
 import { cloneElement, isValidElement, useId, type ComponentProps, type ReactElement, type ReactNode } from "react";
+import { Counted } from "./counted";
 
 export function PageHeader({
   title,
@@ -136,7 +137,7 @@ export interface FieldControl {
 /**
  * A label, its control and an optional hint. The label names only the control and the hint is its
  * description, so screen readers don't read the hint (or a button beside the control) as part of the
- * name. A lone <input>, <select> or <textarea> gets the ids by itself; anything more (a control with
+ * name. A lone <input>, <select>, <textarea> or <Counted> gets the ids by itself; anything more (a control with
  * buttons beside it, a file picker component) is a function that puts `control` on the control.
  */
 export function Field({
@@ -166,7 +167,8 @@ export function Field({
 }
 
 function withControl(children: ReactNode, control: FieldControl) {
-  const isControl = isValidElement(children) && (children.type === "input" || children.type === "select" || children.type === "textarea");
+  const isControl =
+    isValidElement(children) && (children.type === "input" || children.type === "select" || children.type === "textarea" || children.type === Counted);
   return isControl ? cloneElement(children as ReactElement<FieldControl>, control) : children;
 }
 
