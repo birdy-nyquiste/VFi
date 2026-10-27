@@ -128,6 +128,9 @@ describe("saving an agent's call results", () => {
     const group = mockInsights.groups.get(row.insightGroupId!)!;
     expect(group.spec.fields?.schema).toEqual(fieldsJsonSchema([name, urgent]));
     expect(group.spec.summaryInstructions).toContain("Write in English");
+    // Names can't tell anyone's gender; neither the summary nor the fields may guess it.
+    expect(group.spec.summaryInstructions).toContain("never assume anyone's gender");
+    expect(group.spec.fields?.instructions).toContain("never assume anyone's gender");
 
     // Same group and insights after an edit; no fields means no fields insight.
     await updateAgent(u.id, a.id, { ...input, language: "zh", voice: "stock:Telnyx.Ultra.7a5d4663-88ae-47b7-808e-8f9b9ee4127b", results: results([]) });

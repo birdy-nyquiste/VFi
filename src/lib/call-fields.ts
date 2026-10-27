@@ -90,18 +90,22 @@ export function fieldsJsonSchema(fields: CallField[]): Record<string, unknown> {
 
 const LANGUAGE_NAME: Record<Language, string> = { en: "English", zh: "Simplified Chinese (Mandarin)" };
 
+/** Names can't tell anyone's gender, so results never guess it (a summary said "he" for a caller named Chen Li). */
+const NO_GENDER = "Refer to people by name or role (the caller, the assistant); never assume anyone's gender or use gendered pronouns.";
+
 export function summaryInstructions(language: Language): string {
   return (
     "Summarize this phone call for the business that owns the assistant, in 2 to 4 sentences: who called or was called, " +
     "what they wanted, what was agreed or promised, and any follow-up the team needs to do. Include names, companies, " +
-    `phone numbers, email addresses, dates and times exactly as given. Write in ${LANGUAGE_NAME[language]}.`
+    `phone numbers, email addresses, dates and times exactly as given. ${NO_GENDER} Write in ${LANGUAGE_NAME[language]}.`
   );
 }
 
 export function fieldsInstructions(language: Language): string {
   return (
     "Fill in each field from this phone call, following its description. Use null for anything the call didn't cover; " +
-    `never guess. For text fields, be brief and write in ${LANGUAGE_NAME[language]}. For "one of" fields, pick exactly one of the allowed values.`
+    `never guess. For text fields, be brief and write in ${LANGUAGE_NAME[language]}. For "one of" fields, pick exactly one of the allowed values. ` +
+    NO_GENDER
   );
 }
 
