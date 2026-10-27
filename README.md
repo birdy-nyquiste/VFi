@@ -1,6 +1,6 @@
 # VFi
 
-VFi (vfi.airppp.com) is the phone service of AirPPP by Nyquiste: a US phone number plus AI Assistants that answer and place calls for a business. A thin web app over Telnyx (numbers, voices, AI Assistants, Call Control) with prepaid billing through Stripe. See [SPEC.md](SPEC.md) for product decisions (§16 lists the MVP decisions).
+VFi (vfi.airppp.com) is the phone service of AirPPP by Nyquiste: a US phone number plus AI Assistants that answer and place calls for a business. A thin web app over Telnyx (numbers, voices, AI Assistants, Call Control) with prepaid billing through Stripe. See [SPEC.md](SPEC.md) for product rules and decisions (§11 is the decision log).
 
 ## Run locally
 
@@ -34,7 +34,7 @@ CI (`.github/workflows/ci.yml`) runs typecheck, lint, the tests against a Postgr
 
 1. In the Telnyx portal, create an **Outbound Voice Profile** and a **Call Control Application**. Set the app's webhook URL to `https://<host>/api/webhooks/telnyx` and **webhook API version to "2"**. Link the outbound profile to the app, and enable **"call cost in webhooks"** (`call_cost_in_webhooks`) so each call's Telnyx cost is recorded for reconciliation. Allow only US destinations on the outbound profile (`whitelisted_destinations: ["US"]`): users pay one flat per-minute price, so a call elsewhere could cost the platform more than it charges. The app also refuses Canadian, Caribbean and premium-rate numbers (and doesn't sell toll-free ones), but the profile is the safeguard that covers everything.
 2. Copy the API key, the app id (`TELNYX_CONNECTION_ID`) and the webhook **public key** (`TELNYX_PUBLIC_KEY`) into `.env.local`, and set `TELNYX_MODE=live`.
-3. Optional, to receive texts: create a **Messaging Profile** with webhook URL `https://<host>/api/webhooks/telnyx` and API version 2, and set `TELNYX_MESSAGING_PROFILE_ID`. Texting is **receive only** (SPEC §17). We never send, so no 10DLC registration is needed. Numbers are put on the profile when they activate. Numbers bought earlier are added by the daily cron. Never enable `messaging` on the assistants: they would start replying to texts.
+3. Optional, to receive texts: create a **Messaging Profile** with webhook URL `https://<host>/api/webhooks/telnyx` and API version 2, and set `TELNYX_MESSAGING_PROFILE_ID`. Texting is **receive only** (SPEC §7). We never send, so no 10DLC registration is needed. Numbers are put on the profile when they activate. Numbers bought earlier are added by the daily cron. Never enable `messaging` on the assistants: they would start replying to texts.
 4. Optional: call summaries come from the "Default" Insight Group that Telnyx gives every assistant (its Summary insight). To use your own summary instructions instead, create an Insight Group with a summary insight and set `TELNYX_INSIGHT_GROUP_ID`.
 5. For local development, expose your dev server with `ngrok http 3000` and set `APP_URL` and the Telnyx webhook URL to the ngrok host.
 
@@ -43,7 +43,7 @@ API details and open questions are in [docs/telnyx-api-notes.md](docs/telnyx-api
 ## Models
 
 `TELNYX_LLM_MODEL` (default `zai-org/GLM-5.2`) is the language model for agents left on the default. Users can
-pick another model per agent from a curated list of five (`OFFERED_MODEL_IDS` in `src/server/telnyx/models.ts`; SPEC §16). Speech-to-text is set for
+pick another model per agent from a curated list of five (`OFFERED_MODEL_IDS` in `src/server/telnyx/models.ts`; SPEC §5.5). Speech-to-text is set for
 the whole platform, never per user: `TELNYX_STT_MODEL` (default `assemblyai/universal-3-5-pro`) and
 `TELNYX_STT_LANGUAGE` (default `auto`). Voices are picked per agent from the Telnyx catalog (see
 `src/server/telnyx/stock-voices.ts`). Each agent records which settings it was synced with. After you change these

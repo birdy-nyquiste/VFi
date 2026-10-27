@@ -127,7 +127,7 @@ async function resolveModel(model: string | null): Promise<string | null> {
   return model;
 }
 
-/** The greeting sent to the provider always starts with the recording notice (SPEC §16). */
+/** The greeting sent to the provider always starts with the recording notice (SPEC §6.3). */
 export function providerGreeting(language: Language, greeting: string): string {
   const notice = RECORDING_NOTICE[language];
   return greeting.includes(notice) ? greeting : `${notice} ${greeting}`;
@@ -148,7 +148,7 @@ async function voiceApiKeyRef(a: Pick<Agent, "userId" | "voiceRef">): Promise<st
   return k.ref;
 }
 
-/** What deleting clears at once: nothing from the source stays with us (SPEC §18.2). */
+/** What deleting clears at once: nothing from the source stays with us (SPEC §8.2). */
 export const DELETED_SOURCE = {
   status: "deleting",
   name: null,
@@ -159,7 +159,7 @@ export const DELETED_SOURCE = {
   failureMsg: null,
 } as const;
 
-/** Appended when the agent searches its knowledge base on calls (SPEC §18.2). */
+/** Appended when the agent searches its knowledge base on calls (SPEC §8.2). */
 export const KNOWLEDGE_RULES: Record<Exclude<KnowledgeMode, "off">, string> = {
   reference:
     "You can search a knowledge base with your owner's reference material. Prefer it for factual questions. " +
@@ -322,7 +322,7 @@ async function pushLatest(a: Agent, withKnowledge = true): Promise<Agent | null>
 /**
  * Re-push an agent after its knowledge base changed (mode, bucket, deletions), or to catch up a stale
  * one. Never records a failure: on failure the provider keeps the previous assistant and the
- * fingerprint stays stale, so it is retried later (SPEC §18.3). Returns whether it was pushed.
+ * fingerprint stays stale, so it is retried later (SPEC §8.4). Returns whether it was pushed.
  */
 export async function syncAgentQuietly(a: Agent): Promise<boolean> {
   try {
@@ -471,7 +471,7 @@ async function deleteAssistantQuietly(agentId: string, assistantId: string): Pro
 
 /**
  * Deleted agents whose assistant couldn't be deleted at the provider (they keep its id): try again,
- * so the agent's script doesn't stay there (SPEC §18.6). Run by the daily job.
+ * so the agent's script doesn't stay there (SPEC §8.5). Run by the daily job.
  */
 export async function deleteLeftoverAssistants(): Promise<number> {
   const leftover = await db
@@ -492,7 +492,7 @@ export async function deleteLeftoverAssistants(): Promise<number> {
 export async function deleteAgent(userId: string, agentId: string): Promise<void> {
   const a = await getUserAgent(userId, agentId);
   if (!a) throw new UserError("agentNotFound");
-  // The deletion goes ahead either way (SPEC §18.3). The assistant's id is kept if its delete failed,
+  // The deletion goes ahead either way (SPEC §8.5). The assistant's id is kept if its delete failed,
   // for deleteLeftoverAssistants() to retry, and so is an id a push stored after we read the row.
   const deletedId = a.providerAssistantId && (await deleteAssistantQuietly(a.id, a.providerAssistantId)) ? a.providerAssistantId : null;
   await db.transaction(async (tx) => {
@@ -502,7 +502,7 @@ export async function deleteAgent(userId: string, agentId: string): Promise<void
       .set({ deletedAt: new Date(), ...(deletedId ? { providerAssistantId: sql`nullif(${agents.providerAssistantId}, ${deletedId})` } : {}) })
       .where(eq(agents.id, a.id));
     // The knowledge base goes with the agent, permanently: clear what we hold now; the provider copy is
-    // removed by cleanUpKnowledge() (SPEC §18.3). Whatever the feature flag says, but only where the
+    // removed by cleanUpKnowledge() (SPEC §8.5). Whatever the feature flag says, but only where the
     // tables exist (previews run before the production migration).
     const [{ exists }] = (await tx.execute(sql`select to_regclass('public.knowledge_sources') is not null as exists`)) as unknown as {
       exists: boolean;

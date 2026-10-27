@@ -364,7 +364,7 @@ async function onRecordingSaved(e: CallEvent) {
   if (ref) await voiceProvider().purgeCallData(ref);
 }
 
-/** Provider cost for reconciliation (SPEC §8: provider usage is recorded apart from user charges). */
+/** Provider cost for reconciliation (SPEC §2.4: provider usage is recorded apart from user charges). */
 async function onCallCost(e: CallEvent) {
   const call = await findCall(e);
   const usd = Number(e.totalCostUsd);

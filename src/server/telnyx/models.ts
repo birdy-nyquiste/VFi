@@ -16,7 +16,7 @@ const BRING_YOUR_OWN_KEY = ["google/"];
 /**
  * The models we offer, in display order: the five that did best on accuracy, Knowledge Base search
  * and latency when all 15 catalog models ran the same Front Desk test set (2026-10-26; see
- * docs/telnyx-api-notes.md §13). A listed model still has to pass the catalog checks below.
+ * docs/telnyx-api-notes.md §8). A listed model still has to pass the catalog checks below.
  */
 export const OFFERED_MODEL_IDS = [
   "zai-org/GLM-5.2",

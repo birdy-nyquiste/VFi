@@ -220,7 +220,7 @@ export function createTelnyxProvider(cfg: TelnyxConfig): VoiceProvider {
 
   /**
    * Per-file statuses aren't enumerated in the docs. In the portal spike the status stayed blank for
-   * files that were embedded (docs/telnyx-api-notes.md §15), so only explicit progress words mean
+   * files that were embedded (docs/telnyx-api-notes.md §13), so only explicit progress words mean
    * "still processing"; a file that is listed with any other status is done.
    */
   function toEmbeddingStatus(status: string | undefined): EmbeddingStatus {
@@ -251,7 +251,7 @@ export function createTelnyxProvider(cfg: TelnyxConfig): VoiceProvider {
         // with exact matches; with it, it tops up with numbers from nearby area codes.
         "filter[best_effort]": "true",
       });
-      // New numbers receive texts (SPEC §17.3), which a voice-only number never could.
+      // New numbers receive texts (SPEC §7), which a voice-only number never could.
       if (cfg.messagingProfileId) q.append("filter[features][]", "sms");
       if (areaCode) q.set("filter[national_destination_code]", areaCode);
       let res: { data: { phone_number: string; best_effort?: boolean; region_information?: { region_type: string; region_name: string }[] }[] };

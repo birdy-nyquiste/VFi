@@ -65,7 +65,7 @@ export const config = {
     publicKey: process.env.TELNYX_PUBLIC_KEY ?? "",
     connectionId: process.env.TELNYX_CONNECTION_ID ?? "",
     /**
-     * Platform-fixed model choices (SPEC §16). Pinned so a change to Telnyx's own
+     * Platform-fixed model choices (SPEC §5.5). Pinned so a change to Telnyx's own
      * defaults can't silently change agent behaviour. Empty env values fall back too.
      * STT: deepgram/nova-3 in "auto" mode transcribed Mandarin as English words in a
      * live test; AssemblyAI handled English, Mandarin and mixed speech.
@@ -99,7 +99,7 @@ export const config = {
      * an unregistered (non-10DLC) carrier fee of ~$0.012; 2¢ stays above the worst case.
      */
     smsInboundPerPartCents: intEnv("PRICE_SMS_INBOUND_PER_PART_CENTS", 2),
-    /** One-time charge per knowledge-base source, any type (SPEC §18.2). Embedding a typical source costs Telnyx cents. */
+    /** One-time charge per knowledge-base source, any type (SPEC §8.2). Embedding a typical source costs Telnyx cents. */
     knowledgeSourceCents: intEnv("PRICE_KNOWLEDGE_SOURCE_CENTS", 100),
     /** Stripe won't charge less than $0.50. */
     minTopupCents: intEnv("MIN_TOPUP_CENTS", 1000, 50),
@@ -130,19 +130,19 @@ export const config = {
       return v ? v === "on" : config.elevenlabs.mode !== "live" || Boolean(process.env.SECRETS_KEY);
     },
     /**
-     * Receiving texts (never sending: no 10DLC registration; SPEC §17). Live mode needs a messaging profile.
+     * Receiving texts (never sending: no 10DLC registration; SPEC §7). Live mode needs a messaging profile.
      */
     get inboundSms() {
       return config.telnyx.mode !== "live" || Boolean(config.telnyx.messagingProfileId);
     },
-    /** Per-agent knowledge bases (SPEC §18). Off by default in live mode. KNOWLEDGE_BASE=on|off. */
+    /** Per-agent knowledge bases (SPEC §8). Off by default in live mode. KNOWLEDGE_BASE=on|off. */
     get knowledgeBase() {
       const v = process.env.KNOWLEDGE_BASE;
       return v ? v === "on" : config.telnyx.mode !== "live";
     },
     /**
      * Website URLs as knowledge sources. A Telnyx crawl can't be limited or cancelled, so this stays
-     * off in live mode until Telnyx confirms a crawl has a ceiling (SPEC §18.4). KNOWLEDGE_BASE_URLS=on|off.
+     * off in live mode until Telnyx confirms a crawl has a ceiling (SPEC §8.7). KNOWLEDGE_BASE_URLS=on|off.
      */
     get knowledgeUrls() {
       const v = process.env.KNOWLEDGE_BASE_URLS;
@@ -158,7 +158,7 @@ export const config = {
     // leave headroom for the other form fields and multipart overhead.
     cloneSampleBytes: 4.4 * 1024 * 1024,
     concurrentCalls: 1,
-    /** Knowledge sources per user, across all agents (SPEC §18.2). */
+    /** Knowledge sources per user, across all agents (SPEC §8.2). */
     knowledgeSources: 5,
     /** Sources a user can add in any 24 hours; deleting one doesn't give it back. */
     knowledgeAddsPerDay: 5,
@@ -173,7 +173,7 @@ export const config = {
     knowledgeCrawlBytes: 4 * 1024 * 1024,
     /**
      * A crawl is taken to be finished once nothing has been written for this long: Telnyx never says
-     * when one ends, and a live crawl wrote again after 10+ quiet minutes (docs/telnyx-api-notes.md §17).
+     * when one ends, and a live crawl wrote again after 10+ quiet minutes (docs/telnyx-api-notes.md §13).
      */
     get knowledgeCrawlQuietMs() {
       return config.telnyx.mode === "live" ? 60 * 60 * 1000 : 5000;

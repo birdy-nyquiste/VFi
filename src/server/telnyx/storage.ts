@@ -5,7 +5,7 @@ import type { StoredObject } from "./types";
  * Telnyx Cloud Storage (S3-compatible) for knowledge buckets. Requests carry an AWS SigV4
  * Authorization header with the Telnyx API key as the access key id; Telnyx ignores the signature,
  * but we sign properly so the header is well-formed. Never presign with this: a presigned URL would
- * carry the API key (docs/telnyx-api-notes.md §15).
+ * carry the API key (docs/telnyx-api-notes.md §13).
  */
 
 export const STORAGE_REGION = "us-central-1";

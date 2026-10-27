@@ -10,7 +10,7 @@ import { voiceProvider, type InboundMessageEvent } from "./telnyx";
 import { withWebhookDedupe } from "./webhooks";
 
 /**
- * Receive-only texting (SPEC §17). Texts are stored and billed per segment; nothing is ever sent,
+ * Receive-only texting (SPEC §7). Texts are stored and billed per segment; nothing is ever sent,
  * so no 10DLC registration is needed.
  */
 

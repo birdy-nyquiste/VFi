@@ -1,447 +1,412 @@
-# Telnyx v2 API notes (VFi)
+# Telnyx API notes
 
-Researched 2026-10-07. Sources: developers.telnyx.com pages (URLs per section) and the consolidated
-OpenAPI spec that the docs index links to
-(`https://raw.githubusercontent.com/team-telnyx/openapi/master/openapi/spec3.json`), plus the docs'
-webhook catalog `https://developers.telnyx.com/data/webhook-events.json`.
+What we know about the Telnyx v2 API as VFi uses it: endpoints, field shapes, limits, and behavior we found by testing.
+Product rules are in [SPEC.md](../SPEC.md); this file only records facts about Telnyx. Last reorganized 2026-10-27,
+by topic. The earlier date-ordered version is in git history, and [Appendix A](#appendix-a-old-section-numbers)
+maps its section numbers.
 
-Conventions: base URL `https://api.telnyx.com/v2`, auth `Authorization: Bearer <TELNYX_API_KEY>`.
-Most responses are wrapped in `{ "data": ... }`. **AI Assistant endpoints are the exception: they
-return the assistant object unwrapped.** List filters use deepObject style: `filter[x]=...`,
-`page[number]`, `page[size]`. Items marked **UNCONFIRMED** were not verified in an official source.
+## How to use this file
+
+- Find the topic in the contents below. Each fact carries how we know it:
+
+  | Tag | Meaning |
+  | --- | --- |
+  | **Live YYYY-MM-DD** | Tested against the platform account on that date. Trust it over the docs. |
+  | **Docs** | From Telnyx documentation or the OpenAPI spec only. |
+  | **UNCONFIRMED** | Believed but not verified. Check before relying on it. |
+
+  Facts without a tag in a section inherit the tag in the section's first line.
+- **Sources:** developers.telnyx.com pages (linked per section); the OpenAPI spec
+  `https://raw.githubusercontent.com/team-telnyx/openapi/master/openapi/spec3.json`; the webhook catalog
+  `https://developers.telnyx.com/data/webhook-events.json`; the LLM-friendly bundles
+  `https://developers.telnyx.com/public/llms/ai/assistants-full.txt` and `.../calling/webrtc-full.txt`; and
+  `https://telnyx.com/pricing.md`.
+- **Testing rules:** probes use throwaway resources named `vfi-probe-*` or similar, never a user's, and delete them
+  afterwards (Assistants with `?hard_delete=true`). Anything that costs money (a real call, buying a number) needs
+  the product owner's OK first.
+- **Adding a fact:** put it in its topic section with a tag. Don't add dated sections.
+
+## Contents
+
+1. [Conventions](#1-conventions)
+2. [Phone numbers](#2-phone-numbers)
+3. [Call Control application](#3-call-control-application)
+4. [Call commands](#4-call-commands)
+5. [Webhooks and signatures](#5-webhooks-and-signatures)
+6. [Call cost and recordings](#6-call-cost-and-recordings)
+7. [AI Assistants](#7-ai-assistants)
+8. [Models](#8-models)
+9. [Variables](#9-variables)
+10. [Conversations, transcripts and insights](#10-conversations-transcripts-and-insights)
+11. [Voices, previews and cloning](#11-voices-previews-and-cloning)
+12. [Messaging](#12-messaging)
+13. [Knowledge bases: buckets, embeddings, crawls](#13-knowledge-bases-buckets-embeddings-crawls)
+14. [Assistant versions and routing rules](#14-assistant-versions-and-routing-rules)
+15. [Testing without calls: chat, AI Tests, browser calls](#15-testing-without-calls-chat-ai-tests-browser-calls)
+16. [Pronunciation dictionaries and recognition prompts](#16-pronunciation-dictionaries-and-recognition-prompts)
+17. [Unconfirmed items](#17-unconfirmed-items)
+
+### What VFi calls
+
+Methods are on the live adapter, `src/server/telnyx/live.ts`, unless another file is named.
+
+| Purpose | Endpoint | Code |
+| --- | --- | --- |
+| Search numbers | `GET /available_phone_numbers` | `searchNumbers` |
+| Buy a number | `POST /number_orders`, then `GET /number_orders/{id}` | `orderNumber`, `getNumberOrder` |
+| Find / release a number | `GET /phone_numbers?filter[phone_number]=`, `DELETE /phone_numbers/{id}` | `getNumberOrder`, `releaseNumber` |
+| Receive texts on a number | `PATCH /messaging_phone_numbers/{e164}` | `enableInboundMessaging` |
+| Place a call | `POST /calls` | `dial` |
+| Answer / reject / hang up | `POST /calls/{id}/actions/answer`, `…/reject`, `…/hangup` | `answer`, `reject`, `hangup` |
+| Start the Assistant on an answered outbound call | `POST /calls/{id}/actions/ai_assistant_start` | `startAssistant` |
+| Create / update / delete an Assistant | `POST /ai/assistants`, `POST /ai/assistants/{id}`, `DELETE …?hard_delete=true` | `createAssistant`, `updateAssistant`, `deleteAssistant` |
+| Offered models | `GET /ai/models` | `listModels`; filtering in `models.ts` |
+| Voices, preview, clones | `GET /text-to-speech/voices`, `POST /text-to-speech/speech`, `/voice_clones…` | `listStockVoices`, `synthesizePreview`, `cloneVoice`, `getClonedVoice`, `deleteClonedVoice`, `getCloneSample` |
+| ElevenLabs key | `POST` / `DELETE /integration_secrets` | `createIntegrationSecret`, `deleteIntegrationSecret` |
+| Transcript and summary | `GET /ai/conversations?…`, `…/{id}/messages`, `…/{id}/conversations-insights` | `getCallResults` |
+| Recording link, retention | `GET` / `DELETE /recordings…`, `DELETE /ai/conversations/{id}` | `getRecordingUrl`, `purgeCallData` |
+| Knowledge base | S3-compatible storage, `POST /ai/embeddings`, `POST /ai/embeddings/url`, `GET` / `DELETE /ai/embeddings/buckets/{name}` | `storage.ts`; `enableEmbedding`, `embeddingStatuses`, `crawlUrl`, `deleteBucket` |
 
 ---
 
-## 1. Available number search
+## 1. Conventions
 
-`GET /v2/available_phone_numbers`
-Doc: https://developers.telnyx.com/api-reference/phone-number-search/list-available-phone-numbers
+**Docs.**
 
-Query filters (all `filter[...]`):
-- `filter[country_code]=US`
-- `filter[phone_number_type]=local` (enum `local|toll_free|mobile|national|shared_cost`)
-- `filter[national_destination_code]=415` (area code filter for US)
-- `filter[locality]` (city), `filter[administrative_area]` (US state), `filter[rate_center]` (US/CA only)
-- `filter[phone_number][starts_with|ends_with|contains]`
-- `filter[features][]=voice` (values incl. `sms`, `mms`, `voice`, `fax`, `emergency`, `hd_voice`, ...)
-- `filter[limit]`, `filter[best_effort]` (US/CA), `filter[quickship]`, `filter[reservable]`,
-  `filter[exclude_held_numbers]`
+- Base URL `https://api.telnyx.com/v2`; auth header `Authorization: Bearer <TELNYX_API_KEY>`.
+- Most responses are wrapped in `{ "data": ... }`. **AI Assistant endpoints are the exception:** they return the
+  Assistant object unwrapped. The TTS voice list is also unwrapped (§11).
+- List filters use deepObject style: `filter[x]=...`, `page[number]`, `page[size]`. AI conversation lists use
+  PostgREST syntax instead (§10).
+- Some page sizes are capped: conversation messages reject `page[size]` over 100 with error `10015` (**Live**).
 
-Response: `data[]`, `meta`, `metadata` (`meta`/`metadata` both have `total_results`, `best_effort_results`).
-Each item: `record_type` (`available_phone_number`), `phone_number` (E.164), `vanity_format`,
-`best_effort` (true = not an exact match on your criteria), `quickship`, `reservable`,
-`region_information[] {region_type, region_name}`, `cost_information {upfront_cost, monthly_cost, currency}`,
-`features[] {name}`.
+## 2. Phone numbers
 
-Only numbers previously returned by a search can be ordered (number-orders guide).
+### Search: `GET /v2/available_phone_numbers`
 
-## 2. Number orders
+**Docs.** https://developers.telnyx.com/api-reference/phone-number-search/list-available-phone-numbers
 
-### Create: `POST /v2/number_orders`
-Doc: https://developers.telnyx.com/api-reference/phone-number-orders/create-a-number-order
+- Filters: `filter[country_code]=US`, `filter[phone_number_type]=local`
+  (`local|toll_free|mobile|national|shared_cost`), `filter[national_destination_code]=415` (US area code),
+  `filter[locality]`, `filter[administrative_area]` (US state), `filter[rate_center]` (US/CA),
+  `filter[phone_number][starts_with|ends_with|contains]`, `filter[features][]=voice` (also `sms`, `mms`, `fax`,
+  `emergency`, `hd_voice`, …), `filter[limit]`, `filter[best_effort]` (US/CA), `filter[quickship]`,
+  `filter[reservable]`, `filter[exclude_held_numbers]`.
+- Response `data[]`: `phone_number` (E.164), `vanity_format`, `best_effort` (true = not an exact match, e.g. a nearby
+  area code), `quickship`, `reservable`, `region_information[] {region_type, region_name}`,
+  `cost_information {upfront_cost, monthly_cost, currency}`, `features[] {name}`. `meta`/`metadata` carry
+  `total_results` and `best_effort_results`.
+- Only numbers returned by a search can be ordered.
+- **Live 2026-10-07:** US local results had region types `country_code`, `location`, `rate_center`, `state`, and
+  `monthly_cost` `"1.00000"` USD for 415 numbers.
+
+### Order: `POST /v2/number_orders`
+
+**Docs.** https://developers.telnyx.com/api-reference/phone-number-orders/create-a-number-order
+
 ```json
 { "phone_numbers": [{ "phone_number": "+14155550100" }],
   "connection_id": "<call control app id>",
+  "messaging_profile_id": "<profile id>",
   "customer_reference": "user_123" }
 ```
+
 - `phone_numbers[]` items: `phone_number` (required), `requirement_group_id`, `bundle_id`.
-- Order-level only (no per-number variant): `connection_id`, `messaging_profile_id`, `billing_group_id`,
-  `customer_reference`. **Setting `connection_id` here attaches all ordered numbers to the Call
-  Control app at order time.**
-- Requirement groups are needed "in some countries". Whether US local needs one: **UNCONFIRMED**
-  (believed not required; check `requirements_met` in the response).
+- Order-level only: `connection_id` (attaches the numbers to the Call Control app at order time),
+  `messaging_profile_id`, `billing_group_id`, `customer_reference`.
+- Whether US local numbers need a requirement group: **UNCONFIRMED** (believed not; check `requirements_met`).
+- `GET /v2/number_orders/{id}` (and the list) returns `id`, `phone_numbers_count`, `connection_id`,
+  `messaging_profile_id`, `phone_numbers[]`, `sub_number_orders_ids[]`, `status`, `customer_reference`,
+  `requirements_met`, timestamps.
+  - Order `status`: `pending | success | failure` (the guide also lists `cancelled`, `deleted`).
+  - `phone_numbers[]` item: `id` (the **order item** id, not the number's id), `phone_number`, `status`,
+    `requirements_met`, `requirements_status`, `phone_number_type`, `country_code`, `regulatory_requirements[]`.
+- Webhook `number_order.complete` (payload = the order; `status` can still be `pending` or `failure`) is configured
+  in the portal's account notification settings; there is no `webhook_url` on the order. We poll the order instead.
 
-### Get: `GET /v2/number_orders/{number_order_id}`
-Doc: https://developers.telnyx.com/api-reference/phone-number-orders/retrieve-a-number-order
-Also list: `GET /v2/number_orders`.
+### Number resource: `/v2/phone_numbers`
 
-Response `data`: `id` (uuid), `record_type`, `phone_numbers_count`, `connection_id`,
-`messaging_profile_id`, `billing_group_id`, `phone_numbers[]`, `sub_number_orders_ids[]`,
-`status`, `customer_reference`, `created_at`, `updated_at`, `requirements_met`.
-- Order `status` enum (spec): `pending | success | failure`. The guide also lists `cancelled`, `deleted`.
-- `phone_numbers[]` item: `id` (uuid, the order-item id, **not** the phone number resource id),
-  `phone_number`, `status` (`pending|success|failure`), `requirements_met`, `requirements_status`
-  (`pending|approved|cancelled|deleted|requirement-info-exception|requirement-info-pending|requirement-info-under-review`),
-  `phone_number_type`, `country_code`, `country_iso_alpha2`, `regulatory_requirements[]`, `bundle_id`.
+**Docs.** https://developers.telnyx.com/api-reference/phone-number-configurations/list-phone-numbers
 
-### Webhook
-Doc: https://developers.telnyx.com/api-reference/callbacks/number-order-status-update
-- Only event type in the spec: `number_order.complete`; `data.payload` = the number order object
-  above (check `payload.status`, it can still be `pending`/`failure`).
-- Where the URL is configured: account "Number Order Notifications" notification setting in the
-  portal (guide: https://developers.telnyx.com/docs/numbers/phone-numbers/number-orders). There is
-  **no `webhook_url` field on the order request**. Simplest: poll `GET /v2/number_orders/{id}`.
+- `GET /v2/phone_numbers` filters: `filter[phone_number]` (min 3 digits), `filter[status]`,
+  `filter[connection_id]`, `filter[customer_reference]`, `filter[tag]`, `filter[number_type][eq]`; paged (default
+  20).
+- `{id}` is a numeric string (e.g. `"1293384261075731499"`). Get it with `filter[phone_number]=+1415…` after the
+  order completes.
+- `PATCH /v2/phone_numbers/{id}`: `connection_id`, `tags`, `customer_reference`, `billing_group_id`,
+  `external_pin`, `hd_voice_enabled`, `address_id`.
+- `DELETE /v2/phone_numbers/{id}` releases the number; fails if `deletion_lock_enabled`.
+- Response fields include `id`, `phone_number`, `status`, `connection_id`, `connection_name`, `customer_reference`,
+  `tags`, `phone_number_type`, `purchased_at`, `activated_at`, `deletion_lock_enabled`, `billing_group_id`,
+  `messaging_profile_id`, `emergency_enabled`.
+- `status`: `purchase-pending | purchase-failed | port-pending | port-failed | active | deleted | emergency-only |
+  ported-out | port-out-pending | requirement-info-pending | requirement-info-under-review |
+  requirement-info-exception | provision-pending`.
 
-## 3. Phone numbers
+## 3. Call Control application
 
-Docs: https://developers.telnyx.com/api-reference/phone-number-configurations/list-phone-numbers ,
-.../retrieve-a-phone-number , .../update-a-phone-number , .../delete-a-phone-number
+**Docs.** https://developers.telnyx.com/api-reference/call-control-applications/create-a-call-control-application
 
-- `GET /v2/phone_numbers` with filters `filter[phone_number]` (min 3 digits), `filter[status]`,
-  `filter[connection_id]`, `filter[customer_reference]`, `filter[tag]`,
-  `filter[number_type][eq]`, `page[number]`, `page[size]` (default 20), `sort`.
-- `GET /v2/phone_numbers/{id}`. `{id}` is the phone number resource id, a numeric string such as
-  `"1293384261075731499"`. Get it via `GET /v2/phone_numbers?filter[phone_number]=+1415...` after
-  the order completes.
-- `PATCH /v2/phone_numbers/{id}` with body `{ "connection_id": "<app id>" }`. Other fields:
-  `tags`, `customer_reference`, `billing_group_id`, `external_pin`, `hd_voice_enabled`, `address_id`.
-- `DELETE /v2/phone_numbers/{id}` releases the number from the account and returns the final
-  representation in `data`. Fails if `deletion_lock_enabled` is true.
+The app's id is the `connection_id` used by number orders, `PATCH /phone_numbers/{id}` and `POST /calls`. Ours is
+created in the portal (README.md); the API is `POST /v2/call_control_applications` (201) and
+`GET|PATCH|DELETE /v2/call_control_applications/{id}`.
 
-Response fields: `id`, `record_type`, `phone_number`, `status`, `connection_id`, `connection_name`,
-`customer_reference`, `tags`, `phone_number_type`, `purchased_at`, `created_at`, `updated_at`,
-`activated_at`, `deletion_lock_enabled`, `billing_group_id`, `messaging_profile_id`, `emergency_enabled`.
-`status` enum: `purchase-pending | purchase-failed | port-pending | port-failed | active | deleted |
-emergency-only | ported-out | port-out-pending | requirement-info-pending |
-requirement-info-under-review | requirement-info-exception | provision-pending`.
-
-## 4. Call Control Application (the `connection_id`)
-
-`POST /v2/call_control_applications` returns **201**.
-Doc: https://developers.telnyx.com/api-reference/call-control-applications/create-a-call-control-application
-Also `GET|PATCH|DELETE /v2/call_control_applications/{id}`.
 ```json
-{ "application_name": "easy-voice-prod",
-  "webhook_event_url": "https://app.example.com/api/telnyx/webhook",
+{ "application_name": "vfi-prod",
+  "webhook_event_url": "https://<host>/api/webhooks/telnyx",
   "webhook_api_version": "2",
-  "webhook_event_failover_url": null,
   "webhook_timeout_secs": 10,
+  "call_cost_in_webhooks": true,
   "outbound": { "outbound_voice_profile_id": "<ovp id>" } }
 ```
+
 - Required: `application_name`, `webhook_event_url`.
-- **`webhook_api_version` defaults to `"1"`. Set `"2"`** to get the v2 envelope documented below.
+- **`webhook_api_version` defaults to `"1"`; set `"2"`** for the envelope in §5.
 - Other fields: `active` (default true), `anchorsite_override` (default `Latency`), `dtmf_type`,
-  `first_command_timeout`, `first_command_timeout_secs` (default 30), `inbound {channel_limit,
-  shaken_stir_enabled, sip_subdomain, sip_subdomain_receive_settings}`, `outbound {channel_limit,
-  outbound_voice_profile_id}`, `call_cost_in_webhooks`, `redact_dtmf_debug_logging`.
-  The docs give the `webhook_timeout_secs` range as 0–30.
-- Response `data.id` is the `connection_id` used for `number_orders`, `PATCH /phone_numbers/{id}`,
-  and `POST /calls`. `data.record_type` = `call_control_application`.
-- Outbound PSTN dialing presumably needs an Outbound Voice Profile (`/v2/outbound_voice_profiles`)
-  linked to the app via `outbound.outbound_voice_profile_id`. Whether that is strictly required is
-  **UNCONFIRMED**.
+  `first_command_timeout(_secs)` (default 30 s),
+  `inbound {channel_limit, shaken_stir_enabled, sip_subdomain, …}`, `outbound {channel_limit,
+  outbound_voice_profile_id}`, `call_cost_in_webhooks`, `redact_dtmf_debug_logging`, `webhook_event_failover_url`.
+  `webhook_timeout_secs` range 0–30.
+- Outbound calling needs an Outbound Voice Profile linked through `outbound.outbound_voice_profile_id`; ours allows
+  only US destinations. Strictly required: **UNCONFIRMED**.
 
-## 5. Call Control commands
+## 4. Call commands
 
-All commands are `POST /v2/calls/{call_control_id}/actions/<command>`. Every command accepts
-`client_state` (**must be Base64**, echoed in later webhooks) and `command_id` (idempotency key,
-deduped per `call_control_id`). Command responses: `data.result` (e.g. `"ok"`).
+**Docs.** All commands are `POST /v2/calls/{call_control_id}/actions/<command>`. Every command accepts
+`client_state` (**must be Base64**; echoed in later webhooks) and `command_id` (idempotency key per call). Responses
+are `data.result` (e.g. `"ok"`).
 
 ### Dial: `POST /v2/calls`
-Doc: https://developers.telnyx.com/api-reference/call-commands/dial
-- Required: `connection_id`, `to` (E.164 or SIP URI, or an array), `from` (E.164).
-- Useful: `client_state` (Base64), `webhook_url`, `webhook_url_method` (`POST|GET`),
-  `timeout_secs` (default 30, 5–600), `time_limit_secs` (default 14400, 30–14400),
-  `answering_machine_detection` (`premium|detect|detect_beep|detect_words|greeting_end|disabled|...`),
-  `record: "record-from-answer"`, `record_format` (`wav|mp3`, default mp3), `record_channels`
-  (`single|dual`, default dual), `record_track`, `record_max_length`, `command_id`,
-  `from_display_name`.
-- **`assistant` object (CallAssistantRequest) is accepted on Dial**: `{ "id": "<assistant id>", ... }`.
-  Fields are the same overrides as in `answer` below. The spec does not say explicitly that the
-  assistant starts automatically when the call is answered (it is implied; **UNCONFIRMED**).
-- Response `data`: `call_control_id`, `call_leg_id`, `call_session_id`, `is_alive` (always false),
-  `record_type` (`call`), `client_state`, `recording_id` (only with `record`), `start_time`.
-- Webhooks sent: `call.initiated` (direction `outgoing`), then `call.answered` or `call.hangup`.
 
-### Answer: `.../actions/answer`
-Doc: https://developers.telnyx.com/api-reference/call-commands/answer-call
-- Body (all optional): `client_state`, `command_id`, `webhook_url`, `webhook_url_method`, `record`,
-  `record_format`, `record_channels`, `record_track`, `record_max_length`, `record_trim`,
-  `billing_group_id`, `transcription`, `stream_url`, ...
-- **`assistant`**: `{ "id" (required), "instructions", "greeting", "voice_settings": { "voice" },
-  "transcription": { "model", "language" }, "dynamic_variables", "tools", "model", "name",
-  "llm_api_key_ref", "fallback_config", "external_llm", "mcp_servers", "observability_settings" }`.
-  Omitted fields use the stored assistant. Supplied `voice_settings` and `transcription` **replace**
-  the stored objects (no merge). `dynamic_variables` merge, request wins.
-- With `assistant.id`, Telnyx warms up the assistant, answers, and starts it automatically.
-  **Do not also send `ai_assistant_start`.** The `conversation_id` arrives in the
-  `call.conversation.created` webhook, not in the HTTP response.
-- Response `data`: `result`, `recording_id` (if `record`).
+https://developers.telnyx.com/api-reference/call-commands/dial
 
-### Reject: `.../actions/reject`
-Doc: https://developers.telnyx.com/api-reference/call-commands/reject-a-call
-- Required `cause`: `CALL_REJECTED` (SIP 603) | `USER_BUSY` (486) | `NOT_FOUND` (404) |
-  `TEMPORARILY_UNAVAILABLE` (480). Optional `client_state`, `command_id`.
-- Only valid on unanswered inbound calls. Produces `call.hangup` (e.g. `hangup_cause: call_rejected`).
+- Required: `connection_id`, `to` (E.164, SIP URI or array), `from` (E.164).
+- Useful: `client_state`, `webhook_url`, `timeout_secs` (default 30, 5–600), `time_limit_secs` (default 14400, 30–14400),
+  `answering_machine_detection`, `record: "record-from-answer"`, `record_format` (`wav|mp3`, default mp3), `record_channels`
+  (`single|dual`, default dual), `record_track`, `record_max_length`, `command_id`, `from_display_name`.
+- An `assistant` object is accepted (same overrides as answer). Whether it starts the Assistant on answer:
+  **UNCONFIRMED**. VFi dials without it and calls `ai_assistant_start` once the call is answered.
+- Response `data`: `call_control_id`, `call_leg_id`, `call_session_id`, `is_alive`, `recording_id` (with `record`),
+  `start_time`.
+- Webhooks: `call.initiated` (direction `outgoing`), then `call.answered` or `call.hangup`.
 
-### Hangup: `.../actions/hangup`
-Doc: https://developers.telnyx.com/api-reference/call-commands/hangup-call
-Body: `client_state`, `command_id`, `custom_headers[] {name, value}`.
+### Answer: `…/actions/answer`
 
-### Start AI Assistant: `.../actions/ai_assistant_start` (call must already be answered)
-Doc: https://developers.telnyx.com/api-reference/call-commands/start-ai-assistant
-Guide: https://developers.telnyx.com/docs/voice/programmable-voice/ai-assistant-start
+https://developers.telnyx.com/api-reference/call-commands/answer-call
+
+- Optional body: `client_state`, `command_id`, `webhook_url`, `record…`, `billing_group_id`, `transcription`,
+  `stream_url`, and **`assistant`**: `{ id (required), instructions, greeting, voice_settings, transcription,
+  dynamic_variables, tools, model, name, llm_api_key_ref, fallback_config, external_llm, mcp_servers,
+  observability_settings }`.
+- Omitted fields use the stored Assistant. Supplied `voice_settings` and `transcription` **replace** the stored
+  objects (no merge); `dynamic_variables` merge, request wins. VFi sends only `id` and `dynamic_variables`.
+- With `assistant.id`, Telnyx answers and starts the Assistant itself. **Don't also send `ai_assistant_start`.** The
+  `conversation_id` arrives in `call.conversation.created`, not the response.
+- There is no version id on answer, dial or `ai_assistant_start` (**Live 2026-10-26**; see §14).
+
+### Start Assistant: `…/actions/ai_assistant_start` (call already answered)
+
+https://developers.telnyx.com/docs/voice/programmable-voice/ai-assistant-start
+
 ```json
-{ "assistant": { "id": "assistant-<uuid>",
-                 "voice_settings": { "voice": "Telnyx.KokoroTTS.af_heart" },
-                 "dynamic_variables": { "user_name": "Ada" } },
-  "greeting": "Hi, this is ...",
-  "transcription": { "model": "deepgram/nova-3", "language": "en" },
-  "interruption_settings": { "enable": true },
-  "send_message_history_updates": false,
-  "client_state": "<base64>", "command_id": "<uuid>" }
+{ "assistant": { "id": "assistant-<uuid>", "dynamic_variables": { "call_direction": "outbound" } },
+  "greeting": "Hi, this is an AI assistant calling. This call may be recorded.",
+  "command_id": "<ccid>:assistant" }
 ```
-- Top-level fields: `assistant` (same CallAssistantRequest as answer/dial), `greeting`,
-  `interruption_settings {enable}`, `transcription {model, language}`, `message_history[]`
-  (seed messages), `send_message_history_updates`, `participants[] {id, role:"user", name, on_hangup}`,
-  `client_state`, `command_id`. There is **no top-level `voice`**; the voice goes in
-  `assistant.voice_settings.voice`.
+
+- Top-level: `assistant`, `greeting`, `interruption_settings {enable}`, `transcription {model, language}`,
+  `message_history[]`, `send_message_history_updates`, `participants[]`, `client_state`, `command_id`. There is no
+  top-level `voice`; it goes in `assistant.voice_settings.voice`.
 - Response `data`: `result`, **`conversation_id`**.
-- Webhooks sent: `call.conversation.created`, `call.conversation.ended`,
-  `call.conversation_insights.generated`.
-- Stop: `.../actions/ai_assistant_stop`. Add a leg: `.../actions/ai_assistant_join`
-  (`conversation_id`, `participant {id, role, name, on_hangup}`).
+- Webhooks: `call.conversation.created`, `call.conversation.ended`, `call.conversation_insights.generated`.
+- Also `…/ai_assistant_stop` and `…/ai_assistant_join`.
 
-### Record start: `.../actions/record_start`
-Doc: https://developers.telnyx.com/api-reference/call-commands/recording-start
-- Required: `format` (`wav|mp3`), `channels` (`single|dual`). `dual` puts the first leg on channel A
-  and the rest on channel B.
-- Optional: `play_beep`, `max_length` (0 = unlimited, max 14400), `timeout_secs`,
-  `recording_track` (`both|inbound|outbound`), `trim` (`trim-silence`), `custom_file_name`,
-  `transcription` (bool) plus `transcription_engine`/`transcription_language`, `client_state`,
-  `command_id`.
-- Response `data.result` only (**no `recording_id`**). Stop with `.../actions/record_stop`.
-- Alternative: assistant-level `telephony_settings.recording_settings` (§8).
+### Reject and hang up
 
-## 6. Call webhooks (Call Control, v2 format)
+- `…/actions/reject` with required `cause`: `CALL_REJECTED` (SIP 603) | `USER_BUSY` (486) | `NOT_FOUND` (404) |
+  `TEMPORARILY_UNAVAILABLE` (480). Only for unanswered inbound calls; produces `call.hangup`.
+- `…/actions/hangup`: `client_state`, `command_id`, `custom_headers[]`.
 
-Guide: https://developers.telnyx.com/docs/voice/programmable-voice/voice-api-webhooks
-Envelope:
+### Recording command
+
+`…/actions/record_start` needs `format` and `channels` (`dual` = first leg on channel A); options `play_beep`,
+`max_length`, `recording_track`, `trim`, `custom_file_name`, `transcription`. Response has **no `recording_id`**.
+VFi doesn't use it: recording is requested on answer and dial.
+
+## 5. Webhooks and signatures
+
+### Envelope (Call Control, v2)
+
+**Docs.** https://developers.telnyx.com/docs/voice/programmable-voice/voice-api-webhooks
+
 ```json
 { "data": { "record_type": "event", "event_type": "call.initiated", "id": "<uuid>",
             "occurred_at": "2026-...Z", "payload": { ... } },
   "meta": { "attempt": 1, "delivered_to": "https://..." } }
 ```
-Common `payload` fields: `call_control_id`, `call_leg_id`, `call_session_id`, `connection_id`,
-`client_state` (Base64, as sent), `from`, `to`.
+
+Common payload: `call_control_id`, `call_leg_id`, `call_session_id`, `connection_id`, `client_state`, `from`, `to`.
 
 | event_type | Extra payload fields |
-|---|---|
-| `call.initiated` | `direction` (`incoming`/`outgoing`), `state` (`parked`/`bridging`), `start_time`, `caller_id_name`, `call_screening_result`, `shaken_stir_attestation`, `shaken_stir_validated`, `custom_headers`, `sip_headers`, `tags`, `offered_codecs`, `connection_codecs` |
+| --- | --- |
+| `call.initiated` | `direction` (`incoming`/`outgoing`), `state`, `start_time`, `caller_id_name`, `call_screening_result`, `shaken_stir_attestation`, `shaken_stir_validated`, `custom_headers`, `sip_headers`, `tags`, codecs |
 | `call.answered` | `start_time`, `state: "answered"`, `tags` |
-| `call.hangup` | `start_time`, `state: "hangup"`, `hangup_cause` (`call_rejected|normal_clearing|originator_cancel|timeout|time_limit|user_busy|not_found|no_answer|unspecified`), `hangup_source` (`caller|callee|unknown`), `sip_hangup_cause`, `call_quality_stats` |
-| `call.recording.saved` | `recording_started_at`, `recording_ended_at`, `channels`, `recording_urls {mp3, wav}` (**valid 10 minutes**), `public_recording_urls {mp3, wav}` (valid while the file exists; per-account feature) |
+| `call.hangup` | `start_time`, `hangup_cause` (`call_rejected|normal_clearing|originator_cancel|timeout|time_limit|user_busy|not_found|no_answer|unspecified`), `hangup_source` (`caller|callee|unknown`), `sip_hangup_cause`, `call_quality_stats` |
+| `call.recording.saved` | `recording_started_at`, `recording_ended_at`, `channels`, `recording_urls {mp3, wav}` (**valid 10 minutes**), `public_recording_urls` (valid while the file exists; a per-account feature) |
 | `call.conversation.created` | `conversation_id`, `call_control_id` |
-| `call.conversation.start_failed` | `reason`: `invalid_request` or `service_error` (only for `answer` with `assistant.id`; the call stays answered) |
-| `call.conversation.ended` | `assistant_id`, `conversation_id`, `duration_sec`, `reason` (nullable), `calling_party_type` (`pstn|sip`), `llm_model`, `stt_model`, `tts_provider`, `tts_model_id`, `tts_voice_id` |
+| `call.conversation.start_failed` | `reason`: `invalid_request` or `service_error` (answer with `assistant.id` only; the call stays answered) |
+| `call.conversation.ended` | `assistant_id`, `conversation_id`, `duration_sec`, `reason`, `calling_party_type`, `llm_model`, `stt_model`, `tts_provider`, `tts_model_id`, `tts_voice_id` |
 | `call.conversation_insights.generated` | `insight_group_id`, `results[] {insight_id, result}`, `calling_party_type` |
-| `call.ai_gather.message_history_updated` | `message_history[] {role, content}`, the full history each time (only if `send_message_history_updates`) |
+| `call.ai_gather.message_history_updated` | full `message_history[]` each time (only with `send_message_history_updates`) |
+| `call.cost` | see §6 |
 
-Notes:
-- **`call.hangup` has no `end_time` field.** Use `data.occurred_at` as the end time. Only Dial and
-  recording responses expose `end_time`.
-- **`call.recording.saved` has no `call_control_id` and no `recording_id` in the schema.** Correlate
-  via `call_leg_id`/`call_session_id`, or look it up with `GET /v2/recordings?filter[call_leg_id]=...`.
-- Deliveries can be duplicated or out of order. Dedupe on `data.id`. Failover URL is used if the primary fails.
-- Callback reference pages: https://developers.telnyx.com/api-reference/callbacks/call-initiated ,
-  .../call-hangup , .../call-recording-saved , .../call-conversation-created ,
-  .../call-conversation-start-failed , .../call-conversation-ended ,
-  .../call-conversation-insights-generated
-- `call.conversation.created` and `call.conversation.start_failed` are documented in the guide and
-  callback pages but are absent from the OpenAPI webhook schemas, so their exact field list beyond
-  the IDs above is **UNCONFIRMED**.
+- **`call.hangup` has no `end_time`;** use `data.occurred_at`.
+- **`call.recording.saved` has no `call_control_id` or `recording_id`** in the schema; correlate on
+  `call_leg_id` / `call_session_id`, or list recordings (§6).
+- Deliveries can be duplicated or out of order: dedupe on `data.id`.
+- `call.conversation.created` and `call.conversation.start_failed` are in the guide but not the OpenAPI webhook
+  schemas, so their fields beyond the ids above are **UNCONFIRMED**.
+- Text and insight webhooks use the same signing: §12 and §10.
 
-## 7. Webhook signature verification
+### Signature
 
-Docs: https://developers.telnyx.com/docs/development/api-fundamentals/webhooks/receiving-webhooks ,
-https://developers.telnyx.com/docs/messaging/messages/receiving-webhooks ,
-https://developers.telnyx.com/docs/development/sdk/node/webhooks
-- Headers: `telnyx-signature-ed25519` (Base64 Ed25519 signature) and `telnyx-timestamp` (Unix seconds).
-- Signed message: `` `${timestamp}|${rawBody}` ``, using the **exact raw body bytes**. Do not
-  re-serialize JSON. In Next.js route handlers, read `await req.text()` before parsing.
-- Public key: Mission Control Portal → API Keys → Public Key
-  (https://portal.telnyx.com/#/api-keys/public-key), stored as `TELNYX_PUBLIC_KEY` (Base64). Docs'
-  Go/C#/PHP examples decode it to a raw 32-byte Ed25519 key. For Node `crypto.verify`, wrap it in
-  SPKI DER (prefix `302a300506032b6570032100`) or use `tweetnacl`.
-- Reject requests whose timestamp is older than 5 minutes (300 s).
-- Node SDK: `client.webhooks.unwrap(rawBody, { headers })` verifies and throws on failure.
-  `unsafeUnwrap` skips verification.
-- Acknowledge with 2xx (use 200) quickly. Process asynchronously and idempotently.
+**Docs.** https://developers.telnyx.com/docs/development/api-fundamentals/webhooks/receiving-webhooks
 
-## 8. AI Assistants
+- Headers `telnyx-signature-ed25519` (Base64) and `telnyx-timestamp` (Unix seconds).
+- Signed message: `` `${timestamp}|${rawBody}` `` over the **exact raw body**. In Next.js read `await req.text()`
+  before parsing.
+- Public key from the portal (API Keys → Public Key), stored as `TELNYX_PUBLIC_KEY` (Base64, raw 32-byte Ed25519).
+  For Node `crypto.verify`, wrap it in SPKI DER (prefix `302a300506032b6570032100`). The Node SDK's
+  `client.webhooks.unwrap(rawBody, {headers})` verifies too (`unsafeUnwrap` skips it).
+- Reject timestamps older than 5 minutes. Answer 2xx quickly; process idempotently.
 
-Docs: https://developers.telnyx.com/api-reference/assistants/create-an-assistant ,
-.../get-an-assistant , .../update-an-assistant , .../delete-an-assistant
+## 6. Call cost and recordings
 
-| Op | Method + path |
-|---|---|
-| Create | `POST /v2/ai/assistants` (optional header `Idempotency-Key`) |
-| Get | `GET /v2/ai/assistants/{assistant_id}` (opt. `call_control_id`, `fetch_dynamic_variables_from_webhook`) |
-| Update | **`POST /v2/ai/assistants/{assistant_id}`** (not PATCH). Body = create fields + `promote_to_main` (default true) |
-| Delete | `DELETE /v2/ai/assistants/{assistant_id}` (`?hard_delete=true` skips the soft-delete "Recently Deleted" list). Response `{id, object, deleted}` |
+### `call.cost`
+
+**Docs, checked against the OpenAPI spec 2026-10-07.** Sent when the Call Control app has `call_cost_in_webhooks`.
+Payload: `call_control_id`, `call_leg_id`, `call_session_id`, `client_state`, `total_cost` (decimal string, e.g.
+`"0.0106"`), `billed_duration_secs`, `cost_parts[] {call_part, rate, cost, currency, billed_duration_secs}`. VFi stores
+`total_cost` as micro-USD on the call for reconciliation. Whether AI inference is in `cost_parts`: **UNCONFIRMED**
+(compare with the invoice).
+
+### Recordings
+
+**Docs.** https://developers.telnyx.com/api-reference/call-recordings/retrieve-a-call-recording
+
+- `GET /v2/recordings/{id}`: `call_control_id`, `call_leg_id`, `call_session_id`, `channels`,
+  `download_urls {mp3, wav}`, `duration_millis`, `recording_started_at`, `recording_ended_at`, `status`, `from`,
+  `to`, timestamps. How long `download_urls` stay valid: **UNCONFIRMED**; fetch fresh before use.
+- `GET /v2/recordings?filter[call_control_id]=…` (also `call_leg_id`, `call_session_id`, `connection_id`, `from`,
+  `to`, `created_at`).
+- `DELETE /v2/recordings/{id}`; bulk `POST /v2/recordings/actions/delete`.
+- **Live:** the Assistant's own `telephony_settings.recording_settings` is on by default and made a second,
+  duplicate recording on outbound calls. VFi records on answer/dial and sends `recording_settings: {enabled: false}`.
+
+## 7. AI Assistants
+
+### Endpoints
+
+**Docs.** https://developers.telnyx.com/api-reference/assistants/create-an-assistant
+
+| Op | Method and path |
+| --- | --- |
+| Create | `POST /v2/ai/assistants` (optional `Idempotency-Key` header) |
+| Get | `GET /v2/ai/assistants/{id}` |
+| Update | **`POST /v2/ai/assistants/{id}`** (not PATCH): create fields plus `promote_to_main` (default true; §14) |
+| Delete | `DELETE /v2/ai/assistants/{id}` → `{id, object, deleted}`; `?hard_delete=true` skips the "Recently Deleted" list. Soft-deleted ones are listed at `GET /ai/assistants/deleted` (**Live 2026-10-26**) |
 | List | `GET /v2/ai/assistants` |
 
-Create body (required: `name`, `instructions`):
+- Response (unwrapped): `id` (`assistant-<uuid>`), `name`, `created_at`, all config, `version_id`.
+- Creating an Assistant auto-creates a TeXML app (`telephony_settings.default_texml_app_id`); a hard delete removes
+  it too (**Live 2026-10-21**).
+
+### Fields
+
 ```json
-{ "name": "user_123_agent",
-  "model": "<model id from models API>",
-  "instructions": "You are ... {{user_name}}",
-  "greeting": "Hello, ...",
-  "voice_settings": { "voice": "Telnyx.KokoroTTS.af_heart", "voice_speed": 1.0 },
-  "transcription": { "model": "deepgram/nova-3", "language": "en" },
+{ "name": "…", "model": "zai-org/GLM-5.2", "instructions": "…", "greeting": "…",
+  "voice_settings": { "voice": "Telnyx.Ultra.<id>", "voice_speed": 1.0,
+                      "background_audio": { "type": "predefined_media", "value": "office", "volume": 0.5 } },
+  "transcription": { "model": "assemblyai/universal-3-5-pro", "language": "auto",
+                     "settings": { "keyterm": "VFi, AirPPP" } },
+  "interruption_settings": { "enable": true, "disable_greeting_interruption": false,
+                             "start_speaking_plan": { "wait_seconds": 0.8 } },
   "telephony_settings": { "time_limit_secs": 1800, "user_idle_timeout_secs": 60,
-     "send_message_history_updates": false,
-     "recording_settings": { "enabled": true, "channels": "dual", "format": "mp3",
-                             "stop_on_conversation_end": false } },
+                          "recording_settings": { "enabled": false } },
   "enabled_features": ["telephony"],
+  "tools": [{ "type": "hangup", "hangup": { "description": "…" } }],
   "insight_settings": { "insight_group_id": "<uuid>" },
-  "privacy_settings": { "data_retention": true },
-  "dynamic_variables": { "user_name": "there" },
-  "tags": ["user_123"] }
+  "dynamic_variables": { "business_name": "…" } }
 ```
-- `voice_settings`: `voice` (required), `voice_speed` (0.6–1.5), `api_key_ref` (ElevenLabs secret),
-  `temperature`, `similarity_boost`, `use_speaker_boost`, `style`, `speed`, `language_boost`,
-  `expressive_mode`, `background_audio`.
-- Voice id formats: Telnyx `Telnyx.<model_id>.<voice_id>` (e.g. `Telnyx.KokoroTTS.af_heart`,
-  `Telnyx.Ultra.<voice_id>`), Minimax `Minimax.<ModelId>.<VoiceId>`, AWS `AWS.Polly.<voice_id>`,
-  Azure `azure.<voice>`. ElevenLabs needs `api_key_ref`. Mustache templating works
-  (`Telnyx.Ultra.{{voice_id}}`). Cloned voices: see §9.
-- `transcription`: `model` (enum incl. `deepgram/flux`, `deepgram/nova-3`, `deepgram/nova-2`,
-  `azure/fast`, `assemblyai/universal-streaming`, `xai/grok-stt`, `soniox/...`, `nvidia/parakeet-v3`),
-  `language` (unset or `auto` = autodetect), `region`, `api_key_ref`, `settings`.
-- `telephony_settings`: `default_texml_app_id` (**auto-created TeXML app on create**),
-  `supports_unauthenticated_web_calls`, `noise_suppression` (`aicoustics|krisp|deepfilternet|disabled`),
-  `time_limit_secs` (default 1800), `user_idle_timeout_secs`, `user_idle_reply_secs` (default 10),
-  `fallback_destination`, `send_message_history_updates`, `voicemail_detection`, `disable_dtmf`,
-  `recording_settings`.
-- Other fields: `description`, `tool_ids`, `tools` (deprecated inline), `mcp_servers`,
-  `llm_api_key_ref`, `external_llm`, `fallback_config`, `interruption_settings`,
-  `dynamic_variables_webhook_url`, `post_conversation_settings`, `messaging_settings`,
-  `websocket_settings`, `conversation_flow`.
-- Response (unwrapped): `id` (format `assistant-<uuid>`), `name`, `created_at`, plus all config,
-  `version_id`.
 
-### After a call: conversations, transcript, insights
-Docs: https://developers.telnyx.com/api-reference/conversations/list-conversations ,
-.../get-conversation-messages , .../get-insights-for-a-conversation
-- Best: store `conversation_id` from the `ai_assistant_start` response or `call.conversation.created`.
-- Lookup by call: `GET /v2/ai/conversations?metadata->call_control_id=eq.<call_control_id>`
-  (PostgREST syntax; also `metadata->assistant_id=eq.`, `metadata->telnyx_end_user_target=eq.`,
-  `metadata->telnyx_agent_target=eq.`, `metadata->telnyx_conversation_channel=eq.phone_call`,
-  `created_at=gte.`, `limit`, `order=created_at.desc`). Returns
-  `data[] {id, name, created_at, metadata, last_message_at}`.
-- `GET /v2/ai/conversations/{conversation_id}` returns `data {...}` (same fields).
-- Transcript: `GET /v2/ai/conversations/{conversation_id}/messages` (`page[size]`, `page[number]`)
-  returns `data[] {role: user|assistant|tool, text, tool_calls, created_at, sent_at, metadata}`
-  and `meta`. Sort by `sent_at`; the API notes `created_at` is not necessarily send time.
-- Insights/summary: `GET /v2/ai/conversations/{conversation_id}/conversations-insights` returns
-  `data[] {id, status: pending|in_progress|completed|failed, created_at,
-  conversation_insights[] {insight_id, result}}`. `result` is a string (stringified JSON if the
-  insight has a schema).
-- **A summary only exists if the assistant has an Insight Group with a summary insight.** Create with
-  `POST /v2/ai/conversations/insights {name, instructions, json_schema?, webhook?}` and
-  `POST /v2/ai/conversations/insight-groups {name, description?, webhook?}`, link with
-  `POST /v2/ai/conversations/insight-groups/{group_id}/insights/{insight_id}/assign`, then set
-  `insight_settings.insight_group_id`.
-- Observed 2026-10-26: an assistant created without `insight_settings` gets the account's "Default"
-  insight group (created with the account), holding a Telnyx-managed `Summary` insight
-  (`insight_type: default`). Its result arrives as a completed `conversations-insights` entry about
-  30 s after hangup; right after hangup the list is still empty.
-- `privacy_settings.data_retention=false` means no history or insights are stored.
+- Required on create: `name`, `instructions`.
+- `voice_settings`: `voice` (required), `voice_speed` (docs: 0.6–1.5), `api_key_ref` (ElevenLabs secret),
+  `temperature`, `similarity_boost`, `use_speaker_boost`, `style`, `speed`, `language_boost`, `expressive_mode`,
+  `background_audio`, `pronunciation_dict_id` (§16).
+- `transcription`: `model` (`deepgram/flux`, `deepgram/nova-3`, `deepgram/nova-2`, `azure/fast`,
+  `assemblyai/universal-streaming`, `assemblyai/universal-3-5-pro`, `xai/grok-stt`, `soniox/…`,
+  `nvidia/parakeet-v3`, …), `language` (unset or `auto` = detect), `region`, `api_key_ref`, `settings`
+  (`keyterm`, `prompt` (§16)).
+- `telephony_settings`: `default_texml_app_id`, `supports_unauthenticated_web_calls` (§15), `noise_suppression`
+  (`aicoustics|krisp|deepfilternet|disabled`), `time_limit_secs` (default 1800), `user_idle_timeout_secs`,
+  `user_idle_reply_secs` (default 10), `fallback_destination`, `send_message_history_updates`,
+  `voicemail_detection`, `disable_dtmf`, `recording_settings`.
+- Other: `description`, `tool_ids`, `tools` (inline, **deprecated**), `mcp_servers`, `llm_api_key_ref`,
+  `external_llm`, `fallback_config`, `dynamic_variables_webhook_url`, `post_conversation_settings`,
+  `messaging_settings`, `websocket_settings`, `conversation_flow`, `privacy_settings {data_retention}` (false = no
+  history or insights stored).
 
-## 9. Voices and cloning
+### Behavior settings VFi uses
 
-### List TTS voices: `GET /v2/text-to-speech/voices`
-Doc: https://developers.telnyx.com/api-reference/text-to-speech-commands/list-available-voices
-- Query: `provider` (`aws|telnyx|azure|elevenlabs|minimax|resemble|xai|humain|soniox`), `api_key`
-  (needed for ElevenLabs).
-- Response is **not** wrapped in `data`: `{ "voices": [ {provider, name, voice_id, language, gender, hosted} ] }`.
-- How to build the `voice_settings.voice` string from these fields (e.g. `Telnyx.<model>.<voice_id>`)
-  is not specified in the endpoint schema. Exact mapping per provider is **UNCONFIRMED**.
+**Live 2026-10-21** (a throwaway Assistant created, updated, read back, hard-deleted).
 
-### Clone from audio: `POST /v2/voice_clones/from_upload` (multipart/form-data)
-Docs: https://developers.telnyx.com/api-reference/voice-clones/create-a-voice-clone-from-an-audio-file-upload ,
-https://developers.telnyx.com/docs/voice/voice-design-lab/clone-voice/parameters ,
-https://developers.telnyx.com/docs/voice/voice-design-lab/using-custom-voices
-- Fields: `audio_file` (required; WAV/MP3/FLAC/OGG/M4A), `name` (req), `language` (req, ISO 639-1),
-  `gender` (req, `male|female|neutral`), `provider` (req, `telnyx` or `minimax`), `model_id`
-  (`Qwen3TTS` default for telnyx | `Ultra` | `speech-2.8-turbo` for minimax), `ref_text`
-  (optional transcript, improves quality), `label`.
-- Limits: Qwen3TTS 3–15 s (auto-trimmed to 10 s), 5 MB, sync **201**. Ultra up to 60 s, 5 MB,
-  **async 202** (`status: pending`). Minimax 10 s–5 min, 20 MB, sync 201.
-- **No consent fields exist** in the API spec or the clone docs. Consent capture is our responsibility.
-- Response `data`: `id` (uuid), `record_type` (`voice_clone`), `name`, `language`, `gender`, `label`,
-  `provider`, `provider_supported_models[]`, `provider_voice_id`, `model_id`, `status`
-  (`active|pending|failed|expired`; "expired if not kept alive"), `source_voice_design_id`,
-  `source_voice_design_version`, `created_at`, `updated_at`.
-- Polling Ultra: the docs say `GET /v2/voice_clones/{id}`, but **the OpenAPI spec only defines
-  PATCH and DELETE on `/voice_clones/{id}`**. If GET fails, fall back to `GET /v2/voice_clones`
-  (`filter[name]`, `filter[provider]`, `page[...]`, `sort`).
-- **Voice id for assistants:** `{Provider}.{Model}.{provider_voice_id}`, e.g.
-  `Telnyx.Qwen3TTS.<clone uuid>` (for Qwen3TTS `provider_voice_id` = clone `id`),
-  `Minimax.speech-2.8-turbo.<minimax id>`. Ultra uses a Cartesia-assigned `provider_voice_id`
-  (presumably `Telnyx.Ultra.<provider_voice_id>`, **UNCONFIRMED**).
-- Other: `POST /v2/voice_clones` (from a design: `name`, `voice_design_id`, `language`, `gender`,
-  `provider`), `PATCH|DELETE /v2/voice_clones/{id}`, `GET /v2/voice_clones/{id}/sample`.
-  Design flow: `POST /v2/voice_designs` (text prompt), then `POST /v2/voice_clones`. Designs are not
-  usable for TTS directly.
-- What keeps a clone "alive" and when it expires is not documented: **UNCONFIRMED**.
+- Accepted and echoed exactly: `voice_speed` (KokoroTTS and Ultra), `background_audio` with `silence` or `office`,
+  `transcription.settings.keyterm` (comma-separated string; `null` clears it), `interruption_settings {enable,
+  disable_greeting_interruption, start_speaking_plan.wait_seconds}`, `time_limit_secs`, `user_idle_timeout_secs`
+  (`null` clears it), custom keys in `dynamic_variables`.
+- `voice_speed` isn't range-checked (1.6 was accepted); VFi clamps to 0.8–1.2. Whether every voice model honors it
+  can only be heard on a call.
+- `voice_settings` sent on update is **merged** with the stored one: an omitted key keeps its value
+  (**Live 2026-10-26**).
 
-## 10. Recordings
+### Tools
 
-Docs: https://developers.telnyx.com/api-reference/call-recordings/retrieve-a-call-recording ,
-.../delete-a-call-recording , .../list-all-call-recordings
-- `GET /v2/recordings/{recording_id}` returns `data`: `id`, `record_type` (`recording`),
-  `call_control_id`, `call_leg_id`, `call_session_id`, `connection_id`, `conference_id`,
-  `channels`, `download_urls {mp3, wav}`, `duration_millis`, `recording_started_at`,
-  `recording_ended_at`, `source` (`call|conference`), `status` (`completed`), `from`, `to`,
-  `initiated_by`, `created_at`, `updated_at`. Expiry of `download_urls` is **UNCONFIRMED**;
-  re-fetch before use.
-- `GET /v2/recordings?filter[call_leg_id]=...` (also `filter[call_control_id]`,
-  `filter[call_session_id]`, `filter[connection_id]`, `filter[from]`, `filter[to]`,
-  `filter[created_at]`), `page[...]`.
-- `DELETE /v2/recordings/{recording_id}` returns `data`. Bulk: `POST /v2/recordings/actions/delete`.
+- **Assistants created through the API have no tools** (**Live 2026-10-20**). The portal's templates add a Hang Up
+  tool; that's a portal default.
+- Hang-up tool: `{"type": "hangup", "hangup": {"description": "…"}}`. Telnyx gives each inline tool a `tool_id`.
+- Sending `tools` replaces the whole list (an update with one hang-up tool leaves one, with a new id); omitting
+  `tools` keeps the current list (**Live 2026-10-21**). VFi always sends it.
+- Retrieval tool: §13.
+- `post_conversation_settings.enabled` gives the Assistant one extra LLM turn after the conversation for final
+  tool calls (**Docs**). Not useful to VFi.
 
-## 11. Confirmed after review (2026-10-07, OpenAPI spec)
+### Portal-only things
 
-- `call.cost` webhook (sent when the Call Control app has `call_cost_in_webhooks` enabled): payload has
-  `call_control_id`, `call_leg_id`, `call_session_id`, `client_state`, `total_cost` (decimal string, e.g.
-  `"0.0106"`), `billed_duration_secs`, and `cost_parts[] {call_part, rate, cost, currency, billed_duration_secs}`.
-  We store `total_cost` as micro-USD on the call for reconciliation. Whether AI Assistant inference is included
-  in `cost_parts` is **UNCONFIRMED**. Check against the Telnyx invoice.
-- `DELETE /v2/ai/conversations/{conversation_id}` exists. Retention purge uses it to remove transcripts and insights.
-- `GET /v2/text-to-speech/voices?provider=telnyx` (checked against a live account): each entry's `id` is
-  already the full assistant voice string (e.g. `Telnyx.KokoroTTS.af_heart`, `Telnyx.Ultra.<uuid>`), along with
-  `name`, `language`, `model_id`, `gender`, `label` and an optional `deprecated`. On the live account Mandarin (`zh`)
-  exists **only on the Ultra model** (15 voices, 2 deprecated). KokoroTTS has no Mandarin voices, and `NaturalHD.astra`
-  does not exist. The app loads the catalog live (English: KokoroTTS; Mandarin: Ultra; deprecated voices excluded)
-  instead of using a hard-coded list.
-- Local US number search returned `region_information` types `country_code`, `location`, `rate_center` and
-  `state`, and `cost_information.monthly_cost` of `"1.00000"` USD for 415 numbers.
+**Live 2026-10-21.** Templates exist only in the portal (30 of them: Blank, healthcare, sales, scheduling,
+collections, routing, multilingual, video); there's no template API. The portal's Assistant sections: Agent, Voice,
+Avatar, Workflow, Integrations, Analysis, Calling, Messaging, Widget, Observability, Simulation, Advanced.
 
-## 12. Model choices verified on live calls (2026-10-07)
+## 8. Models
 
-- **STT:** `deepgram/nova-3` with `language: "auto"` transcribed spoken Mandarin as English words
-  ("thirty cents chime"), so Mandarin was effectively not understood. `assemblyai/universal-3-5-pro` with `"auto"`
-  correctly transcribed English, Mandarin (`你是谁？`) and mixed sentences (`What message to her. 你好吗？来自Birdie。`).
-  One short utterance was detected as Japanese. If that recurs for Mandarin-first agents, try `language: "zh"`.
-  Per the transcription-settings doc, AssemblyAI universal-3-5-pro is the only model whose listed languages include `zh`.
-- **LLM:** `GET /v2/ai/models` lists 34 models (18 `recommended_for_assistants`), with `pricing` per 1M tokens.
-  An empty `model` currently resolves to `moonshotai/Kimi-K2.6`. We pin it explicitly.
-- **Bringing other models (not used yet):** assistants accept `llm_api_key_ref` (your own key for a provider),
-  `external_llm { base_url, model, llm_api_key_ref, authentication_method, certificate_ref, token_retrieval_url,
-  forward_metadata }` (any OpenAI-compatible chat-completions endpoint) and `fallback_config { model | external_llm }`.
-  TTS catalog providers include aws, azure, elevenlabs (needs `voice_settings.api_key_ref`), minimax
-  (`voice_settings.language_boost`), resemble and xai. STT supports `api_key_ref`/`region` for Azure only. Secrets live in
-  Telnyx Integration Secrets (`/v2/integration_secrets`).
+### Speech recognition
 
-## 13. Previews, per-agent models and cloned-voice access (checked live 2026-10-08)
+**Live 2026-10-07**, on real calls.
 
-- **TTS preview:** `POST /v2/text-to-speech/speech` `{ text, voice }` (voice = the assistant voice string) returns
-  `audio/mpeg` bytes directly. ~0.5 s for a sentence on KokoroTTS and Ultra.
-- **Clone sample:** `GET /v2/voice_clones/{id}/sample` returns the uploaded sample as-is (`audio/wav` here).
-- **Cloned voices need account verification.** On an unverified account, cloning (`from_upload`, Qwen3TTS) succeeds,
-  but using the clone fails: assistants answer 403 `10010` "Your account is not permitted to use cloned voices. Please
-  complete L2 verification or use a platform voice", and TTS with `Telnyx.Qwen3TTS.<clone id>` answers 403 `10038`
-  "Feature not permitted at this account level". The adapter maps the assistant error to `FeatureNotPermittedError`.
-- **Per-agent LLM:** agents pick from a curated list of five (`OFFERED_MODEL_IDS`): `zai-org/GLM-5.2` (default),
-  `zai-org/GLM-5.3-Flash`, `openai/gpt-5.4-mini`, `openai/gpt-5.2`, `openai/gpt-6-luna`. A listed model is still
-  dropped if the catalog stops recommending it, it's unpriced, or its output price passes $15 / 1M tokens
-  (`MAX_OUTPUT_PRICE_PER_M`), since calls are billed at a flat per-minute rate.
-- **How the five were chosen (2026-10-26):** all 15 offered models ran the Nyquiste Front Desk setup (instructions,
-  2 Knowledge Base sources, strict mode) on 14 caller questions (11 English, 3 Mandarin), twice each, through
-  `POST /v2/ai/assistants/{id}/chat` on temporary clones. Chat runs the retrieval tool like a call does.
-  | Model | Correct | False claims | Searched when needed | Reply s (no search / search) |
+- `deepgram/nova-3` with `language: "auto"` transcribed spoken Mandarin as English words ("thirty cents chime").
+- `assemblyai/universal-3-5-pro` with `"auto"` transcribed English, Mandarin (`你是谁？`) and mixed sentences
+  correctly. One short utterance was detected as Japanese; if that recurs for Mandarin-first Assistants, try
+  `language: "zh"`. Per the transcription-settings doc it's the only model whose listed languages include `zh`.
+
+### LLMs
+
+- `GET /v2/ai/models` lists the catalog (34 models on 2026-10-07, 18 `recommended_for_assistants`) with `pricing`
+  per million tokens (**Live**).
+- An empty `model` resolved to `moonshotai/Kimi-K2.6` (**Live 2026-10-07**); VFi always sets one.
+- **Comparison, Live 2026-10-26:** all 15 offered models ran the Nyquiste Front Desk setup (instructions, 2
+  knowledge sources, strict mode) on 14 caller questions (11 English, 3 Mandarin), twice each, through
+  `POST /ai/assistants/{id}/chat` on temporary copies. Chat runs the retrieval tool as a call does.
+
+  | Model | Correct | False claims | Searched when needed | Reply seconds (no search / search) |
   | --- | --- | --- | --- | --- |
   | GLM-5.2 | 100% | 0 | 100% | 1.0 / 2.2 |
   | gpt-5.2 | 100% | 0 | 100% | 2.4 / 4.5 |
@@ -449,274 +414,346 @@ Docs: https://developers.telnyx.com/api-reference/call-recordings/retrieve-a-cal
   | gpt-6-luna | 93% | 0 | 92% | 2.2 / 4.3 |
   | gpt-5.4-mini | 86% | 0 | 92% | 1.3 / 3.0 |
   | Kimi-K2.6 | 86% | 0 | 67% | 1.6 / 4.4 |
+
   gpt-5.1 and Qwen3-235B-A22B claimed VFi can transfer calls (it can't). gpt-4.1, gpt-4o, gpt-5.6-luna and
-  claude-haiku-4-5 searched the knowledge base in 0–50% of the cases that needed it. GLM-5.3-Flash once looped on
-  its search tool and returned Telnyx's "stuck in a loop" message instead of an answer.
+  claude-haiku-4-5 searched in 0–50% of the cases that needed it. GLM-5.3-Flash once looped on its search tool and
+  returned Telnyx's "stuck in a loop" message.
+- Prices (**Docs, pricing.md, 2026-10-26**): GLM-5.2 $1 / $4 per million input / output tokens ($0.20 cached
+  input); GLM-5.3-Flash $0.135 / $0.45.
 
-## 14. Messaging (SMS/MMS) — researched 2026-10-16, not built
+### Other providers (not used yet)
 
-Background for SPEC §17. Docs only; nothing here has been checked against a live account yet.
+**Docs.** `llm_api_key_ref` (own key for a provider); `external_llm {base_url, model, llm_api_key_ref,
+authentication_method, certificate_ref, token_retrieval_url, forward_metadata}` (any OpenAI-compatible
+chat-completions endpoint); `fallback_config {model | external_llm}`. TTS catalog providers include aws, azure,
+elevenlabs (`voice_settings.api_key_ref`), minimax (`language_boost`), resemble, xai. STT `api_key_ref` / `region`
+apply to Azure only. Secrets live in Integration Secrets (`/v2/integration_secrets`).
 
-**Scope decision (2026-10-16): receive only.** We can't do 10DLC for now, so nothing is ever sent: no
-`POST /v2/messages`, no assistant replies, no scheduled SMS events. What we use: a platform messaging profile whose
-webhook points at `/api/webhooks/telnyx`, numbers assigned to it, and `message.received`. Assistants must **not** get
-`messaging` in `enabled_features`, because the assistant would then reply to texts. The send, 10DLC and
-assistant-messaging notes below are kept as reference for later.
+## 9. Variables
 
-### Send: `POST /v2/messages`
-Doc: https://developers.telnyx.com/api-reference/messages/send-a-message
-- Body: `to` (required, E.164 string), `from` (our number), `text` (SMS) or `media_urls[]` (MMS, total < 1 MB),
-  `subject`, `type` (`SMS|MMS`), `messaging_profile_id` (only needed for number pools / alphanumeric senders),
-  `webhook_url`, `webhook_failover_url`, `use_profile_webhooks` (default `true`), `send_at` (ISO 8601, minute
-  precision), `encoding` (`auto|gsm7|ucs2`).
-- Response `data`: `id`, `direction: "outbound"`, `from {phone_number, carrier, line_type}`,
-  `to[] {phone_number, status, carrier, line_type}` (**array in the response, string in the request**), `text`,
-  `media`, `num_chars`, `parts`, `encoding`, `cost`, `cost_breakdown`, `sent_at`, `completed_at`, `errors`.
-- Mandarin text is UCS-2: 70 chars per segment (67 when concatenated) vs 160/153 for GSM-7, so Chinese messages
-  cost ~2x more segments for the same length.
+- **Live 2026-10-21, chat:** `{{telnyx_current_date}}`, `{{telnyx_current_weekday}}` and `{{telnyx_current_time}}`
+  resolved, in UTC (`2026-10-21T14:48:29Z`). A custom key with a default in the Assistant's `dynamic_variables` did
+  **not** resolve, nor did `{{telnyx_end_user_target}}`. So VFi passes every value explicitly on `answer` /
+  `ai_assistant_start`, and fills in `contact_number` and a local `current_time` itself.
+- **Docs:** `{{telnyx_current_time_<IANA zone>}}` and a `date` filter exist; the shorthand variables are UTC.
+- **Live 2026-10-26, chat:** top-level keys in the conversation's `metadata` fill `{{variables}}`
+  (`{business_name: "MetaCo"}` resolved); a nested `dynamic_variables` key was rejected. Without them custom
+  variables render as `Unknown`.
+- On calls, `dynamic_variables` sent on answer / start merge with the stored ones, request wins (**Docs**).
 
-### Webhooks
-Doc: https://developers.telnyx.com/docs/messaging/messages/receiving-webhooks
-- Events: `message.received` (inbound), `message.sent` (handed to carrier), `message.finalized` (terminal:
-  delivered or failed).
-- `data.payload`: `id`, `direction`, `from.phone_number`, `to[] {phone_number, status}`, `text`,
-  `media[] {url, content_type, sha256, size}` (media URLs expire after 30 days), `cost {amount, currency}`, `parts`,
-  `errors`. `data.id` is the event id (use it for `webhook_events` idempotency, as with calls).
-- Same Ed25519 signing as calls (§7), so `parseWebhook` can be reused. Webhook URL is set on the **messaging
-  profile** (or per message via `webhook_url`), not on the Call Control app.
+## 10. Conversations, transcripts and insights
 
-### Messaging profiles and number setup
-Docs: https://developers.telnyx.com/docs/messaging/messages/messaging-profiles-overview ,
-https://developers.telnyx.com/docs/messaging/messages/phone-number-configuration
-- A number can send and receive messages only once it's assigned to a messaging profile. The profile holds the
-  webhook URLs, number pooling, smart encoding and spend limits.
-- Assign: `PATCH /v2/messaging_phone_numbers/{number}` `{ messaging_profile_id }`. The 10DLC doc uses
-  `PATCH /v2/phone_numbers/{number}` for the same field. **UNCONFIRMED** which one is canonical.
-- `messaging_profile_id` can also be set at order time on `POST /v2/number_orders` (§2).
+### Conversations and transcripts
 
-### 10DLC (US A2P on local numbers)
-Docs: https://developers.telnyx.com/docs/messaging/10dlc/brand-registration ,
-https://developers.telnyx.com/docs/messaging/10dlc/sole-proprietor ,
-https://developers.telnyx.com/docs/messaging/10dlc/phone-number-assignment
-- Carriers filter or block unregistered A2P traffic from local numbers. Texts to other Telnyx numbers are on-net
-  and don't need a campaign. That's useful for testing, not for production.
-- Flow: brand (`/v2/10dlc/brand`) → campaign (`/v2/10dlc/campaignBuilder`) → number assignment
-  `POST /v2/10dlc/phoneNumberCampaign { phoneNumber, campaignId }` (remove: `DELETE .../{phoneNumber}`; list:
-  `GET ...?filter[campaignId]=`). The number must already be on a messaging profile. One campaign per number.
-  The campaign must be `ACTIVE` (`GET /v2/10dlc/campaignBuilder/{campaignId}`).
-- Timing: carrier approval typically 1–5 business days, then 24–72 h propagation after number assignment.
-- Fees (support article): $4 one-time brand registration, $15 campaign vetting. Monthly campaign fees and
-  per-message carrier surcharges: **UNCONFIRMED**.
-- **Sole proprietor** brands (no EIN): the registrant's name, address, mobile number and last 4 of SSN; verified
-  by an SMS PIN to that mobile within 24 h. Limits: 1 campaign per brand, 1 number per campaign, low volume
-  (support article says ~1,000 msgs/day; API docs only say "low-volume").
+**Docs.** https://developers.telnyx.com/api-reference/conversations/list-conversations
 
-### AI Assistants and messaging
-- Assistant fields: `enabled_features[]` (`telephony`, `messaging`; with `messaging` "the assistant will be able
-  to send and receive messages") and `messaging_settings { default_messaging_profile_id,
-  delivery_status_webhook_url, conversation_inactivity_minutes }`. The doc says a default messaging profile is
-  created with the assistant.
-- Outbound text from the assistant: `POST /v2/ai/assistants/{id}/scheduled_events` with
-  `telnyx_conversation_channel: "sms_chat"`, `telnyx_end_user_target`, `telnyx_agent_target` (our number),
-  `scheduled_at_fixed_datetime` (must be in the future), `text` (required for SMS), optional
-  `conversation_metadata`, `dynamic_variables`. Retry fields are rejected (400) for SMS. Status:
-  `pending|in_progress|completed|failed`.
-- **UNCONFIRMED:**
-  - How an inbound text to a number reaches the assistant: assigning the number to the assistant's
-    `default_messaging_profile_id`, or something else.
-  - Whether our app still gets `message.received`/`message.finalized` (with `cost`, `parts`) for
-    assistant-handled texts.
-  - Whether `scheduled_at_fixed_datetime` can be "now".
-  - Whether SMS conversations appear in `/v2/ai/conversations` like calls do.
-  - Whether a "send message" tool exists that lets the assistant text during a voice call (a Telnyx release note
-    URL for it now 404s).
+- Store the `conversation_id` from `ai_assistant_start` or `call.conversation.created`. To look one up by call:
+  `GET /v2/ai/conversations?metadata->call_control_id=eq.<id>` (PostgREST syntax; also
+  `metadata->assistant_id=eq.`, `metadata->telnyx_end_user_target=eq.`, `metadata->telnyx_agent_target=eq.`,
+  `metadata->telnyx_conversation_channel=eq.phone_call`, `created_at=gte.`, `limit`, `order=created_at.desc`).
+  Returns `data[] {id, name, created_at, metadata, last_message_at}`.
+- `GET /v2/ai/conversations/{id}`; `DELETE /v2/ai/conversations/{id}` (removes transcript and insights; used for
+  retention).
+- Transcript: `GET /v2/ai/conversations/{id}/messages` (`page[size]` ≤ 100, `page[number]`) →
+  `data[] {role: user|assistant|tool, text, tool_calls, created_at, sent_at, metadata}`. Sort by `sent_at`;
+  `created_at` isn't necessarily send time.
+- `POST /v2/ai/conversations {name, metadata}` creates a conversation (needed for chat, §15).
 
-## 15. Knowledge bases (storage buckets + embeddings) — checked in the portal 2026-10-20, not built
+### Insights (summaries and structured results)
 
-Spike for SPEC §18, run through the Telnyx portal (the Telnyx MCP connector rejected calls as unauthenticated). Test
-resources: assistant `assistant-0174c0a2-f25b-4b9a-8c6d-9ceea00663af` ("Blank") and bucket `ev-kb-spike-20261020`.
+- `GET /v2/ai/conversations/{id}/conversations-insights` → `data[] {id, status: pending|in_progress|completed|failed,
+  created_at, conversation_insights[] {insight_id, result}}`. `result` is a string (JSON text when the insight has a
+  schema). (**Docs**)
+- A summary exists only if the Assistant's insight group has a summary insight. **Live 2026-10-26:** an Assistant
+  without `insight_settings` gets the account's `Default` group, which holds three Telnyx-managed insights (Summary,
+  User Satisfaction, Agent Instruction Following; `insight_type: default`). The summary is a completed entry about
+  30 s after hangup; right after hangup the list is empty.
+- **Create (Live 2026-10-26):** `POST /ai/conversations/insights {name, instructions, json_schema?}`,
+  `POST /ai/conversations/insight-groups {name, description?, webhook?}`,
+  `POST /ai/conversations/insight-groups/{group}/insights/{insight}/assign`, then set
+  `insight_settings.insight_group_id` on the Assistant. No documented limit on groups or insights. A group of our own
+  doesn't include the Default group's insights, so it needs its own summary insight.
+- **Strict JSON Schema (Live 2026-10-26):** `additionalProperties: false` is required and `required` must list every
+  property, or the API answers `10015 Invalid json_schema`. An optional field therefore uses a nullable type
+  (`"type": ["string", "null"]`). `enum` and `boolean` work.
+- **Insight model (Live 2026-10-26):** `insight_settings.model` must be `zai-org/GLM-5.3-Flash` (default) or
+  `meta-llama/Llama-3.3-70B-Instruct`; it runs every insight in the group. A few insights per call cost a fraction of
+  a cent.
+- **Insight webhook (Live 2026-10-26, signature checked; delivery after a real call not yet seen):** set on the group
+  (no per-Assistant override; `POST /ai/conversations/insights` also takes a `webhook`). One `POST` per conversation's
+  insight request, sent when the group's insights complete or finally fail, with a result for each insight:
 
-Confirmed:
+  ```json
+  { "record_type": "event", "event_type": "conversation_insight_result",
+    "payload": { "conversation_id": "…", "status": "completed", "insight_group_id": "…",
+                 "results": [{ "insight_id": "…", "result": "…" }], "metadata": { } } }
+  ```
 
-- **Assistants we create through the API have no tools.** The portal shows "You haven't added any tools yet" on an
-  app-created assistant (`First`). Portal templates, including Blank, add a Hang Up tool; that is a portal default,
-  not an API one. So sending `tools: []` (or only a `retrieval` tool) removes nothing we rely on.
-- **The account had no storage buckets** before the spike.
-- **A portal "knowledge base" is a storage bucket.** The Assistant → Agent → Knowledge Bases block has *Sources* (a
-  multi-select of bucket names, so one bucket can be picked by several assistants) and *Max Number of Results*
-  (blank by default). Saving labels the new assistant version "Added knowledge base bucket ID".
-- **Bucket creation:** name 3–63 characters of lowercase letters, digits, `.` and `-`, globally unique; region
-  defaults to `us-central-1`; advanced option *Storage Versioning* Disable/Enable. With Disable the bucket shows
-  "Bucket Versioning: Suspended" and no lifecycle configuration, so deleted objects are not kept as old versions.
-- **Embedding an empty bucket works:** the portal reported "Knowledge base creation initiated" before any file was
-  added; files uploaded afterwards were embedded, and the bucket list showed "AI Embedding: Embedded" within about a
-  minute. The per-object "Embedding Status" column stayed blank for these small text files.
-- **Uploaded files keep their names as object keys** (`spike-en.txt`, `spike-zh.txt`).
-- **URL crawl naming:** crawling `https://example.com` (no same-domain links) produced one object,
-  `depth-4-0.txt` (158 bytes of extracted text), at the bucket root, 1–2 minutes after submission. Crawled pages are
-  stored as plain-text `depth-<level>-<n>.txt` objects, never under a prefix of ours, and a second crawl into the same
-  bucket would reuse the same names.
-- **No text chat for assistants in the portal.** "Test assistant" offers a web call, a call to a phone, or a text from
-  the assistant. The LLM Playground has no retrieval option. Retrieval during a call can only be checked by calling.
+  Signed with the usual Ed25519 headers (§5).
+- **Chats:** the docs say insights also run on chat conversations, but none of our test chats got any insight entries
+  within about 10 minutes, with either the Default group or our own (**Live 2026-10-26**).
 
-Still open: see `docs/telnyx-support-questions-knowledge-base.md` (retention after 30 days, vector deletion, crawl
-billing (limits: see §17), behaviour with an empty bucket, retrieval during calls on each model).
+## 11. Voices, previews and cloning
 
-## 16. Assistant behavior fields and variables — checked live 2026-10-21
+### Voice list: `GET /v2/text-to-speech/voices`
 
-Probe: a throwaway assistant created with the fields below, updated, read back, then hard-deleted (its TeXML app
-went with it: `GET /texml_applications/{id}` answered 404 afterwards). Portal tour of the same account for context.
+- Query `provider` (`aws|telnyx|azure|elevenlabs|minimax|resemble|xai|humain|soniox`), `api_key` (ElevenLabs).
+  Response is **not** wrapped: `{ "voices": [ … ] }` (**Docs**).
+- **Live 2026-10-07:** each entry's `id` is already the full voice string for an Assistant (e.g.
+  `Telnyx.KokoroTTS.af_heart`, `Telnyx.Ultra.<uuid>`), with `name`, `language`, `model_id`, `gender`, `label` and an
+  optional `deprecated`. Mandarin (`zh`) exists **only on Ultra** (15 voices, 2 deprecated); KokoroTTS has no
+  Mandarin; `NaturalHD.astra` doesn't exist. VFi loads the catalog live and skips deprecated voices.
+- Voice string formats (**Docs**): `Telnyx.<model>.<voice_id>`, `Minimax.<Model>.<VoiceId>`, `AWS.Polly.<voice_id>`,
+  `azure.<voice>`. ElevenLabs needs `api_key_ref` (docs/elevenlabs-notes.md). Mustache works in it
+  (`Telnyx.Ultra.{{voice_id}}`).
 
-- **Accepted and echoed back as sent:** `voice_settings.voice_speed` (on KokoroTTS and Ultra voices),
-  `voice_settings.background_audio {type: "predefined_media", value: "silence"|"office", volume}`,
-  `transcription.settings.keyterm` (comma-separated string), `interruption_settings {enable,
-  disable_greeting_interruption, start_speaking_plan.wait_seconds}`, `telephony_settings.time_limit_secs`,
-  `telephony_settings.user_idle_timeout_secs` (and `null` clears it), `transcription.settings.keyterm: null` (sent
-when an agent has no key terms), custom keys in `dynamic_variables`.
-- **`voice_speed` isn't range-checked:** 1.6 was accepted. We clamp to 0.8–1.2 ourselves. Whether every voice model
-  honors it is only provable on a call.
-- **Hangup tool:** `{"type": "hangup", "hangup": {"description": "…"}}`. Telnyx gives each inline tool a
-  `tool_id`; sending the full `tools` list again replaces them (one hangup tool after an update, with a new id).
-- **Variables in chat (`POST /ai/assistants/{id}/chat`):** `{{telnyx_current_date}}`, `{{telnyx_current_weekday}}`
-  and `{{telnyx_current_time}}` resolved (UTC: `2026-10-21T14:48:29Z`). A custom key with a default in the assistant's
-  `dynamic_variables` did **not** resolve, nor did `{{telnyx_end_user_target}}`. So we pass every value explicitly on
-  `answer` / `ai_assistant_start`, and fill in the other party's number (`contact_number`) and local time
-  (`current_time`) ourselves.
-- **Time zones:** `{{telnyx_current_time_<IANA zone>}}` and the `date` filter exist (prose docs); the shorthand
-  variables are UTC.
-- **Templates are portal-only.** The portal offers 30 (Blank, healthcare, sales, scheduling, collections, routing,
-  multilingual, video); there is no template endpoint. Its section list: Agent, Voice, Avatar, Workflow,
-  Integrations, Analysis, Calling, Messaging, Widget, Observability, Simulation, Advanced.
+### Preview
 
+**Live 2026-10-08.** `POST /v2/text-to-speech/speech {text, voice}` returns `audio/mpeg` bytes directly, about 0.5 s
+for a sentence on KokoroTTS and Ultra. It has no pronunciation-dictionary parameter (**Live 2026-10-26**).
 
-## 17. Website crawl limits — checked live 2026-10-21
+### Cloning
 
-Probe: two throwaway buckets on the platform account, each set up as the app does it (create bucket,
-`POST /ai/embeddings` on it, then `POST /ai/embeddings/url`), polled every 30 s until the object count held for 10
-minutes, then emptied and deleted (objects, `DELETE /ai/embeddings/buckets/{name}`, bucket; the embeddings endpoint
-answered 404 afterwards).
+**Docs.** https://developers.telnyx.com/docs/voice/voice-design-lab/clone-voice/parameters
+
+- `POST /v2/voice_clones/from_upload` (multipart): `audio_file` (WAV/MP3/FLAC/OGG/M4A), `name`, `language` (ISO
+  639-1), `gender` (`male|female|neutral`) and `provider` (`telnyx` | `minimax`), all required; `model_id` (`Qwen3TTS` default |
+  `Ultra` | `speech-2.8-turbo` for minimax), `ref_text` (optional transcript, improves quality), `label`.
+- Limits: Qwen3TTS 3–15 s (trimmed to 10 s), 5 MB, synchronous 201. Ultra up to 60 s, 5 MB, **asynchronous 202**
+  (`status: pending`). Minimax 10 s–5 min, 20 MB, synchronous.
+- **No consent fields** exist; consent is our responsibility.
+- Response `data`: `id`, `name`, `language`, `gender`, `provider`, `provider_supported_models[]`,
+  `provider_voice_id`, `model_id`, `status` (`active|pending|failed|expired`; "expired if not kept alive"),
+  timestamps. What keeps a clone alive: **UNCONFIRMED**.
+- Voice string for an Assistant: `{Provider}.{Model}.{provider_voice_id}`, e.g. `Telnyx.Qwen3TTS.<clone id>` (for
+  Qwen3TTS `provider_voice_id` is the clone id). Ultra uses a Cartesia-assigned id (presumably
+  `Telnyx.Ultra.<provider_voice_id>`, **UNCONFIRMED**).
+- Polling: the docs say `GET /v2/voice_clones/{id}`, but the OpenAPI spec defines only PATCH and DELETE there. VFi
+  tries the GET and falls back to the list (`GET /v2/voice_clones?page[size]=250`).
+- `GET /v2/voice_clones/{id}/sample` returns the uploaded sample as is (`audio/wav`) (**Live 2026-10-08**).
+- Also: `POST /v2/voice_clones` from a voice design (`POST /v2/voice_designs` takes a text prompt; designs can't be
+  used for TTS directly), `PATCH|DELETE /v2/voice_clones/{id}`.
+- **Clones need account verification (Live 2026-10-08).** On an unverified account cloning succeeds but using the
+  clone fails: Assistants answer 403 `10010` "Your account is not permitted to use cloned voices. Please complete L2
+  verification or use a platform voice"; TTS answers 403 `10038` "Feature not permitted at this account level". The
+  adapter maps `10010` to `FeatureNotPermittedError`.
+
+## 12. Messaging
+
+VFi only **receives** texts (SPEC §7). Receiving is built and in use; the sending, 10DLC and Assistant-messaging
+notes below are kept for reference.
+
+### What VFi uses
+
+- One messaging profile whose webhook is `/api/webhooks/telnyx` (API version 2). A number can send or receive only
+  once it's on a profile. VFi assigns numbers with `PATCH /v2/messaging_phone_numbers/{e164}
+  {messaging_profile_id}`; the 10DLC doc uses `PATCH /v2/phone_numbers/{number}` for the same field (**UNCONFIRMED**
+  which is canonical). It can also be set on the number order (§2).
+- `message.received` (**Docs**): `data.payload` has `id`, `direction`, `from.phone_number`,
+  `to[] {phone_number, status}`, `text`, `media[] {url, content_type, sha256, size}` (media URLs expire after 30
+  days), `cost {amount, currency}`, `parts`, `errors`. `data.id` is the event id for de-duplication. Same Ed25519
+  signing as calls. Other events: `message.sent`, `message.finalized`.
+- **Never** put `messaging` in an Assistant's `enabled_features`: the Assistant would reply to texts.
+- Pricing (**Docs, 2026-10-16**): receiving $0.004 per segment plus $0–0.0045 carrier fees; an unregistered
+  (non-10DLC) carrier fee of about $0.010–0.012 may apply (**UNCONFIRMED** for receiving); texting on a number
+  $0.10/month.
+
+### Sending (not used)
+
+**Docs.** `POST /v2/messages`: `to` (E.164 string), `from`, `text` or `media_urls[]` (MMS, < 1 MB total), `subject`,
+`type`, `messaging_profile_id`, `webhook_url`, `use_profile_webhooks` (default true), `send_at` (ISO 8601, minute
+precision), `encoding` (`auto|gsm7|ucs2`).
+Response `to[]` is an array (a string in the request). Mandarin is UCS-2: 70 characters per segment (67 when
+concatenated) versus 160/153 for GSM-7.
+
+### 10DLC (not used)
+
+**Docs.** Carriers filter unregistered A2P texts from local numbers (texts between Telnyx numbers are on-net and
+work for testing). Flow: brand (`/v2/10dlc/brand`) → campaign (`/v2/10dlc/campaignBuilder`) →
+`POST /v2/10dlc/phoneNumberCampaign {phoneNumber, campaignId}`; the number must already be on a profile; one
+campaign per number; the campaign must be `ACTIVE`. Approval usually 1–5 business days, then 24–72 h after
+assigning numbers. Fees: $4 brand, $15 campaign vetting; monthly and per-message surcharges **UNCONFIRMED**. Sole
+proprietor brands (no EIN) need the registrant's name, address, mobile and last 4 of SSN, verified by SMS PIN within
+24 h; 1 campaign, 1 number, low volume (about 1,000 texts a day per a support article).
+
+### Assistants and messaging (not used)
+
+**Docs.** `enabled_features` may include `messaging` ("the assistant will be able to send and receive messages") with
+`messaging_settings {default_messaging_profile_id, delivery_status_webhook_url, conversation_inactivity_minutes}`; a
+default messaging profile is created with the Assistant.
+Outbound texts from an Assistant: `POST /v2/ai/assistants/{id}/scheduled_events` with
+`telnyx_conversation_channel: "sms_chat"`, `telnyx_end_user_target`, `telnyx_agent_target`,
+`scheduled_at_fixed_datetime` (future), `text`; retry fields are rejected (400) for SMS; status
+`pending|in_progress|completed|failed`. **UNCONFIRMED:** how inbound texts reach the Assistant; whether we
+still get `message.received` for them; whether the time can be "now"; whether SMS conversations appear in
+`/ai/conversations`; whether a send-text tool exists during calls.
+
+Open questions for support: docs/telnyx-support-questions-messaging.md.
+
+## 13. Knowledge bases: buckets, embeddings, crawls
+
+A portal "knowledge base" is a storage bucket whose objects are embedded; the Assistant searches it with a
+`retrieval` tool. Background for SPEC §8. Open questions for support:
+docs/telnyx-support-questions-knowledge-base.md.
+
+### Buckets and objects
+
+**Live 2026-10-20** (portal spike; the Telnyx MCP connector rejected calls as unauthenticated).
+
+- In the portal, Assistant → Agent → Knowledge Bases has *Sources* (a multi-select of bucket names, so one bucket can
+  serve several Assistants) and *Max Number of Results* (blank by default). Saving labels the new version "Added
+  knowledge base bucket ID".
+- Bucket names: 3–63 characters of lowercase letters, digits, `.` and `-`, globally unique. Region defaults to
+  `us-central-1`. With *Storage Versioning* disabled the bucket shows "Bucket Versioning: Suspended" and no
+  lifecycle rules, so deleted objects aren't kept as old versions.
+- Uploaded files keep their names as object keys.
+- Telnyx allows 100 buckets per account (**Docs**).
+- VFi talks to storage over the S3-compatible endpoint `https://us-central-1.telnyxcloudstorage.com/<bucket>/<key>`,
+  using the API key as the SigV4 access key id (Telnyx ignores the signature). See `src/server/telnyx/storage.ts`.
+
+### Embeddings
+
+- `POST /v2/ai/embeddings` on a bucket turns embedding on. **It works on an empty bucket:** files uploaded afterwards
+  were embedded, and the bucket showed "AI Embedding: Embedded" within about a minute (**Live 2026-10-20**).
+- The per-object "Embedding Status" stayed blank for small embedded text files (**Live 2026-10-20**). VFi treats
+  blank as embedded and only explicit progress words as processing.
+- `GET /v2/ai/embeddings/buckets/{name}` lists embedded files; `DELETE` turns embedding off (afterwards `GET`
+  answers 404) (**Live 2026-10-21**).
+- Embedding price (**Docs**): $0.0015 per 1,000 characters with the default `intfloat/multilingual-e5-large` (the
+  $0.0001 per 1,000 tokens on the inference price list is gte-large). Storage $0.60 per GiB-month.
+
+### Retrieval tool
+
+- Shape: `{type: "retrieval", retrieval: {bucket_ids: [...], max_num_results: 3}}`, sent inline in `tools` (inline
+  tools are deprecated, §7). Whether `bucket_ids` takes names: **UNCONFIRMED** (the portal picks by name).
+- Retrieval during a call can't be tested in the portal (it has no text chat); `POST /ai/assistants/{id}/chat` does
+  run it (§15).
+
+### Website crawls
+
+`POST /v2/ai/embeddings/url` crawls a site into the bucket. **Live 2026-10-21**: two throwaway buckets set up as the
+app does, polled every 30 s until the object count held for 10 minutes, then emptied and deleted.
 
 | Start URL | Objects | Text | Timeline |
-|---|---|---|---|
-| `https://developers.telnyx.com/` | 2 (3 by cleanup) | 18 KB | 1st object at ~2 min, 2nd at ~4 min, then nothing for 10+ min; a 3rd had arrived by 21:39, ~37 min after submission |
-| `https://docs.python.org/3/` | 8 | 12.5 MB | objects from ~2 min to ~11 min, then nothing for 10 min |
+| --- | --- | --- | --- |
+| `https://developers.telnyx.com/` | 2 (3 by cleanup) | 18 KB | 1st at ~2 min, 2nd at ~4 min, nothing for 10+ min, a 3rd by ~37 min |
+| `https://docs.python.org/3/` | 8 | 12.5 MB | from ~2 to ~11 min, then nothing for 10 min |
 
-- **The task status means nothing.** `POST /ai/embeddings/url` answers `status: "success"` with `finished_at: null`
-  at once, before any page is written, and `GET /ai/embeddings/{task_id}` kept answering exactly that for the whole
-  crawl and after it. Neither status nor `finished_at` tells us when a crawl is done.
-- **Objects are not pages.** Each `depth-<level>-<n>.txt` object is the extracted text of many pages concatenated
-  (no separators or URLs per page), split at about 2 MB. `<level>` counts down from 4 at the start URL to 1, so a
-  crawl follows links about three hops deep. `<n>` numbers the chunks within a level. The Python docs gave
-  `depth-4-0` (64 bytes, the start page), `depth-3-0` (204 KB), `depth-2-0`…`depth-2-4` (1.1–2.8 MB each) and
-  `depth-1-0` (2.1 MB). Writing seems to happen once per batch of pages, not per page.
-- **No page or size limit seen.** The only limit visible is the depth (about three hops). One URL produced 12.5 MB
-  of text, and all 8 objects showed up as embedded files (`GET /ai/embeddings/buckets/{name}`), so presumably all of
-  it was billed for embedding. A larger site within three hops could produce much more. A JavaScript-rendered site
-  (the Telnyx docs) yields almost nothing.
-- **Late writes.** A crawl can write again after more than 10 minutes of silence (developers.telnyx.com, above).
-  "Done" can only be guessed from the bucket going quiet, and even that isn't reliable.
+- **The task status means nothing.** The POST answers `status: "success"` with `finished_at: null` at once, and
+  `GET /ai/embeddings/{task_id}` keeps answering that during and after the crawl.
+- **Objects aren't pages.** Each object is many pages' text concatenated (no separators or URLs), split at about
+  2 MB, named `depth-<level>-<n>.txt` at the bucket root. `<level>` counts down from 4 at the start URL to 1, so a
+  crawl follows links about three hops deep; `<n>` numbers chunks within a level. The Python docs gave `depth-4-0`
+  (64 bytes), `depth-3-0` (204 KB), `depth-2-0`…`depth-2-4` (1.1–2.8 MB each), `depth-1-0` (2.1 MB). A second crawl
+  into the same bucket reuses the names (**Live 2026-10-20**).
+- **No page or size limit** beyond the depth. All 12.5 MB was embedded, presumably billed. JavaScript-rendered sites
+  (the Telnyx docs) yield almost nothing.
+- **Late writes:** a crawl wrote again after more than 10 quiet minutes. "Done" can only be guessed from the bucket
+  going quiet; VFi waits an hour (`knowledgeCrawlQuietMs`) and checks only total bytes, not object count.
 
-What this meant for `settleCrawl` / `crawlMayWrite` in `src/server/knowledge.ts` (both fixed the same day: a crawl
-now counts as done once the bucket has been quiet for `knowledgeCrawlQuietMs`, and only the byte limit is checked):
+## 14. Assistant versions and routing rules
 
-- Both trust `getCrawlStatus`, which maps the immediate `success` to finished. In live mode a new URL source would be
-  settled on the next refresh with 0 pages and failed as unreadable, and cleanup would think the crawl can no longer
-  write.
-- `knowledgeCrawlPages` (50) counts objects, which are ~2 MB chunks, so it can't catch a site that is too large.
-  `knowledgeCrawlBytes` (4 MB) did catch the Python docs (12.5 MB), but only after Telnyx had already embedded and
-  presumably billed all of it.
+**Live 2026-10-26.** Not used by VFi (draft versions were dropped, SPEC §1.4); recorded in case we return to them.
 
-
-## 18. Assistant round 2 (SPEC §20.6) — checked live 2026-10-26
-
-Probe: two throwaway assistants (`vfi-probe-*`, no number), one pronunciation dictionary, one insight group with two
-insights, one AI test, and the chat conversations they produced, all on the platform account and all deleted afterwards
-(assistants hard-deleted). Sources: the OpenAPI spec above and
-`https://developers.telnyx.com/public/llms/ai/assistants-full.txt`, `.../calling/webrtc-full.txt`, `https://telnyx.com/pricing.md`.
-
-### C. Pronunciation and recognition
-
-- **Dictionaries:** `POST /v2/pronunciation_dicts {name, items[]}`; items are `{text, type: "alias", alias}` or
-  `{text, type: "phoneme", phoneme, alphabet: "ipa"}`. `text` ≤ 200 chars, alias ≤ 500, matching is case-insensitive.
-  `PATCH /pronunciation_dicts/{id} {items}` replaces the whole list (optimistic locking: 409 on a concurrent change);
-  `DELETE` answers 204. `name` must be unique in the organization.
-- **Limits: 50 dictionaries per organization, 100 items each.** All VFi users share the platform account, so this is
-  50 dictionaries across every user (error `90203` "Maximum number of pronunciation dictionaries (50) reached").
-- **Linking:** `voice_settings.pronunciation_dict_id` is accepted on create/update and echoed back, though the OpenAPI
-  schema doesn't list it. `null` removes it. Omitting it keeps the current one (the stored `voice_settings` is merged,
-  not replaced). A non-existent id is accepted without error, so we must validate it ourselves.
-- **Preview:** `POST /text-to-speech/speech` has no dictionary parameter. For the "try it" sentence, apply the alias
-  items to the text ourselves before synthesis (phoneme items can't be previewed this way).
-- **Not provable without a call:** whether the dictionary is honored by each TTS model (Ultra, KokoroTTS, clones,
-  ElevenLabs), and for English words inside Mandarin sentences. To check on the first real call after C ships.
-- **Recognition prompt:** `transcription.settings.prompt` is "available only for `assemblyai/universal-3-5-pro`" (our
-  STT model), at most 1,750 characters, and should "describe the content, do not give instructions". Accepted and
-  echoed back alongside `keyterm`. Its effect is only provable on a call.
-
-### A. Call-result fields and email
-
-- **Structured insights need strict JSON Schema:** `additionalProperties: false` is required, and `required` must
-  list every property (`10015 Invalid json_schema`). An optional field therefore uses a nullable type
-  (`"type": ["string", "null"]`). `enum` and `boolean` work. The result arrives as a JSON string.
-- **Groups:** `POST /ai/conversations/insight-groups {name, webhook}`, `POST /ai/conversations/insights {name,
-  instructions, json_schema?}`, `POST .../insight-groups/{g}/insights/{i}/assign`. No documented limit on groups or
-  insights. The account's `Default` group holds three Telnyx-managed insights (Summary, User Satisfaction, Agent
-  Instruction Following); a group of our own doesn't include them, so it needs its own summary insight.
-- **Insight model:** `insight_settings.model` must be `zai-org/GLM-5.3-Flash` (default on create) or
-  `meta-llama/Llama-3.3-70B-Instruct`; it runs every insight in the group. GLM-5.3-Flash costs $0.135/$0.45 per
-  million input/output tokens, so per-call insights cost a fraction of a cent.
-- **Webhook:** set on the group (no per-assistant override). One `POST` per insight request when it completes or
-  finally fails: `{record_type: "event", event_type: "conversation_insight_result", payload: {conversation_id,
-  status, insight_group_id, results: [{insight_id, result}], metadata}}`, signed with the usual Ed25519 headers. This
-  is the timely trigger for the email; results arrive keyed by `insight_id`.
-- **Chats:** the docs say insights apply to chat conversations too, but none of the probe's chat conversations got
-  any insight entries within about 10 minutes, with either the Default group or our own.
-- `post_conversation_settings.enabled` gives the assistant one extra LLM turn after the conversation for final tool
-  calls. Not useful to us: insights already cover it, and we have no tools to call.
-
-### B. Testing without calls
-
-- **Chat:** `POST /ai/assistants/{id}/chat {content, conversation_id}` needs an existing conversation
-  (`POST /ai/conversations {name, metadata}`); a random UUID gives 404. Reply in about 1 s. The conversation's
-  metadata gets `assistant_id`, `assistant_version_id` and `telnyx_conversation_channel: "web_chat"`.
-- **Variables in chat:** top-level keys in the conversation's `metadata` fill `{{variables}}` (`{business_name:
-  "MetaCo"}` resolved; nested `dynamic_variables` was rejected). Without them, custom variables render as `Unknown`.
-- **Chat always uses the main version** — extra body fields (`version_id`, `target_version_id`, …) are ignored —
-  **unless a routing rule matches.** With a rule `{match: [{attribute: "telnyx_end_user_target", operator: "in",
-  values: ["vfi-draft-test"]}], serve: {version_id}}`, a conversation created with metadata
-  `{telnyx_end_user_target: "vfi-draft-test"}` was answered by that version. `telnyx_end_user_target` is the only
-  allowed attribute.
-- **Flaky right after an update:** a chat sent within seconds of an assistant create/update sometimes answered
-  `422 "Error chatting with assistant: Error code: 404"`; a retry a few seconds later worked. Seen with GLM-5.2, not
-  with GLM-5.3-Flash. Retry once before showing an error.
-- **AI Tests** (`POST /ai/assistants/tests`, `POST .../tests/{id}/runs`): an LLM plays the caller from free-text
-  `instructions`, and an LLM judges each `rubric` item; a 3-turn `web_chat` run took about 30 s. **The run's
-  `destination_version_id` was ignored on `web_chat`** (it answered from main). Test conversations have
-  `telnyx_end_user_target: "ai-assistant-test-<test_id>"`, so a routing rule could send them to a draft. Pricing for
-  test runs isn't published. Creating a test also creates a hidden simulator assistant named after the test; deleting
-  the test only soft-deletes it (it shows in `GET /ai/assistants/deleted` until hard-deleted).
-- **Cost:** chat bills only LLM inference (no voice minutes). GLM-5.2 is $1 / $4 per million input/output tokens
-  ($0.20 cached input); a reply with long instructions plus knowledge-base context (~8k tokens in) costs about
-  $0.01.
-- **Browser voice:** the WebRTC SDK's `anonymous_login: {target_type: "ai_assistant", target_id, target_version_id?,
-  target_params: {conversation_id}}` connects a browser straight to an assistant (a specific version is supported).
-  It requires `telephony_settings.supports_unauthenticated_web_calls: true`, which lets **anyone who knows the
-  assistant id** call it on our account. These calls go through the assistant's own TeXML app, not our Call Control
-  application, so we get no answer webhook, balance check, recording or per-call variables. Billing would have to
-  come from the conversation afterwards. Voice AI is $0.05/min on Telnyx's side.
-
-### D. Versions
-
-- **Every update creates a version; each assistant keeps at most 10.** Older versions are deleted, except the main
-  version and any version a routing rule references. Our background resyncs therefore use up versions too.
-- `POST /ai/assistants/{id}` with `promote_to_main: false` creates a non-main version and leaves main as it was.
+- **Every update creates a version; each Assistant keeps at most 10.** Older ones are deleted, except the main
+  version and any version a routing rule references. VFi's background re-syncs use up versions too.
+- `POST /ai/assistants/{id}` with `promote_to_main: false` creates a non-main version and leaves main alone.
   `POST /ai/assistants/{id}/versions/{version_id}` updates that non-main version in place (same id, no new version;
   main can't be updated this way). The non-main version survived four later main updates.
-- `POST .../versions/{version_id}/promote` makes it main in one call and **deletes the routing rules**
-  (`GET .../canary-deploys` answers 404 afterwards).
-- Routing rules: `POST`/`PUT /ai/assistants/{id}/canary-deploys {rules: [{match, serve}]}`; the first matching rule
-  wins, and no match means main. For calls, `telnyx_end_user_target` is the caller (inbound) or the destination
-  (outbound), so a rule on a value like `vfi-draft-<agent id>` never matches real traffic.
-- `answer`, `ai_assistant_start` and `POST /calls` take `assistant.id` plus per-call overrides (instructions, voice,
-  transcription, tools, …) but no version id.
+- `POST …/versions/{version_id}/promote` makes it main in one call and **deletes the routing rules** (`GET
+  …/canary-deploys` answers 404 afterwards).
+- Routing rules: `POST` / `PUT /ai/assistants/{id}/canary-deploys {rules: [{match, serve}]}`, e.g.
+  `{match: [{attribute: "telnyx_end_user_target", operator: "in", values: ["vfi-draft-test"]}], serve: {version_id}}`.
+  The first matching rule wins; no match means main. `telnyx_end_user_target` is the only allowed attribute.
+- For calls, `telnyx_end_user_target` is the caller (inbound) or the destination (outbound), so a rule on a made-up
+  value never matches real calls, and a rule on a phone number would route that person's calls to a version (not
+  tested on a real call).
+- Answer, dial and `ai_assistant_start` take no version id; per-call overrides apply to whichever version answers.
 - `version_name` (optional) labels a version.
+
+## 15. Testing without calls: chat, AI Tests, browser calls
+
+**Live 2026-10-26.** Not used by VFi (dropped, SPEC §1.4), except that chat was used to compare models (§8).
+
+- **Chat:** `POST /ai/assistants/{id}/chat {content, conversation_id}` needs an existing conversation
+  (`POST /ai/conversations {name, metadata}`); a random UUID gives 404. Replies in about 1 s; the same
+  `conversation_id` continues the conversation; the retrieval tool runs. The conversation's metadata gets
+  `assistant_id`, `assistant_version_id`, `telnyx_conversation_channel: "web_chat"`. Variables: §9.
+- **Chat always uses the main version** (body fields like `version_id` are ignored) unless a routing rule matches the
+  conversation's `telnyx_end_user_target` metadata (§14).
+- **Flaky right after an update:** a chat within seconds of an Assistant create or update sometimes answered
+  `422 "Error chatting with assistant: Error code: 404"`; a retry a few seconds later worked. Seen with GLM-5.2, not
+  GLM-5.3-Flash. Retry once.
+- **Cost:** chat bills only LLM tokens (no voice minutes). A GLM-5.2 reply with long instructions and knowledge
+  context (~8k tokens in) is about $0.01.
+- **AI Tests** (`POST /ai/assistants/tests`, `POST …/tests/{id}/runs`): an LLM plays the caller from free-text
+  `instructions` and an LLM judges each `rubric` item; a 3-turn `web_chat` run took about 30 s. **The run's
+  `destination_version_id` was ignored on `web_chat`** (main answered). Test conversations have
+  `telnyx_end_user_target: "ai-assistant-test-<test_id>"`. Run pricing isn't published. Creating a test also creates
+  a hidden simulator Assistant named after it; deleting the test only soft-deletes that Assistant.
+- **Browser voice calls:** the WebRTC SDK's `anonymous_login {target_type: "ai_assistant", target_id,
+  target_version_id?, target_params: {conversation_id}}` connects a browser straight to an Assistant (a specific
+  version works). It requires `telephony_settings.supports_unauthenticated_web_calls: true`, which lets **anyone who
+  knows the Assistant id** call it on our account. These calls go through the Assistant's own TeXML app, not our Call
+  Control app: no answer webhook, balance check, recording or per-call variables. Voice AI is $0.05/min on Telnyx's
+  side.
+
+## 16. Pronunciation dictionaries and recognition prompts
+
+**Live 2026-10-26.** Not used by VFi (dropped, SPEC §1.4).
+
+- `POST /v2/pronunciation_dicts {name, items[]}`; items are `{text, type: "alias", alias}` or
+  `{text, type: "phoneme", phoneme, alphabet: "ipa"}`. `text` ≤ 200 characters, alias ≤ 500, case-insensitive
+  matching. `PATCH /pronunciation_dicts/{id} {items}` replaces the whole list (409 on a concurrent change). `DELETE`
+  answers 204. `name` must be unique in the organization.
+- **50 dictionaries per organization, 100 items each.** All VFi users share one account, so 50 across every user
+  (error `90203`).
+- Linked with `voice_settings.pronunciation_dict_id` (accepted and echoed though not in the OpenAPI schema). `null`
+  removes it; omitting keeps it; a non-existent id is accepted without error.
+- The TTS preview endpoint can't use a dictionary; alias items would have to be applied to the text first.
+- Whether each TTS model honors dictionaries, and English words inside Mandarin sentences: only provable on a call.
+- **Recognition prompt:** `transcription.settings.prompt`, only for `assemblyai/universal-3-5-pro`, at most 1,750
+  characters, should "describe the content, do not give instructions". Accepted and echoed beside `keyterm`. Effect
+  only provable on a call.
+
+## 17. Unconfirmed items
+
+Collected from the sections above.
+
+| Item | Section |
+| --- | --- |
+| US local numbers need no requirement group | §2 |
+| An Outbound Voice Profile is strictly required for dialing | §3 |
+| An `assistant` object on dial starts the Assistant on answer | §4 |
+| Full field lists of `call.conversation.created` / `start_failed` | §5 |
+| AI inference included in `call.cost` parts | §6 |
+| How long recording `download_urls` stay valid | §6 |
+| Ultra clone voice string; what keeps a clone alive | §11 |
+| Canonical endpoint for putting a number on a messaging profile | §12 |
+| Unregistered-traffic carrier fee on received texts; 10DLC monthly fees | §12 |
+| `bucket_ids` takes bucket names | §13 |
+| Insight webhook delivered after a real call | §10 |
+| Knowledge-base retention, vector deletion, crawl billing (support questions) | §13 |
+
+---
+
+## Appendix A. Old section numbers
+
+| Old | New |
+| --- | --- |
+| §1 Available number search, §2 Number orders, §3 Phone numbers | §2 |
+| §4 Call Control Application | §3 |
+| §5 Call Control commands | §4 |
+| §6 Call webhooks, §7 Webhook signature verification | §5 |
+| §8 AI Assistants (incl. "After a call") | §7, §10 |
+| §9 Voices and cloning | §11 |
+| §10 Recordings | §6 |
+| §11 Confirmed after review (call.cost, voices, number search) | §6, §11, §2 |
+| §12 Model choices verified on live calls | §8 |
+| §13 Previews, per-agent models, cloned-voice access | §11, §8 |
+| §14 Messaging | §12 |
+| §15 Knowledge bases | §13 |
+| §16 Assistant behavior fields and variables | §7, §9 |
+| §17 Website crawl limits | §13 |
+| §18 Assistant round 2: A (insights) | §10 |
+| §18: B (testing), C (pronunciation), D (versions) | §15, §16, §14 |
