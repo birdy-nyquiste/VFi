@@ -6,7 +6,7 @@ import { applyLedger } from "@/server/billing/ledger";
 import type { CallEvent } from "@/server/telnyx";
 
 export async function resetDb() {
-  await db.execute(sql`truncate table users, sessions, email_otps, payments, ledger_entries, phone_numbers, voices, elevenlabs_keys, agents, agent_knowledge, knowledge_sources, calls, messages, contacts, webhook_events restart identity cascade`);
+  await db.execute(sql`truncate table users, sessions, email_otps, payments, ledger_entries, phone_numbers, voices, elevenlabs_keys, agents, agent_knowledge, knowledge_sources, agent_call_results, calls, call_results, messages, contacts, webhook_events restart identity cascade`);
 }
 
 export async function makeUser(balanceCents = 0) {
@@ -44,7 +44,8 @@ export async function makeLine(balanceCents = 1000) {
 
 /** Another active number for the user, answered by `agentId` if given. */
 export async function addNumber(userId: string, agentId: string | null = null, createdAt = new Date()) {
-  const e164 = `+1628${String(Math.floor(Math.random() * 1e7)).padStart(7, "0")}`;
+  // The exchange (first digit after the area code) can't be 0 or 1, or the number isn't a valid US one.
+  const e164 = `+1628${2 + Math.floor(Math.random() * 8)}${String(Math.floor(Math.random() * 1e6)).padStart(6, "0")}`;
   const [number] = await db
     .insert(phoneNumbers)
     .values({ userId, e164, status: "active", agentId, providerNumberId: `num_${e164}`, createdAt })

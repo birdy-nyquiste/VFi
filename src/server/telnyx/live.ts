@@ -161,7 +161,7 @@ export function createTelnyxProvider(cfg: TelnyxConfig): VoiceProvider {
         // default and produced a second, duplicate recording on outbound calls.
         recording_settings: { enabled: false },
       },
-      ...(cfg.insightGroupId ? { insight_settings: { insight_group_id: cfg.insightGroupId } } : {}),
+      ...((spec.insightGroupId ?? cfg.insightGroupId) ? { insight_settings: { insight_group_id: spec.insightGroupId ?? cfg.insightGroupId } } : {}),
     };
   }
 
@@ -462,7 +462,58 @@ export function createTelnyxProvider(cfg: TelnyxConfig): VoiceProvider {
       return { conversationId: res.data?.conversation_id };
     },
 
-    async getCallResults(ref) {
+    async syncInsights(current, spec) {
+      // The insights are updated in place; a group or insight that has gone missing is made again, and a
+      // new group gets new insights (an insight is only ever assigned to the group it was made for).
+      const base = "/ai/conversations";
+      const group = { name: spec.name, description: "VFi call results", webhook: spec.webhookUrl };
+      let groupId = current?.groupId;
+      let fresh = false;
+      if (groupId) {
+        try {
+          await api("PUT", `${base}/insight-groups/${encodeURIComponent(groupId)}`, group);
+        } catch (err) {
+          if (!(err instanceof TelnyxApiError && err.status === 404)) throw err;
+          groupId = undefined;
+        }
+      }
+      if (!groupId) {
+        groupId = (await api<{ data: { id: string } }>("POST", `${base}/insight-groups`, group)).data.id;
+        fresh = true;
+      }
+      const gid = groupId;
+      async function upsert(id: string | null | undefined, body: Record<string, unknown>): Promise<string> {
+        if (id && !fresh) {
+          try {
+            await api("PUT", `${base}/insights/${encodeURIComponent(id)}`, body);
+            return id;
+          } catch (err) {
+            if (!(err instanceof TelnyxApiError && err.status === 404)) throw err;
+          }
+        }
+        const created = (await api<{ data: { id: string } }>("POST", `${base}/insights`, body)).data.id;
+        await api("POST", `${base}/insight-groups/${encodeURIComponent(gid)}/insights/${encodeURIComponent(created)}/assign`);
+        return created;
+      }
+      const summaryId = await upsert(current?.summaryId, { name: "Summary", instructions: spec.summaryInstructions });
+      let fieldsId: string | null = null;
+      if (spec.fields) {
+        fieldsId = await upsert(current?.fieldsId, { name: "Call results", instructions: spec.fields.instructions, json_schema: spec.fields.schema });
+      } else if (current?.fieldsId && !fresh) {
+        await ignoreNotFound(api("DELETE", `${base}/insights/${encodeURIComponent(current.fieldsId)}`));
+      }
+      return { groupId: gid, summaryId, fieldsId };
+    },
+
+    async deleteInsights(ids) {
+      const base = "/ai/conversations";
+      for (const id of [ids.summaryId, ids.fieldsId]) {
+        if (id) await ignoreNotFound(api("DELETE", `${base}/insights/${encodeURIComponent(id)}`));
+      }
+      if (ids.groupId) await ignoreNotFound(api("DELETE", `${base}/insight-groups/${encodeURIComponent(ids.groupId)}`));
+    },
+
+    async getCallResults(ref, insights) {
       const conversationId = await findConversationId(ref);
       if (!conversationId) return null;
       // Telnyx caps page[size] at 100 (larger sizes are rejected with 10015), so page through.
@@ -484,7 +535,7 @@ export function createTelnyxProvider(cfg: TelnyxConfig): VoiceProvider {
       // Asked whether or not TELNYX_INSIGHT_GROUP_ID is set: an assistant without our insight group still
       // gets the account's "Default" group from Telnyx, whose Summary insight is the summary.
       // A failed request leaves the summary pending rather than losing the transcript fetched above.
-      const ins = await api<{ data: { status: string; conversation_insights?: { result: string }[] }[] }>(
+      const ins = await api<{ data: { status: string; conversation_insights?: { insight_id?: string; result: string }[] }[] }>(
         "GET",
         `/ai/conversations/${encodeURIComponent(conversationId)}/conversations-insights`,
       ).catch((err) => {
@@ -495,8 +546,13 @@ export function createTelnyxProvider(cfg: TelnyxConfig): VoiceProvider {
       // Not completed yet, including before Telnyx has created any insight entry right after hangup: the
       // transcript is returned anyway, and the summary is fetched again until RESULTS_WAIT_MS makes it final.
       const summaryPending = !done;
-      const summary = done?.conversation_insights?.[0]?.result;
-      return { transcript, summary, summaryPending };
+      const results = done?.conversation_insights ?? [];
+      // By id when the agent has its own insights; calls from before that, and agents on the platform
+      // group, have just the summary first.
+      const byId = (id: string | null | undefined) => (id ? results.find((r) => r.insight_id === id)?.result : undefined);
+      const summary = byId(insights?.summaryId) ?? (insights?.fieldsId ? results.find((r) => r.insight_id !== insights.fieldsId) : results[0])?.result;
+      const fields = byId(insights?.fieldsId);
+      return { transcript, summary, summaryPending, fields };
     },
 
     async getRecordingUrl(ref) {

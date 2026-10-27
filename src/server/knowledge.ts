@@ -16,7 +16,7 @@ import { UserError } from "@/lib/errors";
 import { toMegabytes } from "@/lib/format";
 import { failureColumns, stored, type StoredText } from "@/lib/stored-text";
 import { normalizeLineBreaks } from "@/lib/text";
-import { agentFingerprint, DELETED_SOURCE, desiredKnowledge, resyncAgentIfStale, syncAgentQuietly } from "./agents";
+import { agentIsStale, DELETED_SOURCE, desiredKnowledge, pushedWithKnowledge, resyncAgentIfStale, syncAgentQuietly } from "./agents";
 import { chargePurchase, refundPurchase, type Purchase } from "./billing/ledger";
 import { voiceProvider } from "./telnyx";
 import type { StoredObject } from "./telnyx/types";
@@ -105,14 +105,14 @@ export async function getAgentKnowledge(agent: Agent): Promise<AgentKnowledgeVie
   const sources = all.filter((s) => s.status !== "deleting");
   const website = sources.some((s) => s.type === "url") ? "listed" : all.some((s) => s.type === "url") ? "removing" : null;
   const desired = (await desiredKnowledge([agent.id])).get(agent.id);
-  const stale = agent.status === "ready" && agent.syncedConfig !== agentFingerprint(desired);
+  const stale = await agentIsStale(agent);
   return {
     base: base ?? null,
     sources,
     website,
     notApplied: stale && Boolean(desired),
     // A fingerprint with a knowledge part means the last push included the retrieval tool.
-    notRemoved: stale && !desired && Boolean(agent.syncedConfig?.includes(":")),
+    notRemoved: stale && !desired && pushedWithKnowledge(agent.syncedConfig),
   };
 }
 

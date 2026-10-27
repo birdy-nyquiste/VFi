@@ -8,6 +8,7 @@ import { config } from "@/lib/config";
 import { getUserAgent, listModels, resyncStaleAgentsOnView } from "@/server/agents";
 import Link from "next/link";
 import { requireUser } from "@/server/auth";
+import { getAgentResultsRow, readResultsSettings } from "@/server/call-results";
 import { getElevenLabsKey } from "@/server/elevenlabs/keys";
 import { countAgentSources, hasPendingKnowledge, refreshKnowledge } from "@/server/knowledge";
 import { listUserNumbers } from "@/server/numbers";
@@ -40,7 +41,7 @@ export default async function AgentPage({
     if (await hasPendingKnowledge(agent.id)) await refreshKnowledge({ agentId: agent.id });
     if (await resyncStaleAgentsOnView(user.id)) agent = (await getUserAgent(user.id, id)) ?? agent;
   }
-  const [stock, clones, models, elKey, numbers, sources] = await Promise.all([
+  const [stock, clones, models, elKey, numbers, sources, resultsRow] = await Promise.all([
     // Without the catalog the form keeps the agent's current voice and says why there are no others.
     listStockVoices().catch((err) => {
       console.error("voice catalog unavailable", err);
@@ -52,6 +53,7 @@ export default async function AgentPage({
     getElevenLabsKey(user.id),
     listUserNumbers(user.id),
     config.features.knowledgeBase ? countAgentSources(agent.id) : 0,
+    getAgentResultsRow(agent.id),
   ]);
   const [t, locale] = await Promise.all([getTranslations("agents"), getLocale()]);
   const keyRejected = isElevenLabsVoice(agent.voiceRef) && Boolean(elKey?.keyInvalidAt);
@@ -81,7 +83,16 @@ export default async function AgentPage({
       )}
       {/* Keyed on updatedAt: React resets a form to its initial defaults after an action, so
           without a remount the fields would show pre-save values (and a second save would revert). */}
-      <AgentForm key={agent.updatedAt.toISOString()} agent={agent} saved={Boolean(saved) && agent.status === "ready"} stock={stock} clones={clones} models={models} />
+      <AgentForm
+        key={agent.updatedAt.toISOString()}
+        agent={agent}
+        saved={Boolean(saved) && agent.status === "ready"}
+        stock={stock}
+        clones={clones}
+        models={models}
+        results={readResultsSettings(resultsRow)}
+        accountEmail={user.email}
+      />
       {config.features.knowledgeBase && <KnowledgeSection agent={agent} />}
       <Card>
         <CardTitle>{t("dangerZone")}</CardTitle>

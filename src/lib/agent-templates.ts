@@ -1,4 +1,5 @@
 import type { AgentBehavior, AgentVariable } from "./agent-settings";
+import type { CallField } from "./call-fields";
 import type { Language } from "./language";
 
 /**
@@ -12,7 +13,12 @@ export interface AgentTemplate {
   instructions: string;
   variables: AgentVariable[];
   behavior?: Partial<AgentBehavior>;
+  /** What the agent records from each call (SPEC §9.2). */
+  fields?: CallField[];
 }
+
+const text = (key: string, name: string, description: string): CallField => ({ key, name, description, type: "text", options: [], badge: "none" });
+const yesNo = (key: string, name: string, description: string, badge: CallField["badge"]): CallField => ({ key, name, description, type: "yesno", options: [], badge });
 
 const businessName: AgentVariable = { key: "business_name", value: "", askPerCall: false };
 
@@ -29,6 +35,20 @@ This call is {{call_direction}}.
 
 Never quote prices, promise delivery dates or make commitments for {{business_name}}. If you aren't sure, say the team will follow up.`,
     variables: [businessName],
+    fields: [
+      {
+        key: "fcalltype",
+        name: "Call type",
+        description: "Why they called",
+        type: "choice",
+        options: ["New customer", "Existing customer", "Partner", "Other"],
+        badge: "none",
+      },
+      text("fname", "Name", "The caller's full name"),
+      text("fcompany", "Company", "The company they're calling from, if any"),
+      text("fneed", "Need", "What they want from us, in one or two sentences"),
+      yesNo("furgent", "Urgent", "Yes if they need an answer today or said it's urgent", "urgent"),
+    ],
   },
 
   qa: {
@@ -43,6 +63,12 @@ This call is {{call_direction}}.
 
 Don't make up prices, availability, terms or policies.`,
     variables: [businessName],
+    fields: [
+      text("fquestion", "Question", "What they asked, in one sentence"),
+      yesNo("fanswered", "Answered", "Yes if the knowledge base answered it fully", "none"),
+      text("fname", "Name", "The caller's full name"),
+      text("fcompany", "Company", "The company they're calling from, if any"),
+    ],
   },
 
   outreach: {
@@ -59,6 +85,12 @@ Stay within the goal. Never agree to prices, payments, contracts or deadlines un
     variables: [businessName],
     // Phone menus and hold music: give it time, and don't hang up on silence.
     behavior: { responseTiming: "balanced", silenceHangupSecs: 0 },
+    fields: [
+      yesNo("fgoalmet", "Goal reached", "Yes if the call's goal was achieved", "none"),
+      text("fagreed", "Agreed", "What was agreed: dates, times, names, amounts"),
+      text("fnextstep", "Next step", "What we need to do next, if anything"),
+      yesNo("ffollowup", "Needs follow-up", "Yes if someone on our team needs to act", "followup"),
+    ],
   },
 
   blank: { language: "en", greeting: "", instructions: "", variables: [] },

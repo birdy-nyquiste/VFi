@@ -4,10 +4,10 @@ import { config } from "@/lib/config";
  * Sends via Resend. Without RESEND_API_KEY, dev and tests print the message to the server console
  * instead; a production server refuses (resendApiKey throws), since sign-in codes must never reach its logs.
  */
-export async function sendEmail(msg: { to: string; subject: string; text: string; html?: string }): Promise<void> {
+export async function sendEmail(msg: { to: string | string[]; subject: string; text: string; html?: string }): Promise<void> {
   const apiKey = config.email.resendApiKey;
   if (!apiKey) {
-    console.log(`\n[email:dev] to=${msg.to}\n  ${msg.subject}\n  ${msg.text}\n`);
+    console.log(`\n[email:dev] to=${[msg.to].flat().join(", ")}\n  ${msg.subject}\n  ${msg.text}\n`);
     return;
   }
   const res = await fetch("https://api.resend.com/emails", {

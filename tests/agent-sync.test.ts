@@ -91,7 +91,8 @@ describe("platform model settings", () => {
   it("records which platform settings an agent was synced with", async () => {
     const u = await makeUser();
     const a = await createAgent(u.id, input);
-    expect(a.syncedConfig).toBe(platformFingerprint());
+    // Plus the agent's insights (its call-result fields), set up in the same push.
+    expect(a.syncedConfig).toMatch(new RegExp(`^${platformFingerprint()}:r[0-9a-f]{16}$`));
   });
 
   it("re-syncs only agents saved under different platform settings, once", async () => {
@@ -171,7 +172,7 @@ describe("pushes racing a save", () => {
 
     expect(await syncAgentQuietly(olderCopy)).toBe(true);
     expect(update.mock.calls.map((c) => c[1].greeting)).toEqual([greeting("Hi"), greeting("Saved since")]);
-    expect(await agentRow(a.id)).toMatchObject({ greeting: "Saved since", status: "ready", syncedConfig: platformFingerprint() });
+    expect(await agentRow(a.id)).toMatchObject({ greeting: "Saved since", status: "ready", syncedConfig: expect.stringMatching(new RegExp(`^${platformFingerprint()}:r`)) });
   });
 
   it("ends on the newer of two overlapping saves, whichever request lands last", async () => {

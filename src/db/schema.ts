@@ -387,3 +387,48 @@ export type LedgerEntry = typeof ledgerEntries.$inferSelect;
 export type AgentKnowledge = typeof agentKnowledge.$inferSelect;
 export type KnowledgeSource = typeof knowledgeSources.$inferSelect;
 export type KnowledgeMode = AgentKnowledge["mode"];
+
+// ---------- Call results and email (SPEC §9.2) ----------
+
+/**
+ * What an agent records from each call and who gets emailed afterwards, plus the provider insight group
+ * that does the recording. Its own table because previews share the production database (SPEC §2.6).
+ * No row means no fields and no email; the insight ids are filled in on the agent's next push.
+ */
+export const agentCallResults = pgTable("agent_call_results", {
+  agentId: uuid("agent_id").primaryKey().references(() => agents.id),
+  /** CallField[] (src/lib/call-fields.ts). */
+  fields: jsonb("fields").$type<unknown[]>().notNull().default([]),
+  /** EmailSettings (src/lib/call-email.ts). */
+  email: jsonb("email").$type<Record<string, unknown>>().notNull().default({}),
+  insightGroupId: text("insight_group_id"),
+  summaryInsightId: text("summary_insight_id"),
+  fieldsInsightId: text("fields_insight_id"),
+  /** What the provider's insights were last set up from; they're updated when it changes. */
+  insightsHash: text("insights_hash"),
+  /** When test emails were sent in the last hour, for their limit. */
+  testEmailsAt: jsonb("test_emails_at").$type<string[]>().notNull().default([]),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+
+/**
+ * A finished call's field results and its email. Written once, when the call's results become final; the
+ * insert is what makes sure each call is emailed at most once.
+ */
+export const callResults = pgTable("call_results", {
+  callId: uuid("call_id").primaryKey().references(() => calls.id),
+  /** The fields as they were for this call, so later edits don't relabel old results. Cleared on purge. */
+  fields: jsonb("fields").$type<unknown[]>(),
+  /** Field key → value. Null when the provider returned none, or once purged. */
+  values: jsonb("values").$type<Record<string, string | boolean | null>>(),
+  /** "urgent" or "followup" from a yes/no field, for the calls list. */
+  badge: text("badge").$type<"urgent" | "followup">(),
+  /** "off" (email not on), "pending" (being sent), "sent", "failed". */
+  emailStatus: text("email_status").$type<"off" | "pending" | "sent" | "failed">().notNull(),
+  emailedTo: jsonb("emailed_to").$type<string[]>(),
+  emailedAt: ts("emailed_at"),
+  createdAt: createdAt(),
+});
+
+export type AgentCallResults = typeof agentCallResults.$inferSelect;
+export type CallResultRow = typeof callResults.$inferSelect;

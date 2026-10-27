@@ -1,5 +1,5 @@
 import { isUuid } from "@/lib/uuid";
-import type { CallEvent, CallEventType, InboundMessageEvent, ProviderEvent } from "./types";
+import type { CallEvent, CallEventType, InboundMessageEvent, InsightsReadyEvent, ProviderEvent } from "./types";
 
 const KNOWN: CallEventType[] = [
   "call.initiated",
@@ -36,8 +36,31 @@ function envelopeData(body: unknown): Record<string, unknown> {
   return data;
 }
 
-/** Call Control and messaging webhooks share one envelope; route by event type. */
+/**
+ * An insight group's webhook (conversation_insight_result): the call's summary and fields are done. Seen
+ * both inside the usual `data` envelope and without it, so either is accepted.
+ */
+function parseInsightResult(body: unknown): InsightsReadyEvent | undefined {
+  const outer = body as { data?: Record<string, unknown> } & Record<string, unknown>;
+  const data = outer?.data && typeof outer.data === "object" ? outer.data : outer;
+  if (data?.event_type !== "conversation_insight_result") return undefined;
+  const p = (data.payload ?? {}) as Record<string, unknown>;
+  const meta = (p.metadata ?? {}) as Record<string, unknown>;
+  const conversationId = str(p.conversation_id);
+  return {
+    id: str(data.id) ?? `conversation_insight_result:${conversationId ?? ""}:${str(p.insight_group_id) ?? ""}`,
+    type: "insights.ready",
+    rawType: "conversation_insight_result",
+    occurredAt: date(data.occurred_at) ?? new Date(),
+    conversationId,
+    callControlId: str(meta.call_control_id),
+  };
+}
+
+/** Call Control, messaging and insight webhooks share one endpoint; route by event type. */
 export function parseTelnyxEnvelope(body: unknown): ProviderEvent {
+  const insights = parseInsightResult(body);
+  if (insights) return insights;
   const data = envelopeData(body);
   if (data.event_type === "message.received") {
     const message = parseInboundMessage(data);

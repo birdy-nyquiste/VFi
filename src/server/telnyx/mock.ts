@@ -5,7 +5,7 @@ import { stored } from "@/lib/stored-text";
 import { encodeClientState, parseCallEnvelope, parseTelnyxEnvelope } from "./events";
 import { MOCK_MODELS, toOfferedModels } from "./models";
 import { MOCK_CATALOG, toStockVoices } from "./stock-voices";
-import type { AssistantSpec, CallResults, ClonedVoiceResult, EmbeddingStatus, VoiceProvider } from "./types";
+import type { AssistantSpec, CallResults, ClonedVoiceResult, EmbeddingStatus, InsightIds, InsightsSpec, VoiceProvider } from "./types";
 
 /**
  * In-memory stand-in for Telnyx so the whole product loop runs locally
@@ -32,6 +32,28 @@ state.buckets ??= new Map();
  * text containing "mock:unreadable" fails to embed; crawled URLs containing "too-large" or "empty"
  * bring in more text than a website source may have, or none.
  */
+/** Insight groups made by syncInsights, by group id; tests read them. Calls get sample field values from them. */
+// Kept on globalThis like the rest of the mock state, so a dev-server reload doesn't forget the groups.
+export const mockInsights = ((globalThis as unknown as { __mockInsights?: { groups: Map<string, { spec: InsightsSpec; ids: InsightIds }>; failSync: boolean } }).__mockInsights ??= {
+  groups: new Map(),
+  failSync: false,
+});
+
+/** A plausible value for each field of a fields schema: the first option, false, or sample text. */
+function sampleFieldResult(schema: Record<string, unknown> | undefined): string | undefined {
+  const props = (schema?.properties ?? {}) as Record<string, { type?: unknown; enum?: unknown[] }>;
+  if (!schema) return undefined;
+  const out = Object.fromEntries(
+    Object.entries(props).map(([key, p]) => {
+      const types = Array.isArray(p.type) ? p.type : [p.type];
+      if (types.includes("boolean")) return [key, false];
+      const option = p.enum?.find((v) => typeof v === "string");
+      return [key, option ?? "Mock caller"];
+    }),
+  );
+  return JSON.stringify(out);
+}
+
 export const mockKnowledge = {
   /** How long embedding takes. */
   delayMs: 2000,
@@ -273,8 +295,25 @@ export const mockProvider: VoiceProvider = {
     return { conversationId: `conv-${randomUUID()}` };
   },
 
-  async getCallResults(): Promise<CallResults> {
+  async syncInsights(current, spec) {
+    if (mockInsights.failSync) throw new Error("[mock-telnyx] insight sync failed");
+    const ids: InsightIds = {
+      groupId: current?.groupId ?? `group-${randomUUID()}`,
+      summaryId: current?.summaryId ?? `insight-${randomUUID()}`,
+      fieldsId: spec.fields ? (current?.fieldsId ?? `insight-${randomUUID()}`) : null,
+    };
+    mockInsights.groups.set(ids.groupId, { spec, ids });
+    return ids;
+  },
+
+  async deleteInsights(ids) {
+    if (ids.groupId) mockInsights.groups.delete(ids.groupId);
+  },
+
+  async getCallResults(_ref, insights): Promise<CallResults> {
+    const group = insights?.fieldsId ? [...mockInsights.groups.values()].find((g) => g.ids.fieldsId === insights.fieldsId) : undefined;
     return {
+      fields: sampleFieldResult(group?.spec.fields?.schema),
       transcript: [
         { role: "assistant", text: "Hi! This call may be recorded. How can I help you today?" },
         { role: "user", text: "Just testing the mock line." },

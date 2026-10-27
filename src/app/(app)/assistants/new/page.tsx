@@ -82,6 +82,7 @@ export default async function NewAgentPage({ searchParams }: { searchParams: Pro
         stock={stock}
         clones={clones}
         models={models}
+        accountEmail={user.email}
       />
     </div>
   );

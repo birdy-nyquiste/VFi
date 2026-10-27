@@ -362,8 +362,9 @@ When platform model settings change, existing Assistants are re-synced automatic
 
 - Each call has a recording (dual channel, MP3, made by our answer or dial command; the Assistant's own recording is
   turned off because it duplicated outbound recordings), a transcript and a summary.
-- **Summary:** comes from an insight group's summary insight. Production currently uses the default group Telnyx
-  gives every account (`TELNYX_INSIGHT_GROUP_ID` unset). §9.2 replaces this with a group per Assistant.
+- **Summary:** comes from the Assistant's own insight group (§9.2), with our summary instructions in the
+  Assistant's main language. Until that group is set up (or if setting it up fails), the Assistant uses
+  `TELNYX_INSIGHT_GROUP_ID` when set, otherwise the default group Telnyx gives every account.
 - **Waiting for results:** the transcript is fetched right after the call; the summary can take about 30 s. A call's
   results are final when the summary is complete or `RESULTS_WAIT_MS` (30 min) has passed; until then the call page
   and the daily job keep asking. A failed summary never loses the transcript.
@@ -588,7 +589,7 @@ no crawl limit beyond link depth, so turning them on means accepting that risk: 
 
 ## 9. Round 2: more numbers and call results
 
-**Status:** E is built; A is planned. Approved 2026-10-26, revised 2026-10-27. Built in this order, one pull request
+**Status:** E and A are built. Approved 2026-10-26, revised 2026-10-27. Built in this order, one pull request
 each, cut from `main`: **E (§9.1), then A (§9.2).** E is small and independent; A's email shows which of the user's numbers took
 the call, which needs E.
 
@@ -598,7 +599,7 @@ run twice each) and comparing our Assistant page with the Telnyx console.
 | Item | Problem seen in rehearsal | Status |
 | --- | --- | --- |
 | E. Up to 3 numbers per account | One number per account: separate lines of business or separate Assistants can't each have a number | Built 2026-10-27 |
-| A. Call-result fields and email | Every call gets only a generic summary, and nobody is told when a call comes in | Planned; needs a mock |
+| A. Call-result fields and email | Every call gets only a generic summary, and nobody is told when a call comes in | Built 2026-10-27; mock approved 2026-10-27 |
 | B. Testing without calls | Every instruction change needed a phone call to check | Dropped (§1.4) |
 | C. Pronunciation and recognition | Instructions had to spell names out ("V Fi", "Air P P P"); "VFi" was heard as "Wi-Fi" | Dropped (§1.4) |
 | D. Draft and published versions | The live Assistant was edited 9 times during rehearsal | Dropped (§1.4) |
@@ -655,9 +656,13 @@ today. All text in five languages.
 - **Fields:** each Assistant can define up to 8 things to record from every call. Each has a name, a short
   description (telling the model what to capture) and a type: text, one of a few options, or yes/no.
 - **Template defaults:** Reception = call type, name, company, need, urgent. Business Q&A = question, answered,
-  name, company. Outreach = goal reached, what was agreed, next step. Blank has none.
-- **Call page:** the fields appear as a table above the summary. The calls list shows an "Urgent" or "Follow-up"
-  badge when the matching yes/no field is yes.
+  name, company. Outreach = goal reached, what was agreed, next step, and needs follow-up (a yes/no that drives the
+  "Follow-up" badge). Blank has none.
+- **Call page:** the fields appear as a table above the summary, with a line saying whether the email was sent and
+  to whom. The calls list shows an "Urgent" or "Follow-up" badge when a yes/no field set to show it is yes; each
+  yes/no field has its own setting (nothing / Urgent / Follow-up).
+- **Mock:** https://claude.ai/artifact/LFXM1LoQyWGAVE7pqM1TcM (approved 2026-10-27). The settings are two cards
+  after "Ending calls" on the Assistant page, saved with the rest of the form.
 - **Email after each call:** optional per Assistant, **off by default**. Recipients default to the account email;
   the user can set up to 3 addresses instead. The email holds the other party's number, our number (§9.1), the
   Assistant's name, the fields, the summary and a link to the call page, laid out by the email template.
@@ -697,22 +702,32 @@ today. All text in five languages.
 - **Insights:** each Assistant gets its own Telnyx insight group with a summary insight plus, when it has fields, a
   structured insight whose `json_schema` is built from the fields. Telnyx requires strict schemas
   (`additionalProperties: false`, every property in `required`), so every field is nullable and empty when the call
-  didn't cover it. Insights run on `zai-org/GLM-5.3-Flash` (Telnyx allows only it or Llama-3.3-70B), under a cent
-  per call. We write our own summary instructions, asking for the Assistant's main language (today production uses
-  Telnyx's default summary; #33). The group is linked with `insight_settings.insight_group_id`.
-- **Results:** keep the wait logic from §6.2 (#31, #33, #34): results are final when both summary and fields are
-  complete or `RESULTS_WAIT_MS` has passed. `getCallResults` currently takes the first completed insight as the
-  summary; with two insights it must pick each by insight id.
-- **Sending:** the write that makes a call's results final also sends its email, and a flag in the database makes
-  sure each call is emailed once (the page, the daily job and the webhook can all race).
+  didn't cover it. Field keys are stable ids (`f…`), so renaming a field keeps its results. Insights run on
+  Telnyx's default insight model (`zai-org/GLM-5.3-Flash`), under a cent per call. Our summary instructions ask for
+  the Assistant's main language. The group is linked with `insight_settings.insight_group_id`.
+- **Keeping the group in step** (`ensureInsights` in `src/server/call-results.ts`): every push of the Assistant
+  first makes its insight group match its fields and language, updating the insights in place (a group that has
+  gone missing is made again). A hash of what the group was set up from is part of the Assistant's sync
+  fingerprint, so a change is retried until it succeeds. If setting up the group fails, the Assistant is still
+  saved and keeps its previous group; it shows as stale and the next sync retries. Existing Assistants get their
+  group on the first sync after this ships (their fingerprint no longer matches).
+- **Results:** keep the wait logic from §6.2: results are final when the insights are complete or
+  `RESULTS_WAIT_MS` has passed. `getCallResults` picks the summary and fields by insight id; calls from before the
+  Assistant had its own group take the first completed insight as the summary.
+- **Sending:** the write that makes a call's results final inserts its `call_results` row; only the request that
+  inserts it sends the email (the page, the daily job and the webhook can all race). The row records "off",
+  "sent" or "failed" and who it went to. A failed email isn't retried.
+- **Test emails** use the settings on screen (saved or not) and sample answers, go to the account email, and are
+  limited to 5 per Assistant per hour (timestamps kept on the settings row).
 - **Timely trigger:** the insight group's webhook. When all of a call's insights finish (or finally fail), Telnyx
   sends one signed `conversation_insight_result` with the conversation id and results by insight id (API notes
   §10). `/api/webhooks/telnyx` receives it, fetches and stores results, and sends the email. Opening the call page
   and the daily job remain the fallback, including the "summary not available" email after `RESULTS_WAIT_MS`.
 - **Templates:** variable substitution happens on our server, in one function shared by preview, test email and
   real email, with its own tests.
-- **Data** (new tables only, §2.6): field definitions; email settings, recipients and template; per-call field
-  results and the sent flag.
+- **Data** (new tables only, §2.6): `agent_call_results` (fields, email settings, the insight ids and hash, test
+  email times) and `call_results` (per call: the fields as they were, the values, the badge, the email status).
+  Retention and deleting a call clear the fields and values; deleting an Assistant deletes its insight group.
 - **To check on the first real call after A ships:** that the insight webhook is actually delivered.
 
 ---
@@ -736,6 +751,7 @@ Newest first. Each line points to where the rule now lives.
 
 | Date | Decision | Section |
 | --- | --- | --- |
+| 2026-10-27 | A built: call-result fields, badges and the email after each call, from a mock approved the same day | §9.2 |
 | 2026-10-27 | Rewrote this spec in English, organized by feature | — |
 | 2026-10-27 | Each number takes one call at a time; up to 3 calls per account | §9.1 |
 | 2026-10-27 | Up to 3 numbers per account (E); E mock approved | §9.1 |

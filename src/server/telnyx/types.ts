@@ -102,6 +102,26 @@ export interface AssistantSpec {
   variables: Record<string, string>;
   /** Storage bucket the assistant may search during calls (the retrieval tool); none when absent. */
   knowledgeBucket?: string;
+  /** The agent's own insight group (summary and call-result fields); the platform default when absent. */
+  insightGroupId?: string;
+}
+
+/** What an agent's insight group should produce after each call (SPEC §9.2). */
+export interface InsightsSpec {
+  /** Shown in the provider's console; identifies the agent. */
+  name: string;
+  /** Where the provider posts once a call's insights are done. */
+  webhookUrl: string;
+  summaryInstructions: string;
+  /** The structured call-result fields; none when the agent has no fields. */
+  fields: { instructions: string; schema: Record<string, unknown> } | null;
+}
+
+export interface InsightIds {
+  groupId: string;
+  summaryId: string;
+  /** Null when the agent has no fields. */
+  fieldsId: string | null;
 }
 
 /** Embedding progress of one object in a knowledge bucket. */
@@ -121,8 +141,10 @@ export interface DialResult {
 export interface CallResults {
   transcript: { role: string; text: string }[];
   summary?: string;
-  /** The summary is still being generated; the transcript is complete. */
+  /** The summary (and fields) are still being generated; the transcript is complete. */
   summaryPending?: boolean;
+  /** The fields insight's JSON result, when the agent has fields and it's done. */
+  fields?: string;
 }
 
 export type CallEventType =
@@ -176,7 +198,17 @@ export interface InboundMessageEvent {
   costUsd?: string;
 }
 
-export type ProviderEvent = CallEvent | InboundMessageEvent;
+/** A call's insights (summary, fields) are done, or finally failed. */
+export interface InsightsReadyEvent {
+  id: string;
+  type: "insights.ready";
+  rawType: string;
+  occurredAt: Date;
+  conversationId?: string;
+  callControlId?: string;
+}
+
+export type ProviderEvent = CallEvent | InboundMessageEvent | InsightsReadyEvent;
 
 /**
  * Per-call values available to an agent's instructions as {{call_direction}} and {{call_goal}}.
@@ -267,8 +299,19 @@ export interface VoiceProvider {
   reject(callControlId: string, cause: "CALL_REJECTED" | "USER_BUSY"): Promise<void>;
   hangup(callControlId: string): Promise<void>;
   startAssistant(callControlId: string, input: AssistantStart): Promise<{ conversationId?: string }>;
-  /** Null when results aren't available (yet). */
-  getCallResults(call: CallRef): Promise<CallResults | null>;
+  /**
+   * Create or update an agent's insight group so it matches `spec`; `current` holds the ids made last
+   * time. Returns the ids to keep.
+   */
+  syncInsights(current: Partial<InsightIds> | null, spec: InsightsSpec): Promise<InsightIds>;
+  /** Delete an agent's insight group and its insights. Succeeds if they're already gone. */
+  deleteInsights(ids: Partial<InsightIds>): Promise<void>;
+
+  /**
+   * Null when results aren't available (yet). With `insights`, the summary and fields are taken from
+   * those insights; without, the first completed insight is the summary (the platform default group).
+   */
+  getCallResults(call: CallRef, insights?: { summaryId?: string | null; fieldsId?: string | null }): Promise<CallResults | null>;
   /** Short-lived playback URL, or null if no recording exists. */
   getRecordingUrl(call: CallRef): Promise<string | null>;
   /** Delete recordings and the AI conversation (transcript, insights) at the provider. */
