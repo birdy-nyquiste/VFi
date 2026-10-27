@@ -34,6 +34,7 @@ import {
 } from "@/lib/call-fields";
 import type { Language } from "@/lib/language";
 import { sendTestEmailAction } from "./actions";
+import { Counted } from "@/components/counted";
 
 const PART_LABEL = {
   caller: "includeCaller",
@@ -139,26 +140,30 @@ export function ResultsSection({
               {fields.map((f, i) => (
                 <div key={f.key} className="space-y-2.5 rounded-2xl border border-stone-200 px-3.5 py-3">
                   <div className={`grid grid-cols-2 items-start gap-2.5 ${FIELD_COLUMNS}`}>
-                    <input
-                      aria-label={t("colName")}
-                      value={f.name}
-                      maxLength={MAX_FIELD_NAME_LENGTH}
-                      onChange={(e) => update(i, { name: e.target.value })}
-                      className={inputClass}
-                    />
+                    <Counted>
+                      <input
+                        aria-label={t("colName")}
+                        value={f.name}
+                        maxLength={MAX_FIELD_NAME_LENGTH}
+                        onChange={(e) => update(i, { name: e.target.value })}
+                        className={inputClass}
+                      />
+                    </Counted>
                     <select aria-label={t("colType")} value={f.type} onChange={(e) => update(i, { type: e.target.value as FieldType })} className={inputClass}>
                       {FIELD_TYPES.map((type) => (
                         <option key={type} value={type}>{t(`type_${type}`)}</option>
                       ))}
                     </select>
-                    <input
-                      aria-label={t("colDescription")}
-                      value={f.description}
-                      maxLength={MAX_FIELD_DESCRIPTION_LENGTH}
-                      placeholder={t("descriptionPlaceholder")}
-                      onChange={(e) => update(i, { description: e.target.value })}
-                      className={`${inputClass} col-span-2 sm:col-span-1`}
-                    />
+                    <Counted className="col-span-2 sm:col-span-1">
+                      <input
+                        aria-label={t("colDescription")}
+                        value={f.description}
+                        maxLength={MAX_FIELD_DESCRIPTION_LENGTH}
+                        placeholder={t("descriptionPlaceholder")}
+                        onChange={(e) => update(i, { description: e.target.value })}
+                        className={inputClass}
+                      />
+                    </Counted>
                     <button type="button" onClick={() => setFields((fs) => fs.filter((_, j) => j !== i))} className="justify-self-start self-center text-[13px] text-stone-600 underline sm:justify-self-end">
                       {t("remove")}
                     </button>
@@ -258,26 +263,30 @@ export function ResultsSection({
               </Field>
 
               <Field label={t("subject")} hint={t("subjectHint")}>
-                <input
-                  ref={subjectRef}
-                  value={email.subject}
-                  placeholder={defaultSubject(language)}
-                  maxLength={MAX_SUBJECT_LENGTH}
-                  onFocus={() => (lastText.current = "subject")}
-                  onChange={(e) => setEmail((s) => ({ ...s, subject: e.target.value }))}
-                  className={inputClass}
-                />
+                <Counted>
+                  <input
+                    ref={subjectRef}
+                    value={email.subject}
+                    placeholder={defaultSubject(language)}
+                    maxLength={MAX_SUBJECT_LENGTH}
+                    onFocus={() => (lastText.current = "subject")}
+                    onChange={(e) => setEmail((s) => ({ ...s, subject: e.target.value }))}
+                    className={inputClass}
+                  />
+                </Counted>
               </Field>
               <Field label={t("note")} hint={t("noteHint")}>
-                <textarea
-                  ref={noteRef}
-                  rows={2}
-                  value={email.note}
-                  maxLength={MAX_NOTE_LENGTH}
-                  onFocus={() => (lastText.current = "note")}
-                  onChange={(e) => setEmail((s) => ({ ...s, note: e.target.value }))}
-                  className={inputClass}
-                />
+                <Counted>
+                  <textarea
+                    ref={noteRef}
+                    rows={2}
+                    value={email.note}
+                    maxLength={MAX_NOTE_LENGTH}
+                    onFocus={() => (lastText.current = "note")}
+                    onChange={(e) => setEmail((s) => ({ ...s, note: e.target.value }))}
+                    className={inputClass}
+                  />
+                </Counted>
               </Field>
               <div className="space-y-1.5">
                 <p className="text-[13px] text-stone-500">{t("variablesHint")}</p>
@@ -325,14 +334,16 @@ export function ResultsSection({
                   </select>
                 </Field>
                 <Field label={t("tag")}>
-                  <input
-                    value={email.tagText}
-                    placeholder={defaultTagText(language)}
-                    maxLength={MAX_TAG_LENGTH}
-                    disabled={!tagField}
-                    onChange={(e) => setEmail((s) => ({ ...s, tagText: e.target.value }))}
-                    className={inputClass}
-                  />
+                  <Counted>
+                    <input
+                      value={email.tagText}
+                      placeholder={defaultTagText(language)}
+                      maxLength={MAX_TAG_LENGTH}
+                      disabled={!tagField}
+                      onChange={(e) => setEmail((s) => ({ ...s, tagText: e.target.value }))}
+                      className={inputClass}
+                    />
+                  </Counted>
                 </Field>
               </div>
 
@@ -384,21 +395,23 @@ function OptionsEditor({ field, onChange }: { field: CallField; onChange: (optio
         </span>
       ))}
       {field.options.length < MAX_FIELD_OPTIONS && (
-        <input
-          aria-label={t("addOption")}
-          value={draft}
-          maxLength={MAX_FIELD_OPTION_LENGTH}
-          placeholder={t("addOption")}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={add}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              add();
-            }
-          }}
-          className="w-32 rounded-full border border-dashed border-stone-300 bg-transparent px-2.5 py-0.5 text-[13px] outline-none focus:border-stone-900"
-        />
+        <Counted>
+          <input
+            aria-label={t("addOption")}
+            value={draft}
+            maxLength={MAX_FIELD_OPTION_LENGTH}
+            placeholder={t("addOption")}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={add}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                add();
+              }
+            }}
+            className="w-32 rounded-full border border-dashed border-stone-300 bg-transparent px-2.5 py-0.5 text-[13px] outline-none focus:border-stone-900"
+          />
+        </Counted>
       )}
     </div>
   );

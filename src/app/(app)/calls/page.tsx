@@ -19,6 +19,7 @@ import { activeNumbersByAge, defaultCallerNumber, ourNumber } from "@/lib/phone-
 import { isUuid } from "@/lib/uuid";
 import { AgentFields, type CallAgent } from "./agent-fields";
 import { viewerTimeZone } from "@/server/time-zone";
+import { Counted } from "@/components/counted";
 
 function callAgent(a: Agent, numbers: PhoneNumber[]): CallAgent {
   const ask = readVariables(a.variables).filter((v) => v.askPerCall);
@@ -89,13 +90,15 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
                     label={t("goal")}
                     hint={t.rich("goalHint", { code: (chunks) => <code>{chunks}</code> })}
                   >
-                    <textarea
-                      name="goal"
-                      rows={2}
-                      maxLength={MAX_CALL_GOAL_LENGTH}
-                      placeholder={t("goalPlaceholder")}
-                      className={inputClass}
-                    />
+                    <Counted>
+                      <textarea
+                        name="goal"
+                        rows={2}
+                        maxLength={MAX_CALL_GOAL_LENGTH}
+                        placeholder={t("goalPlaceholder")}
+                        className={inputClass}
+                      />
+                    </Counted>
                   </Field>
                   <SubmitButton pendingText={t("dialing")}>{t("call")}</SubmitButton>
                 </>
