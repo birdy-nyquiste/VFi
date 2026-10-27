@@ -91,6 +91,8 @@ export async function enablePendingInboundSms(): Promise<number> {
 
 export interface Conversation {
   from: string;
+  /** The user's number it was sent to: a sender who texts two of them has two conversations. */
+  to: string;
   /** The user's name for this sender, if they set one. */
   name?: string;
   last: Message;
@@ -99,34 +101,37 @@ export interface Conversation {
 }
 
 /**
- * Conversations (one per sender), newest first, at most `limit` of them. Counts are over every
- * text in the conversation, so they match the unread badge.
+ * Conversations (one per sender and receiving number), newest first, at most `limit` of them; only
+ * those sent to `to` when it's given. Counts are over every text in the conversation, so they match
+ * the unread badge.
  */
-export async function listConversations(userId: string, limit = 500): Promise<Conversation[]> {
-  const visible = and(eq(messages.userId, userId), isNull(messages.deletedAt));
+export async function listConversations(userId: string, limit = 500, to?: string): Promise<Conversation[]> {
+  const visible = and(eq(messages.userId, userId), isNull(messages.deletedAt), to ? eq(messages.toNumber, to) : undefined);
   const groups = await db
     .select({
       from: messages.fromNumber,
+      to: messages.toNumber,
       count: sql<number>`count(*)::int`,
       unread: sql<number>`(count(*) filter (where ${messages.readAt} is null))::int`,
     })
     .from(messages)
     .where(visible)
-    .groupBy(messages.fromNumber)
-    .orderBy(desc(sql`max(${messages.receivedAt})`), asc(messages.fromNumber))
+    .groupBy(messages.fromNumber, messages.toNumber)
+    .orderBy(desc(sql`max(${messages.receivedAt})`), asc(messages.fromNumber), asc(messages.toNumber))
     .limit(limit);
   if (groups.length === 0) return [];
   const [latest, names] = await Promise.all([
     db
-      .selectDistinctOn([messages.fromNumber])
+      .selectDistinctOn([messages.fromNumber, messages.toNumber])
       .from(messages)
       .where(and(visible, inArray(messages.fromNumber, groups.map((g) => g.from))))
-      .orderBy(messages.fromNumber, desc(messages.receivedAt)),
+      .orderBy(messages.fromNumber, messages.toNumber, desc(messages.receivedAt)),
     getContactNames(userId),
   ]);
-  const lastByFrom = new Map(latest.map((m) => [m.fromNumber, m]));
+  const key = (from: string, to: string) => `${from} ${to}`;
+  const lastByKey = new Map(latest.map((m) => [key(m.fromNumber, m.toNumber), m]));
   return groups.flatMap((g) => {
-    const last = lastByFrom.get(g.from);
+    const last = lastByKey.get(key(g.from, g.to));
     // Missing only if the conversation was deleted between the two queries.
     return last ? [{ ...g, name: names.get(g.from), last }] : [];
   });
@@ -136,40 +141,41 @@ export async function countUnreadMessages(userId: string): Promise<number> {
   return db.$count(messages, and(eq(messages.userId, userId), isNull(messages.deletedAt), isNull(messages.readAt)));
 }
 
-/** Every text from one sender, oldest first. */
-export async function getConversation(userId: string, from: string): Promise<Message[]> {
-  return db
-    .select()
-    .from(messages)
-    .where(and(eq(messages.userId, userId), eq(messages.fromNumber, from), isNull(messages.deletedAt)))
-    .orderBy(asc(messages.receivedAt));
+/**
+ * Which conversation: one sender's texts to one of the user's numbers, or to any of them when `to` is
+ * omitted (links from before texts were split by the number they went to).
+ */
+export interface ConversationKey {
+  from: string;
+  to?: string;
+}
+
+function conversationTexts(userId: string, { from, to }: ConversationKey) {
+  return and(eq(messages.userId, userId), eq(messages.fromNumber, from), to ? eq(messages.toNumber, to) : undefined, isNull(messages.deletedAt));
+}
+
+/** Every text in a conversation, oldest first. */
+export async function getConversation(userId: string, key: ConversationKey): Promise<Message[]> {
+  return db.select().from(messages).where(conversationTexts(userId, key)).orderBy(asc(messages.receivedAt));
 }
 
 /** Marks texts read, up to the newest one the user has seen. Returns how many changed. */
-export async function markConversationRead(userId: string, from: string, upTo: Date): Promise<number> {
+export async function markConversationRead(userId: string, key: ConversationKey, upTo: Date): Promise<number> {
   const changed = await db
     .update(messages)
     .set({ readAt: new Date() })
-    .where(
-      and(
-        eq(messages.userId, userId),
-        eq(messages.fromNumber, from),
-        isNull(messages.readAt),
-        isNull(messages.deletedAt),
-        lte(messages.receivedAt, upTo),
-      ),
-    )
+    .where(and(conversationTexts(userId, key), isNull(messages.readAt), lte(messages.receivedAt, upTo)))
     .returning({ id: messages.id });
   return changed.length;
 }
 
 /** Deletes the text content of a conversation; billing rows stay. */
-export async function deleteConversation(userId: string, from: string): Promise<void> {
+export async function deleteConversation(userId: string, key: ConversationKey): Promise<void> {
   const now = new Date();
   const deleted = await db
     .update(messages)
     .set({ body: null, purgedAt: now, deletedAt: now })
-    .where(and(eq(messages.userId, userId), eq(messages.fromNumber, from), isNull(messages.deletedAt)))
+    .where(conversationTexts(userId, key))
     .returning({ id: messages.id });
   if (deleted.length === 0) throw new UserError("conversationNotFound");
 }

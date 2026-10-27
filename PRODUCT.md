@@ -44,12 +44,12 @@ Value points (deck): low latency (efficient agent architecture, edge computing);
 - Buy US local numbers by area code; answer inbound calls, place outbound calls, receive texts (receive only).
 - Assistants: company intro, greeting, instructions, language, voice (built-in voices, voice cloning, or the user's own ElevenLabs account), knowledge base, strict answer mode, model choice.
 - Calls: recordings, transcripts, summaries when available.
-- One call at a time per account. Outbound calls are started one by one by the user.
+- Up to 3 numbers per account, each taking one call at a time. Outbound calls are started one by one by the user.
 - Billing: prepaid balance via Stripe, minimum top-up US$10, no subscription.
 
 Do not claim: bringing an existing number / SIP trunk (hidden until built), outbound texting, browser calling (that is VFi Lite, a separate product), concurrency, customer results, specific compliance certifications, edge computing or latency figures.
 
-Do not state on public pages: the one-call-at-a-time limit (true, but kept to the app).
+Do not state on public pages: the one-call-at-a-time-per-number limit (true, but kept to the app).
 
 ## Pricing (final as of 2026-10-23; matches config)
 

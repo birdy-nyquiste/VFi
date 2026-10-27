@@ -9,6 +9,7 @@ import { listUserAgents } from "@/server/agents";
 import { requireUser } from "@/server/auth";
 import { listUserCalls } from "@/server/calls";
 import { listUserNumbers } from "@/server/numbers";
+import { activeNumbersByAge, ourNumber } from "@/lib/phone-numbers";
 import { viewerTimeZone } from "@/server/time-zone";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -31,25 +32,25 @@ export default async function DashboardPage() {
     listUserAgents(user.id),
     listUserCalls(user.id, 5),
   ]);
-  const activeNumber = numbers.find((n) => n.status === "active");
-  const linkedAgent = agents.find((a) => a.id === activeNumber?.agentId);
+  const activeNumbers = activeNumbersByAge(numbers);
+  const agentOf = (agentId: string | null) => agents.find((a) => a.id === agentId);
   // Inbound calls are turned away unless the assigned agent is ready.
-  const answering = linkedAgent?.status === "ready";
+  const anyAnswering = activeNumbers.some((n) => agentOf(n.agentId)?.status === "ready");
 
   const steps = [
     { done: user.balanceCents > 0, label: t("stepCredit"), href: "/account/billing" },
     { done: agents.some((a) => a.status === "ready"), label: t("stepAgent"), href: "/assistants/new" },
-    { done: Boolean(activeNumber), label: t("stepNumber"), href: "/numbers" },
-    { done: answering, label: t("stepConnect"), href: "/numbers" },
+    { done: activeNumbers.length > 0, label: t("stepNumber"), href: "/numbers" },
+    { done: anyAnswering, label: t("stepConnect"), href: "/numbers" },
     { done: recent.length > 0, label: t("stepCall"), href: "/calls" },
   ];
   const allDone = steps.every((s) => s.done);
 
-  const live = recent.find(({ call }) => call.status === "initiated" || call.status === "answered");
+  const live = recent.filter(({ call }) => call.status === "initiated" || call.status === "answered");
 
   return (
     <div className="space-y-6">
-      {live && <AutoRefresh everyMs={3000} slowestMs={10000} />}
+      {live.length > 0 && <AutoRefresh everyMs={3000} slowestMs={10000} />}
       <PageHeader
         title={t("title")}
         action={
@@ -60,32 +61,35 @@ export default async function DashboardPage() {
         }
       />
 
-      {live && (
+      {/* Each number can be on a call, so there's a banner for every call in progress. */}
+      {live.map(({ call, agentName }) => (
         <Link
-          href={`/calls/${live.call.id}`}
+          key={call.id}
+          href={`/calls/${call.id}`}
           className={`flex flex-wrap items-center gap-4 rounded-[20px] bg-stone-900 px-5 py-4 text-white ${focusRing}`}
         >
           <LiveIndicator />
           <span className="flex min-w-0 flex-col gap-0.5">
             <span className="text-[15px]">
               {t("liveCall", {
-                name: live.agentName ?? "—",
-                number: formatCallerNumber(live.call.direction === "inbound" ? live.call.fromNumber : live.call.toNumber, tc("unknownNumber")),
+                name: agentName ?? "—",
+                number: formatCallerNumber(call.direction === "inbound" ? call.fromNumber : call.toNumber, tc("unknownNumber")),
               })}
             </span>
             <span className="text-[13px] text-stone-400">
-              {live.call.direction === "inbound" ? tcl("directionInbound") : tcl("directionOutbound")}
-              {live.call.answeredAt && (
+              {call.direction === "inbound" ? tcl("directionInbound") : tcl("directionOutbound")}
+              {activeNumbers.length > 1 && <span className="tabular-nums">{" · "}{tcl("yourNumber", { number: formatPhone(ourNumber(call)) })}</span>}
+              {call.answeredAt && (
                 <>
                   {" · "}
-                  <span className="tabular-nums">{formatDuration(Math.max(0, Math.floor((Date.now() - live.call.answeredAt.getTime()) / 1000)))}</span>
+                  <span className="tabular-nums">{formatDuration(Math.max(0, Math.floor((Date.now() - call.answeredAt.getTime()) / 1000)))}</span>
                 </>
               )}
             </span>
           </span>
           <span className="ml-auto text-sm text-stone-300">{t("openCall")}</span>
         </Link>
-      )}
+      ))}
 
       {/* Two columns until the cards are wide enough for a phone number on one line beside the sidebar. */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -99,20 +103,41 @@ export default async function DashboardPage() {
           </Link>
         </Card>
         <Card className="flex flex-col gap-3">
-          <h2 className="text-sm text-stone-500">{t("number")}</h2>
-          <p className="whitespace-nowrap text-2xl leading-[38px] tracking-[-0.01em] tabular-nums">{activeNumber ? formatPhone(activeNumber.e164) : "—"}</p>
-          {linkedAgent && !answering ? (
-            <Link
-              href={`/assistants/${linkedAgent.id}`}
-              className={`text-sm hover:underline ${linkedAgent.status === "failed" ? "text-red-600" : "text-amber-700"}`}
-            >
-              {tn("agentStatus", { name: linkedAgent.name, status: ts(linkedAgent.status) })}
-            </Link>
+          <h2 className="text-sm text-stone-500">{activeNumbers.length > 1 ? t("numbers") : t("number")}</h2>
+          {activeNumbers.length === 0 ? (
+            <>
+              <p className="whitespace-nowrap text-2xl leading-[38px] tracking-[-0.01em] tabular-nums">—</p>
+              <p className="text-sm text-stone-700">{t("noNumber")}</p>
+            </>
           ) : (
-            <p className="flex items-center gap-2 text-sm text-stone-700">
-              {answering && <span aria-hidden className="h-[7px] w-[7px] rounded-full bg-emerald-500" />}
-              {linkedAgent ? t("answeredBy", { name: linkedAgent.name }) : activeNumber ? t("noAgent") : t("noNumber")}
-            </p>
+            <ul className="flex flex-col gap-2">
+              {activeNumbers.map((n) => {
+                const agent = agentOf(n.agentId);
+                return (
+                  <li key={n.id} className="flex flex-col gap-1">
+                    {/* One number gets the large figure; several are listed smaller so the card stays short. */}
+                    <span className={`whitespace-nowrap tabular-nums ${activeNumbers.length > 1 ? "text-[17px]" : "text-2xl leading-[38px] tracking-[-0.01em]"}`}>
+                      {formatPhone(n.e164)}
+                    </span>
+                    {agent && agent.status !== "ready" ? (
+                      <Link href={`/assistants/${agent.id}`} className={`text-sm hover:underline ${agent.status === "failed" ? "text-red-600" : "text-amber-700"}`}>
+                        {tn("agentStatus", { name: agent.name, status: ts(agent.status) })}
+                      </Link>
+                    ) : (
+                      <p className="flex items-center gap-2 text-sm text-stone-700">
+                        {agent && <span aria-hidden className="h-[7px] w-[7px] rounded-full bg-emerald-500" />}
+                        {agent ? t("answeredBy", { name: agent.name }) : t("noAgent")}
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {activeNumbers.length > 1 && (
+            <Link href="/numbers" className="self-start text-sm underline hover:text-stone-600">
+              {t("manage")}
+            </Link>
           )}
         </Card>
         <Card className="flex flex-col gap-3">

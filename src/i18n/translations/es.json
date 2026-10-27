@@ -15,7 +15,9 @@
     "name": "Nombre",
     "agent": "Asistente",
     "language": "Idioma",
-    "sentenceGap": " "
+    "sentenceGap": " ",
+    "allNumbers": "Todos los números",
+    "filterByNumber": "Filtrar por número"
   },
   "languages": {
     "en": "Inglés",
@@ -129,14 +131,15 @@
     "stepCredit": "Agrega saldo",
     "stepAgent": "Crea un asistente (elige o clona una voz)",
     "stepNumber": "Consigue un número de teléfono",
-    "stepConnect": "Conecta el asistente a tu número",
+    "stepConnect": "Conecta un asistente a un número",
     "stepCall": "Haz o recibe tu primera llamada",
     "recentCalls": "Llamadas recientes",
     "allCalls": "Todas las llamadas",
     "noCalls": "Aún no hay llamadas.",
     "placeCall": "Hacer una llamada",
     "liveCall": "{name} está en una llamada con {number}",
-    "openCall": "Abrir llamada"
+    "openCall": "Abrir llamada",
+    "numbers": "Números"
   },
   "agents": {
     "title": "Asistentes",
@@ -334,7 +337,7 @@
   },
   "numbers": {
     "title": "Números de teléfono",
-    "description": "Números locales de EE. UU., {price}/mes, cobrados de tu saldo.",
+    "description": "Números locales de EE. UU., {price}/mes cada uno, cobrados de tu saldo. Hasta {max} por cuenta.",
     "empty": "Aún no tienes un número. Busca uno abajo.",
     "renews": "Se renueva el {date}",
     "receivesTexts": "Recibe mensajes ({price}/segmento) en <link>Mensajes</link>. No se pueden enviar respuestas.",
@@ -366,7 +369,8 @@
     "agentConnected": "Asistente conectado.",
     "agentDisconnected": "Asistente desconectado.",
     "simulatedCall": "Llamada simulada realizada: revisa Llamadas en unos segundos.",
-    "simulatedText": "Mensaje simulado recibido: míralo en Mensajes."
+    "simulatedText": "Mensaje simulado recibido: míralo en Mensajes.",
+    "atLimit": "Tienes {max} números, el máximo por cuenta. Libera uno para obtener un número diferente."
   },
   "calls": {
     "title": "Llamadas",
@@ -416,7 +420,11 @@
     "callBackAction": "Hacer una llamada",
     "playRecording": "Reproducir grabación",
     "pauseRecording": "Pausar grabación",
-    "seekRecording": "Posición de la grabación"
+    "seekRecording": "Posición de la grabación",
+    "callFrom": "Llamar desde",
+    "colYourNumber": "Tu número",
+    "emptyForNumber": "Aún no hay llamadas en este número.",
+    "yourNumber": "Tu número {number}"
   },
   "messages": {
     "title": "Mensajes",
@@ -438,7 +446,10 @@
     "noText": "(sin texto)",
     "footer": "No puedes responder desde VFi. Los mensajes se eliminan después de {days} días.",
     "nameSaved": "Nombre guardado.",
-    "nameRemoved": "Nombre quitado."
+    "nameRemoved": "Nombre quitado.",
+    "toNumber": "Para {number}",
+    "emptyForNumber": "Aún no hay mensajes para este número.",
+    "descriptionMany": "Mensajes de texto enviados a tus números, {price} por segmento. Solo recepción: no se pueden enviar respuestas."
   },
   "account": {
     "title": "Cuenta",
@@ -625,8 +636,8 @@
     "goalTooLong": "El objetivo de la llamada debe tener menos de {max} caracteres.",
     "balanceEmptyCall": "Tu saldo está vacío. Recarga para hacer llamadas.",
     "noActiveNumber": "Necesitas un número de teléfono activo desde el cual llamar.",
-    "cantCallOwnNumber": "No puedes llamar a tu propio número de VFi.",
-    "callInProgress": "Hay otra llamada en curso. Espera a que termine.",
+    "cantCallOwnNumber": "No puedes llamar a tus propios números de VFi.",
+    "callInProgress": "Este número ya está en una llamada. Espera a que termine o llama desde otro número.",
     "callNotFound": "No se encontró la llamada.",
     "callStillLive": "No se puede eliminar una llamada que sigue en curso.",
     "recordingDeleteFailed": "No se pudo eliminar la grabación. Inténtalo de nuevo en un momento.",

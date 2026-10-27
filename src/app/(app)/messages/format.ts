@@ -4,8 +4,8 @@ import { config } from "@/lib/config";
 
 type T = Awaited<ReturnType<typeof getTranslations<"messages">>>;
 
-export function threadHref(from: string): string {
-  return `/messages/thread?from=${encodeURIComponent(from)}`;
+export function threadHref({ from, to }: { from: string; to: string }): string {
+  return `/messages/thread?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
 }
 
 /**

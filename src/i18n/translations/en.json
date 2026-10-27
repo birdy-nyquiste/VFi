@@ -15,7 +15,9 @@
     "name": "Name",
     "agent": "Assistant",
     "language": "Language",
-    "sentenceGap": " "
+    "sentenceGap": " ",
+    "allNumbers": "All numbers",
+    "filterByNumber": "Filter by number"
   },
   "languages": {
     "en": "English",
@@ -129,14 +131,15 @@
     "stepCredit": "Add credit",
     "stepAgent": "Create an Assistant (pick or clone a voice)",
     "stepNumber": "Get a phone number",
-    "stepConnect": "Connect the Assistant to your number",
+    "stepConnect": "Connect an Assistant to a number",
     "stepCall": "Make or receive your first call",
     "recentCalls": "Recent calls",
     "allCalls": "All calls",
     "noCalls": "No calls yet.",
     "placeCall": "Place a call",
     "liveCall": "{name} is on a call with {number}",
-    "openCall": "Open call"
+    "openCall": "Open call",
+    "numbers": "Numbers"
   },
   "agents": {
     "title": "Assistants",
@@ -334,7 +337,7 @@
   },
   "numbers": {
     "title": "Phone numbers",
-    "description": "US local numbers, {price}/month, charged from your balance.",
+    "description": "US local numbers, {price}/month each, charged from your balance. Up to {max} per account.",
     "empty": "You don't have a number yet. Search for one below.",
     "renews": "Renews {date}",
     "receivesTexts": "Receives texts ({price}/segment) in <link>Messages</link>. Replies aren't supported.",
@@ -366,7 +369,8 @@
     "agentConnected": "Assistant connected.",
     "agentDisconnected": "Assistant disconnected.",
     "simulatedCall": "Simulated call placed — check Calls in a few seconds.",
-    "simulatedText": "Simulated text received — see Messages."
+    "simulatedText": "Simulated text received — see Messages.",
+    "atLimit": "You have {max} numbers, the most an account can have. Release one to get a different number."
   },
   "calls": {
     "title": "Calls",
@@ -416,7 +420,11 @@
     "callBackAction": "Place a call",
     "playRecording": "Play recording",
     "pauseRecording": "Pause recording",
-    "seekRecording": "Recording position"
+    "seekRecording": "Recording position",
+    "callFrom": "Call from",
+    "colYourNumber": "Your number",
+    "emptyForNumber": "No calls on this number yet.",
+    "yourNumber": "Your number {number}"
   },
   "messages": {
     "title": "Messages",
@@ -438,7 +446,10 @@
     "noText": "(no text)",
     "footer": "You can't reply from VFi. Texts are deleted after {days} days.",
     "nameSaved": "Name saved.",
-    "nameRemoved": "Name removed."
+    "nameRemoved": "Name removed.",
+    "toNumber": "To {number}",
+    "emptyForNumber": "No texts to this number yet.",
+    "descriptionMany": "Texts sent to your numbers, {price} per segment. Receive only: replies aren't supported."
   },
   "account": {
     "title": "Account",
@@ -625,8 +636,8 @@
     "goalTooLong": "Keep the call goal under {max} characters.",
     "balanceEmptyCall": "Your balance is empty. Top up to make calls.",
     "noActiveNumber": "You need an active phone number to call from.",
-    "cantCallOwnNumber": "You can't call your own VFi number.",
-    "callInProgress": "Another call is in progress. Wait for it to finish.",
+    "cantCallOwnNumber": "You can't call your own VFi numbers.",
+    "callInProgress": "This number is already on a call. Wait for it to finish, or call from another number.",
     "callNotFound": "Call not found.",
     "callStillLive": "Can't delete a call that's still in progress.",
     "recordingDeleteFailed": "Couldn't delete the recording. Try again shortly.",

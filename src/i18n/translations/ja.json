@@ -15,7 +15,9 @@
     "name": "名前",
     "agent": "アシスタント",
     "language": "言語",
-    "sentenceGap": ""
+    "sentenceGap": "",
+    "allNumbers": "すべての番号",
+    "filterByNumber": "番号で絞り込む"
   },
   "languages": {
     "en": "英語",
@@ -136,7 +138,8 @@
     "noCalls": "通話はまだありません。",
     "placeCall": "発信する",
     "liveCall": "{name}が {number} と通話中です",
-    "openCall": "通話を開く"
+    "openCall": "通話を開く",
+    "numbers": "電話番号"
   },
   "agents": {
     "title": "アシスタント",
@@ -334,7 +337,7 @@
   },
   "numbers": {
     "title": "電話番号",
-    "description": "米国のローカル番号、月額 {price}。残高から引き落とされます。",
+    "description": "米国のローカル番号、1 番号あたり月額 {price}。残高から引き落とされます。1 アカウントにつき最大 {max} 番号。",
     "empty": "電話番号はまだありません。下で検索してください。",
     "renews": "{date} に更新",
     "receivesTexts": "SMS（1 セグメントあたり {price}）を<link>メッセージ</link>で受信します。返信には対応していません。",
@@ -366,7 +369,8 @@
     "agentConnected": "アシスタントを接続しました。",
     "agentDisconnected": "アシスタントの接続を解除しました。",
     "simulatedCall": "シミュレーション通話を発信しました。数秒後に「通話」を確認してください。",
-    "simulatedText": "シミュレーション SMS を受信しました。「メッセージ」をご覧ください。"
+    "simulatedText": "シミュレーション SMS を受信しました。「メッセージ」をご覧ください。",
+    "atLimit": "電話番号は {max} 件あり、1 アカウントの上限に達しています。別の番号を取得するには、いずれかを解約してください。"
   },
   "calls": {
     "title": "通話",
@@ -416,7 +420,11 @@
     "callBackAction": "発信する",
     "playRecording": "録音を再生",
     "pauseRecording": "録音を一時停止",
-    "seekRecording": "録音の再生位置"
+    "seekRecording": "録音の再生位置",
+    "callFrom": "発信元の番号",
+    "colYourNumber": "自分の番号",
+    "emptyForNumber": "この番号の通話はまだありません。",
+    "yourNumber": "自分の番号 {number}"
   },
   "messages": {
     "title": "メッセージ",
@@ -438,7 +446,10 @@
     "noText": "（本文なし）",
     "footer": "VFi から返信することはできません。SMS は {days} 日後に削除されます。",
     "nameSaved": "名前を保存しました。",
-    "nameRemoved": "名前を削除しました。"
+    "nameRemoved": "名前を削除しました。",
+    "toNumber": "宛先 {number}",
+    "emptyForNumber": "この番号宛ての SMS はまだありません。",
+    "descriptionMany": "あなたの各番号に届いた SMS です。1 セグメントあたり {price}。受信専用のため、返信には対応していません。"
   },
   "account": {
     "title": "アカウント",
@@ -626,7 +637,7 @@
     "balanceEmptyCall": "残高がありません。発信するにはチャージしてください。",
     "noActiveNumber": "発信には有効な電話番号が必要です。",
     "cantCallOwnNumber": "ご自身の VFi の番号には発信できません。",
-    "callInProgress": "別の通話が進行中です。終了するまでお待ちください。",
+    "callInProgress": "この番号は通話中です。終了するまで待つか、別の番号から発信してください。",
     "callNotFound": "通話が見つかりません。",
     "callStillLive": "進行中の通話は削除できません。",
     "recordingDeleteFailed": "録音を削除できませんでした。しばらくしてからもう一度お試しください。",

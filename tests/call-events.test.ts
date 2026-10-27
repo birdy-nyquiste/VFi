@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import { agents, calls, ledgerEntries, users } from "@/db/schema";
+import { agents, calls, ledgerEntries, phoneNumbers, users } from "@/db/schema";
 import { showStored } from "@/lib/stored-text";
 import { callAgentName, deleteCallRecord, startOutboundCall } from "@/server/calls";
 import { handleCallEvent } from "@/server/calls/events";
@@ -11,7 +11,7 @@ import { isAwaitingResults, RESULTS_WAIT_MS } from "@/server/calls/state";
 import { withWebhookDedupe } from "@/server/webhooks";
 import { parseCallEnvelope } from "@/server/telnyx/events";
 import { mockProvider } from "@/server/telnyx/mock";
-import { event, makeLine, makeUser, resetDb } from "./helpers";
+import { addNumber, event, makeLine, makeUser, resetDb } from "./helpers";
 
 beforeEach(async () => {
   await resetDb();
@@ -94,6 +94,17 @@ describe("inbound calls", () => {
     await handleCallEvent(inbound(number.e164, "cc-1"));
     await handleCallEvent(inbound(number.e164, "cc-2"));
     expect(mockProvider.reject).toHaveBeenCalledWith("cc-2", "USER_BUSY");
+  });
+
+  it("takes one call per number: a call to another of the user's numbers goes through", async () => {
+    const { user, agent, number } = await makeLine(1000);
+    const second = await addNumber(user.id, agent.id);
+    await handleCallEvent(inbound(number.e164, "cc-1"));
+    await handleCallEvent(inbound(second.e164, "cc-2"));
+    await handleCallEvent(inbound(number.e164, "cc-3"));
+    expect(mockProvider.answer).toHaveBeenCalledTimes(2);
+    expect(mockProvider.reject).toHaveBeenCalledTimes(1);
+    expect(mockProvider.reject).toHaveBeenCalledWith("cc-3", "USER_BUSY");
   });
 
   it("leaves contact_number empty for callers without caller ID", async () => {
@@ -289,6 +300,64 @@ describe("outbound calls", () => {
     expect(vars.current_time).toMatch(/GMT\+9/);
   });
 });
+
+describe("choosing the number to call from", () => {
+  beforeEach(() => {
+    vi.spyOn(mockProvider, "dial").mockImplementation(async ({ clientState }) => ({ callControlId: `cc-${clientState}`, callSessionId: `sess-${clientState}` }));
+  });
+
+  it("uses the agent's own number by default, else the earliest active one", async () => {
+    const { user, agent, number } = await makeLine(1000);
+    await addNumber(user.id, null, new Date(Date.now() + 1000));
+    const [sales] = await db.insert(agents).values({ ...agentFields(user.id), name: "Sales" }).returning();
+    const salesLine = await addNumber(user.id, sales.id, new Date(Date.now() + 2000));
+    // Each call is ended before the next, so the number is free again.
+    const from = async (agentId: string) => {
+      const c = await startOutboundCall(user, { agentId, to: "+14155550100" });
+      await db.update(calls).set({ endedAt: new Date() }).where(eq(calls.id, c.id));
+      return c.fromNumber;
+    };
+    expect(await from(sales.id)).toBe(salesLine.e164);
+    expect(await from(agent.id)).toBe(number.e164);
+    await db.update(phoneNumbers).set({ agentId: null }).where(eq(phoneNumbers.id, salesLine.id));
+    expect(await from(sales.id)).toBe(number.e164);
+  });
+
+  it("calls from the number the user picks, which must be theirs and active", async () => {
+    const { user, agent } = await makeLine(1000);
+    const picked = await addNumber(user.id);
+    expect((await startOutboundCall(user, { agentId: agent.id, to: "+14155550100", numberId: picked.id })).phoneNumberId).toBe(picked.id);
+    const stranger = await makeLine(1000);
+    await expect(startOutboundCall(user, { agentId: agent.id, to: "+14155550101", numberId: stranger.number.id })).rejects.toThrow(/number/i);
+  });
+
+  it("refuses to call any of the user's own numbers", async () => {
+    const { user, agent } = await makeLine(1000);
+    const second = await addNumber(user.id);
+    await expect(startOutboundCall(user, { agentId: agent.id, to: second.e164 })).rejects.toThrow(/own VFi numbers/);
+  });
+
+  it("refuses a second call from a busy number, but not from another one", async () => {
+    const { user, agent, number } = await makeLine(1000);
+    const second = await addNumber(user.id);
+    await startOutboundCall(user, { agentId: agent.id, to: "+14155550100", numberId: number.id });
+    await expect(startOutboundCall(user, { agentId: agent.id, to: "+14155550101", numberId: number.id })).rejects.toThrow(/already on a call/);
+    expect((await startOutboundCall(user, { agentId: agent.id, to: "+14155550102", numberId: second.id })).status).toBe("initiated");
+  });
+});
+
+function agentFields(userId: string) {
+  return {
+    userId,
+    name: "Agent",
+    instructions: "Be helpful",
+    greeting: "Hello",
+    language: "en" as const,
+    voiceRef: "Telnyx.KokoroTTS.af_heart",
+    providerAssistantId: "assistant-test-2",
+    status: "ready" as const,
+  };
+}
 
 describe("outbound calls that go wrong", () => {
   const balance = async (userId: string) => (await db.select().from(users).where(eq(users.id, userId)))[0].balanceCents;

@@ -148,7 +148,7 @@ async function onInitiated(e: CallEvent) {
       const [agent] = existing.agentId ? await tx.select().from(agents).where(eq(agents.id, existing.agentId)) : [];
       return agent?.providerAssistantId ? { action: "answer", call: existing, agent } : null;
     }
-    const check = await checkInbound(tx, created, num.agentId, voiceUsable);
+    const check = await checkInbound(tx, created, num.id, num.agentId, voiceUsable);
     if ("outcome" in check) {
       await tx.update(calls).set({ status: "rejected", ...outcomeColumns(check.outcome) }).where(eq(calls.id, created.id));
       return { action: "reject", call: created, cause: check.cause };
@@ -175,6 +175,7 @@ async function agentVoiceUsable(userId: string, agentId: string | null): Promise
 async function checkInbound(
   q: Queryable,
   call: Call,
+  numberId: string,
   agentId: string | null,
   voiceUsable: boolean,
 ): Promise<{ agent: Agent } | { outcome: StoredMessage; cause: "CALL_REJECTED" | "USER_BUSY" }> {
@@ -190,7 +191,7 @@ async function checkInbound(
   if (!voiceUsable) {
     return { outcome: stored("outcomeKeyRejected"), cause: "CALL_REJECTED" };
   }
-  if (await hasOtherActiveCall(call.userId, call.id, q)) {
+  if (await hasOtherActiveCall(numberId, call.id, q)) {
     return { outcome: stored("outcomeBusy"), cause: "USER_BUSY" };
   }
   return { agent };

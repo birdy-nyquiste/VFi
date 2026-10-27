@@ -199,6 +199,25 @@ export function isActivePath(path: string, href: string): boolean {
   return path === href || path.startsWith(`${href}/`);
 }
 
+/** Round filter links that wrap on narrow screens; the active one is filled. */
+export function FilterChips({ label, chips }: { label: string; chips: { href: string; label: ReactNode; active: boolean }[] }) {
+  return (
+    <nav aria-label={label} className="flex flex-wrap gap-2">
+      {chips.map((c) => (
+        <Link
+          key={c.href}
+          href={c.href}
+          scroll={false}
+          aria-current={c.active ? "page" : undefined}
+          className={`whitespace-nowrap rounded-full border px-3 py-1 text-[13px] tabular-nums transition-colors ${focusRing} ${c.active ? "border-stone-900 bg-stone-900 text-white" : "border-stone-300 text-stone-600 hover:border-stone-900 hover:text-stone-900"}`}
+        >
+          {c.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
 /** Underlined tab links; the active one is marked. `scroll={false}` keeps the page in place when switching. */
 export function Tabs({ tabs }: { tabs: { href: string; label: ReactNode; active: boolean }[] }) {
   return (

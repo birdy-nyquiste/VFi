@@ -227,17 +227,17 @@ Fixed retail prices, configurable. Telnyx's cost is recorded separately and neve
 
 | Limit | Value | Where |
 | --- | --- | --- |
-| Phone numbers | 1 today; **3 planned** (§9.1) | `limits.numbersPerUser` |
+| Phone numbers | 3 (§9.1) | `limits.numbersPerUser` |
 | Assistants | 3 | `limits.agentsPerUser` |
 | Cloned voices | 2 | `limits.clonedVoicesPerUser` |
-| Calls at the same time | 1 per account today; **1 per number planned** (§9.1) | `limits.concurrentCalls` |
+| Calls at the same time | 1 per number, so up to 3 per account (§9.1) | `hasOtherActiveCall` (a rule, not a setting) |
 | Knowledge sources | 5 across all Assistants; 5 added per 24 hours (§8) | `limits.knowledgeSources`, `limits.knowledgeAddsPerDay` |
 
 ---
 
 ## 4. Phone numbers
 
-**Status: Built.** Changing to up to 3 numbers per account: §9.1.
+**Status: Built.** Up to 3 numbers per account, each its own line: §9.1.
 
 - US local numbers only (no toll-free), searched by area code; nearby area codes are offered when the code is
   sold out.
@@ -350,10 +350,11 @@ When platform model settings change, existing Assistants are re-synced automatic
 
 - **Inbound:** Telnyx sends `call.initiated` to our Call Control app. We check ownership, the linked Assistant and
   the balance, then either answer with the Assistant (passing its id and the call's variables) or reject.
-- **Outbound:** the user picks an Assistant, enters the number and an optional goal, and we dial from their number.
-  When the call is answered we start the Assistant with the fixed outbound opening.
-- **Busy:** an account has one call at a time today; a second call is rejected or refused. Changing to one call per
-  number: §9.1.
+- **Outbound:** the user picks an Assistant, enters the number and an optional goal, and (with several numbers) the
+  number to call from; we dial from it. When the call is answered we start the Assistant with the fixed outbound
+  opening.
+- **Busy:** each number has one call at a time; a second call to or from a busy number is rejected or refused. Calls
+  on the account's other numbers aren't affected (§9.1).
 - **Billing:** on hangup, per started minute at the call price. Telnyx's own cost for the call
   (`call.cost` webhook) is stored for reconciliation.
 
@@ -587,8 +588,8 @@ no crawl limit beyond link depth, so turning them on means accepting that risk: 
 
 ## 9. Round 2: more numbers and call results
 
-**Status: Planned.** Approved 2026-10-26, revised 2026-10-27. Build in this order, one pull request each, cut from
-`main`: **E (§9.1), then A (§9.2).** E is small and independent; A's email shows which of the user's numbers took
+**Status:** E is built; A is planned. Approved 2026-10-26, revised 2026-10-27. Built in this order, one pull request
+each, cut from `main`: **E (§9.1), then A (§9.2).** E is small and independent; A's email shows which of the user's numbers took
 the call, which needs E.
 
 Where it came from: setting up and rehearsing the Nyquiste Front Desk Assistant (7 real calls and 15 text scenarios
@@ -596,7 +597,7 @@ run twice each) and comparing our Assistant page with the Telnyx console.
 
 | Item | Problem seen in rehearsal | Status |
 | --- | --- | --- |
-| E. Up to 3 numbers per account | One number per account: separate lines of business or separate Assistants can't each have a number | Planned; mock approved 2026-10-27 |
+| E. Up to 3 numbers per account | One number per account: separate lines of business or separate Assistants can't each have a number | Built 2026-10-27 |
 | A. Call-result fields and email | Every call gets only a generic summary, and nobody is told when a call comes in | Planned; needs a mock |
 | B. Testing without calls | Every instruction change needed a phone call to check | Dropped (§1.4) |
 | C. Pronunciation and recognition | Instructions had to spell names out ("V Fi", "Air P P P"); "VFi" was heard as "Wi-Fi" | Dropped (§1.4) |
@@ -622,8 +623,8 @@ run twice each) and comparing our Assistant page with the Telnyx console.
 | Calls: place a call | New "Call from" picker. Defaults to the selected Assistant's number (its earliest-bought one if it has several), otherwise the earliest-bought active number, and follows the Assistant when it changes. The caller-ID line shows the chosen number. |
 | Calls: list | New "Your number" column and a filter by number. On phones, your number shows under the time. |
 | Call details | New "Your number" line. |
-| Messages | Each conversation shows which of the user's numbers it was sent to, with the same filter. A sender who texts two of the user's numbers appears as two conversations (grouped by sender and our number). |
-| Dashboard | "Connect the Assistant to your number" becomes "Connect an Assistant to a number". |
+| Messages | The description says "your numbers" instead of "your number". Each conversation shows which of the user's numbers it was sent to, with the same filter. A sender who texts two of the user's numbers appears as two conversations (grouped by sender and our number). |
+| Dashboard | "Connect the Assistant to your number" becomes "Connect an Assistant to a number". With more than one number, the number card becomes a "Numbers" card listing each number and the Assistant that answers it, and every call in progress gets its own live banner, naming which of the user's numbers it is on. (Added after the mock, approved by the product owner 2026-10-27.) |
 | Assistants list | An Assistant on several numbers lists all of them. |
 
 All of these appear only when the account has more than one number; with one number the app looks as it does
@@ -638,14 +639,14 @@ today. All text in five languages.
 
 - The data model already supports several numbers (numbers are listed per user, linked per number, renewed per
   number). No new tables or columns.
-- `placeCall` takes an optional number id and validates it; the call form adds the picker.
-- `hasOtherActiveCall` checks per number instead of per account; the limit is renamed to a per-number one. The
-  per-user balance lock is unchanged.
-- Replace every "first active number" lookup (dashboard, messages page, outbound calls) with an explicit choice or a
-  list.
-- Messages: conversations are keyed by (sender, our number) instead of sender.
-- When E ships, update PRODUCT.md ("One call at a time per account" under Capabilities, and the "do not state"
-  note).
+- `startOutboundCall` takes an optional number id and checks it's the user's and active; without one,
+  `defaultCallerNumber` (`src/lib/caller-number.ts`) picks it, and the call form uses the same rule for its default.
+- `hasOtherActiveCall` checks per number instead of per account; one call per number is a rule, not a setting.
+  Admission still runs under the per-user lock.
+- The calls list and Messages take `?number=<number id>` to filter.
+- Messages: conversations are keyed by (sender, our number). Thread links carry `to`; an old link without it shows
+  all of the sender's texts.
+- PRODUCT.md is updated (one call at a time per number).
 
 ### 9.2 A. Call-result fields and email
 
