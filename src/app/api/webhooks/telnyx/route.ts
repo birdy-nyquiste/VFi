@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { handleCallEvent } from "@/server/calls/events";
+import { handleInsightsReady } from "@/server/calls/results";
 import { handleInboundMessage } from "@/server/messages";
 import { voiceProvider } from "@/server/telnyx";
 
@@ -14,6 +15,7 @@ export async function POST(req: NextRequest) {
   }
   try {
     if (event.type === "message.received") await handleInboundMessage(event);
+    else if (event.type === "insights.ready") await handleInsightsReady(event);
     else await handleCallEvent(event);
   } catch (err) {
     console.error("Telnyx webhook processing failed", event.rawType, err);

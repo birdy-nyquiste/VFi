@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ActionForm, SubmitButton } from "@/components/forms";
-import { Card, DirectionIcon, Empty, Field, FilterChips, Notice, PageHeader, StatusBadge, inputClass } from "@/components/ui";
+import { Badge, Card, DirectionIcon, Empty, Field, FilterChips, Notice, PageHeader, StatusBadge, inputClass } from "@/components/ui";
+import { callBadges } from "@/server/call-results";
 import { config } from "@/lib/config";
 import { formatCallerNumber, formatCents, formatDateTime, formatDuration, formatPhone } from "@/lib/format";
 import { listUserAgents, MAX_CALL_GOAL_LENGTH } from "@/server/agents";
@@ -38,10 +39,11 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
   const showNumbers = activeNumbers.length > 1;
   const filter = showNumbers && number && isUuid(number) ? activeNumbers.find((n) => n.id === number) : undefined;
   const rows = await listUserCalls(user.id, 50, filter?.id);
+  const badges = await callBadges(rows.map(({ call }) => call.id));
   const readyAgents = agents.filter((a) => a.status === "ready");
   const activeNumber = activeNumbers[0];
   const agentNames = new Map(agents.map((a) => [a.id, a.name]));
-  const [t, tc, locale] = await Promise.all([getTranslations("calls"), getTranslations("common"), getLocale()]);
+  const [t, tc, tr, locale] = await Promise.all([getTranslations("calls"), getTranslations("common"), getTranslations("callResults"), getLocale()]);
   const tz = await viewerTimeZone();
   const numberLink = (chunks: React.ReactNode) => (
     <Link href="/numbers" className="underline">
@@ -154,7 +156,13 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
                   </td>
                   {showNumbers && <td className="hidden whitespace-nowrap px-3 py-3.5 tabular-nums text-stone-600 sm:table-cell">{formatPhone(ourNumber(call))}</td>}
                   <td className="hidden px-3 py-3.5 text-stone-600 sm:table-cell">{agentName ?? "—"}</td>
-                  <td className="px-3 py-3.5"><StatusBadge status={call.status} /></td>
+                  <td className="px-3 py-3.5">
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      <StatusBadge status={call.status} />
+                      {badges.get(call.id) === "urgent" && <Badge tone="red">{tr("badgeUrgent")}</Badge>}
+                      {badges.get(call.id) === "followup" && <Badge tone="amber">{tr("badgeFollowup")}</Badge>}
+                    </span>
+                  </td>
                   <td className="hidden px-3 py-3.5 text-right tabular-nums sm:table-cell">{formatDuration(call.durationSec)}</td>
                   <td className="hidden px-3 py-3.5 text-right tabular-nums sm:table-cell">{call.billedCents != null ? formatCents(call.billedCents, locale) : "—"}</td>
                   <td className="hidden whitespace-nowrap px-6 py-3.5 text-right text-stone-500 sm:table-cell">{formatDateTime(call.createdAt, locale, tz)}</td>

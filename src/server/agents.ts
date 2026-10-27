@@ -2,7 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { and, eq, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { z } from "zod";
-import { db, withUserLock } from "@/db";
+import { db, tableExists, withUserLock } from "@/db";
 import { agentKnowledge, agents, elevenLabsKeys, knowledgeSources, phoneNumbers, type Agent, type KnowledgeMode } from "@/db/schema";
 import {
   agentVariable,
@@ -20,6 +20,7 @@ import { failureColumns, stored, storedFromError } from "@/lib/stored-text";
 import { LANGUAGES, type Language } from "@/lib/language";
 import { normalizeLineBreaks } from "@/lib/text";
 import { isUuid } from "@/lib/uuid";
+import { deleteInsightsQuietly, desiredInsightsHashes, ensureInsights, parseResultsInput, saveResultsSettings } from "./call-results";
 import { FeatureNotPermittedError, voiceProvider, type AssistantSpec } from "./telnyx";
 import { isElevenLabsVoice, voiceSpeaks } from "./telnyx/stock-voices";
 import { ASSISTANT_BODY_VERSION } from "./telnyx/version";
@@ -206,6 +207,7 @@ function toSpec(
   a: Pick<Agent, "name" | "instructions" | "greeting" | "language" | "voiceRef" | "model" | "behavior" | "variables">,
   voiceApiKeyRef?: string,
   knowledge?: KnowledgeState,
+  insightGroupId?: string,
 ): AssistantSpec {
   const englishOnly = !voiceSpeaks(a.voiceRef).includes("zh");
   const rules = [englishOnly && ENGLISH_ONLY_VOICE_RULE, knowledge && KNOWLEDGE_RULES[knowledge.mode]].filter(Boolean);
@@ -220,11 +222,19 @@ function toSpec(
     behavior: readBehavior(a.behavior),
     variables: variableDefaults(a),
     knowledgeBucket: knowledge?.bucket,
+    insightGroupId,
   };
+}
+
+/** The fields and email settings posted with the form, when there are any (absent: keep what's stored). */
+function resultsInput(raw: unknown) {
+  const results = (raw as { results?: unknown } | null)?.results;
+  return results === undefined ? undefined : parseResultsInput(results);
 }
 
 export async function createAgent(userId: string, raw: unknown): Promise<Agent> {
   const input = parse(raw);
+  const results = resultsInput(raw);
   const voice = await resolveVoice(userId, input.voice, input.language);
   input.model = await resolveModel(input.model);
   const row = await withUserLock(userId, async (tx) => {
@@ -236,6 +246,7 @@ export async function createAgent(userId: string, raw: unknown): Promise<Agent> 
       throw new UserError("agentLimit", { max: config.limits.agentsPerUser });
     }
     const [inserted] = await tx.insert(agents).values({ userId, ...input, ...voice, status: "syncing" }).returning();
+    if (results) await saveResultsSettings(inserted.id, results, tx);
     return inserted;
   });
   return syncAgent(row);
@@ -245,8 +256,11 @@ export async function updateAgent(userId: string, agentId: string, raw: unknown)
   const existing = await getUserAgent(userId, agentId);
   if (!existing) throw new UserError("agentNotFound");
   const input = parse(raw);
+  const results = resultsInput(raw);
   const voice = await resolveVoice(userId, input.voice, input.language);
   input.model = await resolveModel(input.model);
+  // Before the push below, which sets up the agent's insights from these fields.
+  if (results) await saveResultsSettings(agentId, results);
   const [row] = await db
     .update(agents)
     .set({ ...input, ...voice, status: "syncing", updatedAt: new Date() })
@@ -284,7 +298,8 @@ const MAX_PUSHES = 3;
 async function pushLatest(a: Agent, withKnowledge = true): Promise<Agent | null> {
   for (let pushes = 1; ; pushes++) {
     const knowledge = withKnowledge ? (await desiredKnowledge([a.id])).get(a.id) : undefined;
-    const spec = toSpec(a, await voiceApiKeyRef(a), knowledge);
+    const insights = await ensureInsights(a);
+    const spec = toSpec(a, await voiceApiKeyRef(a), knowledge, insights.groupId);
     let assistantId = a.providerAssistantId;
     let lostClaim = false;
     if (assistantId) await voiceProvider().updateAssistant(assistantId, spec);
@@ -307,7 +322,13 @@ async function pushLatest(a: Agent, withKnowledge = true): Promise<Agent | null>
     if (!lostClaim) {
       const [u] = await db
         .update(agents)
-        .set({ providerAssistantId: assistantId, status: "ready", failureReason: null, failureMsg: null, syncedConfig: agentFingerprint(knowledge) })
+        .set({
+          providerAssistantId: assistantId,
+          status: "ready",
+          failureReason: null,
+          failureMsg: null,
+          syncedConfig: agentFingerprint(knowledge, insights.hash === null ? "pending" : insights.hash),
+        })
         .where(unchangedSince(a))
         .returning();
       if (u) return u;
@@ -380,11 +401,32 @@ export function platformFingerprint(): string {
   return createHash("sha256").update(JSON.stringify(settings)).digest("hex").slice(0, 16);
 }
 
-/** What an agent's provider copy should match: the platform settings plus its knowledge state. */
-export function agentFingerprint(knowledge?: KnowledgeState): string {
-  const fp = platformFingerprint();
-  if (!knowledge) return fp;
-  return `${fp}:${createHash("sha256").update(JSON.stringify(knowledge)).digest("hex").slice(0, 16)}`;
+/**
+ * What an agent's provider copy should match: the platform settings, its knowledge state and its
+ * insights (call-result fields). An insights hash of "pending" (set-up failed) never matches, so it is
+ * retried; none at all means the call-result tables don't exist yet (previews).
+ */
+export function agentFingerprint(knowledge?: KnowledgeState, insightsHash?: string): string {
+  let fp = platformFingerprint();
+  if (knowledge) fp += `:${createHash("sha256").update(JSON.stringify(knowledge)).digest("hex").slice(0, 16)}`;
+  if (insightsHash) fp += `:r${insightsHash}`;
+  return fp;
+}
+
+/** Whether the provider's copy of a ready agent is out of date. */
+export async function agentIsStale(a: Agent): Promise<boolean> {
+  return a.status === "ready" && a.syncedConfig !== (await desiredFingerprints([a])).get(a.id);
+}
+
+/** Whether the last push included the knowledge base (a knowledge part in the fingerprint; insights parts start with "r"). */
+export function pushedWithKnowledge(syncedConfig: string | null): boolean {
+  return Boolean(syncedConfig?.split(":").slice(1).some((part) => !part.startsWith("r")));
+}
+
+/** The fingerprint each agent should have been pushed with. */
+async function desiredFingerprints(list: Agent[]): Promise<Map<string, string>> {
+  const [knowledge, insights] = await Promise.all([desiredKnowledge(list.map((a) => a.id)), desiredInsightsHashes(list)]);
+  return new Map(list.map((a) => [a.id, agentFingerprint(knowledge.get(a.id), insights.get(a.id))]));
 }
 
 /** Ready agents whose provider copy doesn't match the current settings and knowledge state. */
@@ -393,8 +435,8 @@ export async function staleAgents(userId?: string): Promise<Agent[]> {
     .select()
     .from(agents)
     .where(and(isNull(agents.deletedAt), eq(agents.status, "ready"), userId ? eq(agents.userId, userId) : undefined));
-  const knowledge = await desiredKnowledge(ready.map((a) => a.id));
-  return ready.filter((a) => a.syncedConfig !== agentFingerprint(knowledge.get(a.id)));
+  const desired = await desiredFingerprints(ready);
+  return ready.filter((a) => a.syncedConfig !== desired.get(a.id));
 }
 
 /**
@@ -445,7 +487,7 @@ export async function resyncStaleAgents(userId?: string): Promise<number> {
 export async function resyncAgentIfStale(agentId: string): Promise<boolean> {
   const a = await agentRow(agentId);
   if (a?.status !== "ready" || a.deletedAt) return false;
-  if (a.syncedConfig === agentFingerprint((await desiredKnowledge([a.id])).get(a.id))) return false;
+  if (a.syncedConfig === (await desiredFingerprints([a])).get(a.id)) return false;
   return syncAgentQuietly(a);
 }
 
@@ -495,6 +537,7 @@ export async function deleteAgent(userId: string, agentId: string): Promise<void
   // The deletion goes ahead either way (SPEC §8.5). The assistant's id is kept if its delete failed,
   // for deleteLeftoverAssistants() to retry, and so is an id a push stored after we read the row.
   const deletedId = a.providerAssistantId && (await deleteAssistantQuietly(a.id, a.providerAssistantId)) ? a.providerAssistantId : null;
+  await deleteInsightsQuietly(a.id);
   await db.transaction(async (tx) => {
     await tx.update(phoneNumbers).set({ agentId: null }).where(eq(phoneNumbers.agentId, a.id));
     await tx
@@ -504,10 +547,7 @@ export async function deleteAgent(userId: string, agentId: string): Promise<void
     // The knowledge base goes with the agent, permanently: clear what we hold now; the provider copy is
     // removed by cleanUpKnowledge() (SPEC §8.5). Whatever the feature flag says, but only where the
     // tables exist (previews run before the production migration).
-    const [{ exists }] = (await tx.execute(sql`select to_regclass('public.knowledge_sources') is not null as exists`)) as unknown as {
-      exists: boolean;
-    }[];
-    if (!exists) return;
+    if (!(await tableExists(tx, "knowledge_sources"))) return;
     await tx.update(knowledgeSources).set(DELETED_SOURCE).where(eq(knowledgeSources.agentId, a.id));
     await tx.update(agentKnowledge).set({ status: "deleting" }).where(eq(agentKnowledge.agentId, a.id));
   });

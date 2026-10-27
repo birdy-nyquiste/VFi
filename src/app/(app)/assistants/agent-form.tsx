@@ -4,6 +4,8 @@ import { ActionForm, FormMessage, SubmitButton } from "@/components/forms";
 import { Card, CardTitle, Field, Notice, inputClass } from "@/components/ui";
 import { MAX_CALL_MINUTES, MAX_KEY_TERMS_LENGTH, readBehavior, readVariables, SILENCE_HANGUP_SECS } from "@/lib/agent-settings";
 import type { AgentTemplate } from "@/lib/agent-templates";
+import { DEFAULT_EMAIL_SETTINGS, type EmailSettings } from "@/lib/call-email";
+import type { CallField } from "@/lib/call-fields";
 import { config } from "@/lib/config";
 import type { Agent, Voice } from "@/db/schema";
 import { OUTBOUND_GREETING, RECORDING_NOTICE } from "@/server/agents";
@@ -12,6 +14,7 @@ import { modelName, sttModelName } from "@/server/telnyx/models";
 import { DEFAULT_VOICE_REF, ttsModelName, voiceSpeaks } from "@/server/telnyx/stock-voices";
 import { saveAgentAction } from "./actions";
 import { ModelRow } from "./model-row";
+import { ResultsSection } from "./results-section";
 import { ScriptFields } from "./script-fields";
 import { VoiceFields } from "./voice-fields";
 
@@ -26,9 +29,14 @@ export function AgentForm({
   stock: catalog,
   clones,
   models,
+  results,
+  accountEmail,
   saved = false,
 }: {
   agent?: Agent;
+  /** The agent's call-result fields and email settings; a new agent starts with its template's fields. */
+  results?: { fields: CallField[]; email: EmailSettings };
+  accountEmail: string;
   /** Just saved: show "Saved." next to the button until the next save. */
   saved?: boolean;
   /** For a new agent: what the form starts with. */
@@ -216,6 +224,14 @@ export function AgentForm({
           </Field>
         </div>
       </Section>
+
+      <ResultsSection
+        agentId={agent?.id}
+        language={initial?.language ?? "en"}
+        assistantName={agent?.name ?? templateName}
+        accountEmail={accountEmail}
+        initial={results ?? { fields: template?.fields ?? [], email: DEFAULT_EMAIL_SETTINGS }}
+      />
     </ActionForm>
   );
 }

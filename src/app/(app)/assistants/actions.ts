@@ -7,6 +7,7 @@ import { attempt, type ActionState } from "@/lib/action";
 import { createAgent, deleteAgent, updateAgent } from "@/server/agents";
 import { requireUser } from "@/server/auth";
 import { cleanUpKnowledge } from "@/server/knowledge";
+import { parseResultsInput, sendTestEmail } from "@/server/call-results";
 
 function fields(form: FormData) {
   const checked = (name: string) => form.get(name) === "on";
@@ -30,7 +31,28 @@ function fields(form: FormData) {
       timeZone: form.get("timeZone"),
     },
     variables: variablesField(form.get("variables")),
+    results: resultsField(form.get("results")),
   };
+}
+
+/** The call-results cards post their fields and email settings as one JSON field. Absent: leave them as stored. */
+function resultsField(raw: FormDataEntryValue | null): unknown {
+  if (raw === null) return undefined;
+  try {
+    return JSON.parse(String(raw));
+  } catch {
+    return {};
+  }
+}
+
+/** Send the user the email as currently set up on the page (saved or not), with sample answers. */
+export async function sendTestEmailAction(agentId: string, payload: string): Promise<{ error?: string; sentTo?: string }> {
+  const result = await attempt(async () => {
+    const user = await requireUser();
+    const settings = parseResultsInput(resultsField(payload));
+    return sendTestEmail(user.id, agentId, settings);
+  });
+  return result?.error ? { error: result.error } : { sentTo: result?.ok };
 }
 
 /** The variable editor posts its rows as JSON; rows left completely empty are dropped. */

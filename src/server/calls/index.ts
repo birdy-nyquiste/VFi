@@ -16,6 +16,7 @@ import { voiceProvider, type DialResult } from "@/server/telnyx";
 import { isElevenLabsVoice } from "@/server/telnyx/stock-voices";
 import { callRef, failedCallFields, hasOtherActiveCall, isCallLive, STALE_CALL_MS } from "./state";
 import { fetchCallResults } from "./results";
+import { purgeCallResults } from "@/server/call-results";
 
 /** The user's latest calls; only those on one of their numbers when `phoneNumberId` is given. */
 export async function listUserCalls(userId: string, limit = 50, phoneNumberId?: string) {
@@ -190,5 +191,6 @@ export async function purgeCallContent(c: Call): Promise<boolean> {
     .update(calls)
     .set({ transcript: null, summary: null, hasRecording: false, resultsFetched: true, purgedAt: new Date() })
     .where(eq(calls.id, c.id));
+  await purgeCallResults(c.id);
   return true;
 }

@@ -21,6 +21,15 @@ export { schema };
 export type Queryable = Db | Tx;
 
 /**
+ * Whether a table exists. Previews share the production database and run before its migrations, so code
+ * that uses a new table checks first (SPEC §2.6).
+ */
+export async function tableExists(q: Queryable, name: string): Promise<boolean> {
+  const [{ exists }] = (await q.execute(sql`select to_regclass(${`public.${name}`}) is not null as exists`)) as unknown as { exists: boolean }[];
+  return exists;
+}
+
+/**
  * Run `fn` in a transaction holding an advisory lock on `key`, so
  * check-then-insert sequences can't race.
  */

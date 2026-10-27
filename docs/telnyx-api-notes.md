@@ -63,7 +63,8 @@ Methods are on the live adapter, `src/server/telnyx/live.ts`, unless another fil
 | Offered models | `GET /ai/models` | `listModels`; filtering in `models.ts` |
 | Voices, preview, clones | `GET /text-to-speech/voices`, `POST /text-to-speech/speech`, `/voice_clones…` | `listStockVoices`, `synthesizePreview`, `cloneVoice`, `getClonedVoice`, `deleteClonedVoice`, `getCloneSample` |
 | ElevenLabs key | `POST` / `DELETE /integration_secrets` | `createIntegrationSecret`, `deleteIntegrationSecret` |
-| Transcript and summary | `GET /ai/conversations?…`, `…/{id}/messages`, `…/{id}/conversations-insights` | `getCallResults` |
+| Transcript, summary and fields | `GET /ai/conversations?…`, `…/{id}/messages`, `…/{id}/conversations-insights` | `getCallResults` |
+| Each assistant's insight group | `POST`/`PUT /ai/conversations/insight-groups…`, `POST`/`PUT`/`DELETE /ai/conversations/insights…`, `…/assign` | `syncInsights`, `deleteInsights` |
 | Recording link, retention | `GET` / `DELETE /recordings…`, `DELETE /ai/conversations/{id}` | `getRecordingUrl`, `purgeCallData` |
 | Knowledge base | S3-compatible storage, `POST /ai/embeddings`, `POST /ai/embeddings/url`, `GET` / `DELETE /ai/embeddings/buckets/{name}` | `storage.ts`; `enableEmbedding`, `embeddingStatuses`, `crawlUrl`, `deleteBucket` |
 
@@ -468,6 +469,9 @@ apply to Azure only. Secrets live in Integration Secrets (`/v2/integration_secre
   without `insight_settings` gets the account's `Default` group, which holds three Telnyx-managed insights (Summary,
   User Satisfaction, Agent Instruction Following; `insight_type: default`). The summary is a completed entry about
   30 s after hangup; right after hangup the list is empty.
+- **Update in place (Docs):** `PUT /ai/conversations/insights/{id} {name, instructions, json_schema, webhook}` and
+  `PUT /ai/conversations/insight-groups/{id} {name, description, webhook}`. VFi updates each assistant's insights this
+  way when its fields change, so their ids stay the same.
 - **Create (Live 2026-10-26):** `POST /ai/conversations/insights {name, instructions, json_schema?}`,
   `POST /ai/conversations/insight-groups {name, description?, webhook?}`,
   `POST /ai/conversations/insight-groups/{group}/insights/{insight}/assign`, then set

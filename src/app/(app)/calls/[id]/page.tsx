@@ -11,6 +11,8 @@ import { showStored, type StoredMessage } from "@/lib/stored-text";
 import { requireUser } from "@/server/auth";
 import { callAgentName, getUserCall } from "@/server/calls";
 import { listUserNumbers } from "@/server/numbers";
+import { EMAIL_SEND_TIMEOUT_MS, getCallResultRow } from "@/server/call-results";
+import { readFields, type FieldValue } from "@/lib/call-fields";
 import { activeNumbersByAge, ourNumber } from "@/lib/phone-numbers";
 import { isAwaitingResults, isCallLive } from "@/server/calls/state";
 import { deleteCallAction, hangupAction } from "../actions";
@@ -48,12 +50,17 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const call = await loadCall(id); // signs the viewer in, or redirects
   if (!call) notFound();
-  const [agentName, numbers] = await Promise.all([callAgentName(call), listUserNumbers(call.userId)]);
+  const [agentName, numbers, results] = await Promise.all([callAgentName(call), listUserNumbers(call.userId), getCallResultRow(call.id)]);
+  const resultFields = readFields(results?.fields);
+  // A send cut off midway (the server stopped) never finishes: after a while, say it didn't go.
+  const emailStatus =
+    results?.emailStatus === "pending" && Date.now() - results.createdAt.getTime() > EMAIL_SEND_TIMEOUT_MS ? "failed" : results?.emailStatus;
   // Which of the user's numbers took or placed the call; shown only once they have more than one.
   const shownOurNumber = activeNumbersByAge(numbers).length > 1 ? ourNumber(call) : null;
   const live = isCallLive(call);
   const awaitingResults = isAwaitingResults(call);
-  const [t, tc, locale] = await Promise.all([getTranslations("calls"), getTranslations("common"), getLocale()]);
+  const [t, tc, tr, locale] = await Promise.all([getTranslations("calls"), getTranslations("common"), getTranslations("callResults"), getLocale()]);
+  const showValue = (v: FieldValue | undefined) => (v === true ? tr("yes") : v === false ? tr("no") : (v ?? "—"));
   const tz = await viewerTimeZone();
   const other = call.direction === "inbound" ? call.fromNumber : call.toNumber;
   const meta = [
@@ -100,6 +107,30 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
 
       {call.status === "completed" && (
         <>
+          {results && (resultFields.length > 0 || emailStatus !== "off") && (
+            <Card>
+              <CardTitle>{tr("resultsTitle")}</CardTitle>
+              {resultFields.length > 0 && (
+                <dl className="divide-y divide-stone-100 text-sm">
+                  {resultFields.map((f) => (
+                    <div key={f.key} className="grid gap-1 py-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] sm:gap-4">
+                      <dt className="text-stone-500">{f.name}</dt>
+                      <dd className="whitespace-pre-wrap text-stone-900">{showValue(results.values?.[f.key])}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+              {emailStatus !== "off" && (
+                <p className={`mt-3 text-[13px] ${emailStatus === "failed" ? "text-red-600" : "text-stone-500"}`}>
+                  {emailStatus === "sent"
+                    ? tr("emailedTo", { to: (results.emailedTo ?? []).join(", "), time: formatDateTime(results.emailedAt, locale, tz) })
+                    : emailStatus === "failed"
+                      ? tr("emailFailed", { to: (results.emailedTo ?? []).join(", ") })
+                      : tr("emailPending")}
+                </p>
+              )}
+            </Card>
+          )}
           <Card>
             <CardTitle>{t("summary")}</CardTitle>
             <p className="text-[17px] leading-[27px]">{call.summary ?? (awaitingResults ? t("generating") : t("noSummary"))}</p>

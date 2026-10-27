@@ -492,7 +492,7 @@ describe("agent sync", () => {
     });
     expect(saved.status).toBe("ready");
     // Pushed without the knowledge base, so it shows as not applied and is retried.
-    expect(saved.syncedConfig).toBe(agentFingerprint());
+    expect(saved.syncedConfig).toMatch(new RegExp(`^${agentFingerprint()}:r[0-9a-f]{16}$`));
     expect((await getAgentKnowledge(saved)).notApplied).toBe(true);
   });
 
