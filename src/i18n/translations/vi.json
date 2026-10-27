@@ -428,7 +428,7 @@
   },
   "messages": {
     "title": "Tin nhắn",
-    "description": "Tin nhắn gửi đến các số của bạn, {price} mỗi phân đoạn. Chỉ nhận: không hỗ trợ trả lời.",
+    "description": "Tin nhắn gửi đến số của bạn, {price} mỗi phân đoạn. Chỉ nhận: không hỗ trợ trả lời.",
     "smsOff": "Tính năng nhận tin nhắn chưa được bật cho dịch vụ này.",
     "getNumber": "<link>Lấy một số điện thoại</link> để bắt đầu nhận tin nhắn.",
     "smsSettingUp": "Tính năng nhắn tin cho {number} vẫn đang được thiết lập. Hãy quay lại sau.",
@@ -448,7 +448,8 @@
     "nameSaved": "Đã lưu tên.",
     "nameRemoved": "Đã gỡ tên.",
     "toNumber": "Gửi đến {number}",
-    "emptyForNumber": "Số này chưa nhận được tin nhắn nào."
+    "emptyForNumber": "Số này chưa nhận được tin nhắn nào.",
+    "descriptionMany": "Tin nhắn gửi đến các số của bạn, {price} mỗi phân đoạn. Chỉ nhận: không hỗ trợ trả lời."
   },
   "account": {
     "title": "Tài khoản",

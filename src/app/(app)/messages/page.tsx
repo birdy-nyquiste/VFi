@@ -35,7 +35,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
       <AutoRefresh everyMs={10_000} maxMs={Infinity} />
       <PageHeader
         title={t("title")}
-        description={t("description", { price: formatCents(config.pricing.smsInboundPerPartCents, locale) })}
+        description={t(showNumbers ? "descriptionMany" : "description", { price: formatCents(config.pricing.smsInboundPerPartCents, locale) })}
       />
 
       {!config.features.inboundSms ? (

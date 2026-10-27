@@ -623,8 +623,8 @@ run twice each) and comparing our Assistant page with the Telnyx console.
 | Calls: place a call | New "Call from" picker. Defaults to the selected Assistant's number (its earliest-bought one if it has several), otherwise the earliest-bought active number, and follows the Assistant when it changes. The caller-ID line shows the chosen number. |
 | Calls: list | New "Your number" column and a filter by number. On phones, your number shows under the time. |
 | Call details | New "Your number" line. |
-| Messages | Each conversation shows which of the user's numbers it was sent to, with the same filter. A sender who texts two of the user's numbers appears as two conversations (grouped by sender and our number). |
-| Dashboard | "Connect the Assistant to your number" becomes "Connect an Assistant to a number". With more than one number, the number card becomes a "Numbers" card listing each number and the Assistant that answers it (not in the mock: one number of three would have been misleading). |
+| Messages | The description says "your numbers" instead of "your number". Each conversation shows which of the user's numbers it was sent to, with the same filter. A sender who texts two of the user's numbers appears as two conversations (grouped by sender and our number). |
+| Dashboard | "Connect the Assistant to your number" becomes "Connect an Assistant to a number". With more than one number, the number card becomes a "Numbers" card listing each number and the Assistant that answers it, and every call in progress gets its own live banner, naming which of the user's numbers it is on. (Added after the mock, approved by the product owner 2026-10-27.) |
 | Assistants list | An Assistant on several numbers lists all of them. |
 
 All of these appear only when the account has more than one number; with one number the app looks as it does

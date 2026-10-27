@@ -428,7 +428,7 @@
   },
   "messages": {
     "title": "Mensajes",
-    "description": "Mensajes de texto enviados a tus números, {price} por segmento. Solo recepción: no se pueden enviar respuestas.",
+    "description": "Mensajes de texto enviados a tu número, {price} por segmento. Solo recepción: no se pueden enviar respuestas.",
     "smsOff": "La recepción de mensajes aún no está activada para este servicio.",
     "getNumber": "<link>Consigue un número</link> para empezar a recibir mensajes.",
     "smsSettingUp": "Los mensajes de texto aún se están configurando para el {number}. Vuelve a revisar más tarde.",
@@ -448,7 +448,8 @@
     "nameSaved": "Nombre guardado.",
     "nameRemoved": "Nombre quitado.",
     "toNumber": "Para {number}",
-    "emptyForNumber": "Aún no hay mensajes para este número."
+    "emptyForNumber": "Aún no hay mensajes para este número.",
+    "descriptionMany": "Mensajes de texto enviados a tus números, {price} por segmento. Solo recepción: no se pueden enviar respuestas."
   },
   "account": {
     "title": "Cuenta",

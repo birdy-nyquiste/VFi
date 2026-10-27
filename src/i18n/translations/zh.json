@@ -448,7 +448,8 @@
     "nameSaved": "名称已保存。",
     "nameRemoved": "名称已移除。",
     "toNumber": "发至 {number}",
-    "emptyForNumber": "这个号码还没有收到短信。"
+    "emptyForNumber": "这个号码还没有收到短信。",
+    "descriptionMany": "发送到你各个号码的短信，每段 {price}。仅支持接收，不支持回复。"
   },
   "account": {
     "title": "账户",

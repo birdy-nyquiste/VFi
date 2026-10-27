@@ -428,7 +428,7 @@
   },
   "messages": {
     "title": "Messages",
-    "description": "Texts sent to your numbers, {price} per segment. Receive only: replies aren't supported.",
+    "description": "Texts sent to your number, {price} per segment. Receive only: replies aren't supported.",
     "smsOff": "Receiving texts isn't turned on for this service yet.",
     "getNumber": "<link>Get a number</link> to start receiving texts.",
     "smsSettingUp": "Texting is still being set up for {number}. Check back later.",
@@ -448,7 +448,8 @@
     "nameSaved": "Name saved.",
     "nameRemoved": "Name removed.",
     "toNumber": "To {number}",
-    "emptyForNumber": "No texts to this number yet."
+    "emptyForNumber": "No texts to this number yet.",
+    "descriptionMany": "Texts sent to your numbers, {price} per segment. Receive only: replies aren't supported."
   },
   "account": {
     "title": "Account",

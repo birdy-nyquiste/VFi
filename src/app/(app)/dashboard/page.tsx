@@ -9,7 +9,7 @@ import { listUserAgents } from "@/server/agents";
 import { requireUser } from "@/server/auth";
 import { listUserCalls } from "@/server/calls";
 import { listUserNumbers } from "@/server/numbers";
-import { activeNumbersByAge } from "@/lib/phone-numbers";
+import { activeNumbersByAge, ourNumber } from "@/lib/phone-numbers";
 import { viewerTimeZone } from "@/server/time-zone";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -46,11 +46,11 @@ export default async function DashboardPage() {
   ];
   const allDone = steps.every((s) => s.done);
 
-  const live = recent.find(({ call }) => call.status === "initiated" || call.status === "answered");
+  const live = recent.filter(({ call }) => call.status === "initiated" || call.status === "answered");
 
   return (
     <div className="space-y-6">
-      {live && <AutoRefresh everyMs={3000} slowestMs={10000} />}
+      {live.length > 0 && <AutoRefresh everyMs={3000} slowestMs={10000} />}
       <PageHeader
         title={t("title")}
         action={
@@ -61,32 +61,35 @@ export default async function DashboardPage() {
         }
       />
 
-      {live && (
+      {/* Each number can be on a call, so there's a banner for every call in progress. */}
+      {live.map(({ call, agentName }) => (
         <Link
-          href={`/calls/${live.call.id}`}
+          key={call.id}
+          href={`/calls/${call.id}`}
           className={`flex flex-wrap items-center gap-4 rounded-[20px] bg-stone-900 px-5 py-4 text-white ${focusRing}`}
         >
           <LiveIndicator />
           <span className="flex min-w-0 flex-col gap-0.5">
             <span className="text-[15px]">
               {t("liveCall", {
-                name: live.agentName ?? "—",
-                number: formatCallerNumber(live.call.direction === "inbound" ? live.call.fromNumber : live.call.toNumber, tc("unknownNumber")),
+                name: agentName ?? "—",
+                number: formatCallerNumber(call.direction === "inbound" ? call.fromNumber : call.toNumber, tc("unknownNumber")),
               })}
             </span>
             <span className="text-[13px] text-stone-400">
-              {live.call.direction === "inbound" ? tcl("directionInbound") : tcl("directionOutbound")}
-              {live.call.answeredAt && (
+              {call.direction === "inbound" ? tcl("directionInbound") : tcl("directionOutbound")}
+              {activeNumbers.length > 1 && <span className="tabular-nums">{" · "}{tcl("yourNumber", { number: formatPhone(ourNumber(call)) })}</span>}
+              {call.answeredAt && (
                 <>
                   {" · "}
-                  <span className="tabular-nums">{formatDuration(Math.max(0, Math.floor((Date.now() - live.call.answeredAt.getTime()) / 1000)))}</span>
+                  <span className="tabular-nums">{formatDuration(Math.max(0, Math.floor((Date.now() - call.answeredAt.getTime()) / 1000)))}</span>
                 </>
               )}
             </span>
           </span>
           <span className="ml-auto text-sm text-stone-300">{t("openCall")}</span>
         </Link>
-      )}
+      ))}
 
       {/* Two columns until the cards are wide enough for a phone number on one line beside the sidebar. */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

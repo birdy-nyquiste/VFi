@@ -448,7 +448,8 @@
     "nameSaved": "名前を保存しました。",
     "nameRemoved": "名前を削除しました。",
     "toNumber": "宛先 {number}",
-    "emptyForNumber": "この番号宛ての SMS はまだありません。"
+    "emptyForNumber": "この番号宛ての SMS はまだありません。",
+    "descriptionMany": "あなたの各番号に届いた SMS です。1 セグメントあたり {price}。受信専用のため、返信には対応していません。"
   },
   "account": {
     "title": "アカウント",
