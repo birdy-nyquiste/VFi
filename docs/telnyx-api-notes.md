@@ -625,3 +625,98 @@ now counts as done once the bucket has been quiet for `knowledgeCrawlQuietMs`, a
 - `knowledgeCrawlPages` (50) counts objects, which are ~2 MB chunks, so it can't catch a site that is too large.
   `knowledgeCrawlBytes` (4 MB) did catch the Python docs (12.5 MB), but only after Telnyx had already embedded and
   presumably billed all of it.
+
+
+## 18. Assistant round 2 (SPEC §20.6) — checked live 2026-10-26
+
+Probe: two throwaway assistants (`vfi-probe-*`, no number), one pronunciation dictionary, one insight group with two
+insights, one AI test, and the chat conversations they produced, all on the platform account and all deleted afterwards
+(assistants hard-deleted). Sources: the OpenAPI spec above and
+`https://developers.telnyx.com/public/llms/ai/assistants-full.txt`, `.../calling/webrtc-full.txt`, `https://telnyx.com/pricing.md`.
+
+### C. Pronunciation and recognition
+
+- **Dictionaries:** `POST /v2/pronunciation_dicts {name, items[]}`; items are `{text, type: "alias", alias}` or
+  `{text, type: "phoneme", phoneme, alphabet: "ipa"}`. `text` ≤ 200 chars, alias ≤ 500, matching is case-insensitive.
+  `PATCH /pronunciation_dicts/{id} {items}` replaces the whole list (optimistic locking: 409 on a concurrent change);
+  `DELETE` answers 204. `name` must be unique in the organization.
+- **Limits: 50 dictionaries per organization, 100 items each.** All VFi users share the platform account, so this is
+  50 dictionaries across every user (error `90203` "Maximum number of pronunciation dictionaries (50) reached").
+- **Linking:** `voice_settings.pronunciation_dict_id` is accepted on create/update and echoed back, though the OpenAPI
+  schema doesn't list it. `null` removes it. Omitting it keeps the current one (the stored `voice_settings` is merged,
+  not replaced). A non-existent id is accepted without error, so we must validate it ourselves.
+- **Preview:** `POST /text-to-speech/speech` has no dictionary parameter. For the "try it" sentence, apply the alias
+  items to the text ourselves before synthesis (phoneme items can't be previewed this way).
+- **Not provable without a call:** whether the dictionary is honored by each TTS model (Ultra, KokoroTTS, clones,
+  ElevenLabs), and for English words inside Mandarin sentences. To check on the first real call after C ships.
+- **Recognition prompt:** `transcription.settings.prompt` is "available only for `assemblyai/universal-3-5-pro`" (our
+  STT model), at most 1,750 characters, and should "describe the content, do not give instructions". Accepted and
+  echoed back alongside `keyterm`. Its effect is only provable on a call.
+
+### A. Call-result fields and email
+
+- **Structured insights need strict JSON Schema:** `additionalProperties: false` is required, and `required` must
+  list every property (`10015 Invalid json_schema`). An optional field therefore uses a nullable type
+  (`"type": ["string", "null"]`). `enum` and `boolean` work. The result arrives as a JSON string.
+- **Groups:** `POST /ai/conversations/insight-groups {name, webhook}`, `POST /ai/conversations/insights {name,
+  instructions, json_schema?}`, `POST .../insight-groups/{g}/insights/{i}/assign`. No documented limit on groups or
+  insights. The account's `Default` group holds three Telnyx-managed insights (Summary, User Satisfaction, Agent
+  Instruction Following); a group of our own doesn't include them, so it needs its own summary insight.
+- **Insight model:** `insight_settings.model` must be `zai-org/GLM-5.3-Flash` (default on create) or
+  `meta-llama/Llama-3.3-70B-Instruct`; it runs every insight in the group. GLM-5.3-Flash costs $0.135/$0.45 per
+  million input/output tokens, so per-call insights cost a fraction of a cent.
+- **Webhook:** set on the group (no per-assistant override). One `POST` per insight request when it completes or
+  finally fails: `{record_type: "event", event_type: "conversation_insight_result", payload: {conversation_id,
+  status, insight_group_id, results: [{insight_id, result}], metadata}}`, signed with the usual Ed25519 headers. This
+  is the timely trigger for the email; results arrive keyed by `insight_id`.
+- **Chats:** the docs say insights apply to chat conversations too, but none of the probe's chat conversations got
+  any insight entries within about 10 minutes, with either the Default group or our own.
+- `post_conversation_settings.enabled` gives the assistant one extra LLM turn after the conversation for final tool
+  calls. Not useful to us: insights already cover it, and we have no tools to call.
+
+### B. Testing without calls
+
+- **Chat:** `POST /ai/assistants/{id}/chat {content, conversation_id}` needs an existing conversation
+  (`POST /ai/conversations {name, metadata}`); a random UUID gives 404. Reply in about 1 s. The conversation's
+  metadata gets `assistant_id`, `assistant_version_id` and `telnyx_conversation_channel: "web_chat"`.
+- **Variables in chat:** top-level keys in the conversation's `metadata` fill `{{variables}}` (`{business_name:
+  "MetaCo"}` resolved; nested `dynamic_variables` was rejected). Without them, custom variables render as `Unknown`.
+- **Chat always uses the main version** — extra body fields (`version_id`, `target_version_id`, …) are ignored —
+  **unless a routing rule matches.** With a rule `{match: [{attribute: "telnyx_end_user_target", operator: "in",
+  values: ["vfi-draft-test"]}], serve: {version_id}}`, a conversation created with metadata
+  `{telnyx_end_user_target: "vfi-draft-test"}` was answered by that version. `telnyx_end_user_target` is the only
+  allowed attribute.
+- **Flaky right after an update:** a chat sent within seconds of an assistant create/update sometimes answered
+  `422 "Error chatting with assistant: Error code: 404"`; a retry a few seconds later worked. Seen with GLM-5.2, not
+  with GLM-5.3-Flash. Retry once before showing an error.
+- **AI Tests** (`POST /ai/assistants/tests`, `POST .../tests/{id}/runs`): an LLM plays the caller from free-text
+  `instructions`, and an LLM judges each `rubric` item; a 3-turn `web_chat` run took about 30 s. **The run's
+  `destination_version_id` was ignored on `web_chat`** (it answered from main). Test conversations have
+  `telnyx_end_user_target: "ai-assistant-test-<test_id>"`, so a routing rule could send them to a draft. Pricing for
+  test runs isn't published. Creating a test also creates a hidden simulator assistant named after the test; deleting
+  the test only soft-deletes it (it shows in `GET /ai/assistants/deleted` until hard-deleted).
+- **Cost:** chat bills only LLM inference (no voice minutes). GLM-5.2 is $1 / $4 per million input/output tokens
+  ($0.20 cached input); a reply with long instructions plus knowledge-base context (~8k tokens in) costs about
+  $0.01.
+- **Browser voice:** the WebRTC SDK's `anonymous_login: {target_type: "ai_assistant", target_id, target_version_id?,
+  target_params: {conversation_id}}` connects a browser straight to an assistant (a specific version is supported).
+  It requires `telephony_settings.supports_unauthenticated_web_calls: true`, which lets **anyone who knows the
+  assistant id** call it on our account. These calls go through the assistant's own TeXML app, not our Call Control
+  application, so we get no answer webhook, balance check, recording or per-call variables. Billing would have to
+  come from the conversation afterwards. Voice AI is $0.05/min on Telnyx's side.
+
+### D. Versions
+
+- **Every update creates a version; each assistant keeps at most 10.** Older versions are deleted, except the main
+  version and any version a routing rule references. Our background resyncs therefore use up versions too.
+- `POST /ai/assistants/{id}` with `promote_to_main: false` creates a non-main version and leaves main as it was.
+  `POST /ai/assistants/{id}/versions/{version_id}` updates that non-main version in place (same id, no new version;
+  main can't be updated this way). The non-main version survived four later main updates.
+- `POST .../versions/{version_id}/promote` makes it main in one call and **deletes the routing rules**
+  (`GET .../canary-deploys` answers 404 afterwards).
+- Routing rules: `POST`/`PUT /ai/assistants/{id}/canary-deploys {rules: [{match, serve}]}`; the first matching rule
+  wins, and no match means main. For calls, `telnyx_end_user_target` is the caller (inbound) or the destination
+  (outbound), so a rule on a value like `vfi-draft-<agent id>` never matches real traffic.
+- `answer`, `ai_assistant_start` and `POST /calls` take `assistant.id` plus per-call overrides (instructions, voice,
+  transcription, tools, …) but no version id.
+- `version_name` (optional) labels a version.

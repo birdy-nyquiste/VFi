@@ -460,38 +460,41 @@ API 请求已接受、资源已创建、资源已可用和实际操作成功，�
 
 **方案**
 
-- 每个 Assistant 在 Telnyx 有自己的 insight group：一个摘要 insight + 一个带 `json_schema` 的字段 insight（由字段生成）。生产环境目前使用 Telnyx 账户的默认摘要（未设置 `TELNYX_INSIGHT_GROUP_ID`，见 #33），没有我们自己的摘要说明，需要新写一份，并要求按 Assistant 主语言输出。通过 `insight_settings.insight_group_id` 关联到 Assistant。没有字段的 Assistant 只关联摘要 insight。
+- 每个 Assistant 在 Telnyx 有自己的 insight group：一个摘要 insight + 一个带 `json_schema` 的字段 insight（由字段生成）。Telnyx 要求严格的 JSON Schema（`additionalProperties: false`，所有字段都列入 `required`），因此每个字段都用可为空的类型，来电中没提到时为空。insight 由 `zai-org/GLM-5.3-Flash` 生成（Telnyx 只允许它或 Llama-3.3-70B），每通电话成本不到 1 美分。生产环境目前使用 Telnyx 账户的默认摘要（未设置 `TELNYX_INSIGHT_GROUP_ID`，见 #33），没有我们自己的摘要说明，需要新写一份，并要求按 Assistant 主语言输出。通过 `insight_settings.insight_group_id` 关联到 Assistant。没有字段的 Assistant 只关联摘要 insight。
 - 读取结果沿用 `getCallResults` 与 `fetchCallResults` 的等待逻辑（§16、#31/#33/#34）：摘要与字段都完成，或 `RESULTS_WAIT_MS` 到期，才算最终结果。注意当前代码取“第一个已完成的 insight”作为摘要，有两个 insight 后必须按 insight id 区分。
 - 结果确定的那一次写库触发发信，用数据库标记保证每通电话只发一次（与日常任务、页面刷新的并发写入一致）。
-- 发信需要及时的触发：目前结果只在打开通话页、每日定时任务或 `fetchCallResultsSoon`（Vercel 上常被丢弃）时才取，邮件可能晚到一天。优先用 Telnyx insight 完成时的 Webhook（insight 与 insight group 都有 `webhook` 字段，见 §20.6）；不可用时再另设触发方式。
+- 发信的及时触发：insight group 的 Webhook。Telnyx 在一通电话的 insight 全部完成（或最终失败）时发送一次 `conversation_insight_result`，带 `conversation_id` 和按 insight id 区分的结果，使用与其他 Webhook 相同的 Ed25519 签名（已验证，见 `docs/telnyx-api-notes.md` §18）。由现有的 `/api/webhooks/telnyx` 接收，据此取结果、写库、发信。打开通话页和每日定时任务仍按原逻辑兜底（包括 `RESULTS_WAIT_MS` 到期后发“摘要未生成”的邮件）。
 - 数据只新增表（同 §18.3：预览部署与生产共用数据库）：字段定义、邮件设置与收件人、每通电话的字段结果与发信标记。
 
 ### 20.2 B. 不打电话也能测试
 
 **范围（按顺序交付）**
 
-1. **文字试聊**：Assistant 页面上的聊天面板，用 Telnyx 的 `POST /v2/ai/assistants/{id}/chat`（2026-10-26 已验证：同一 `conversation_id` 可多轮，检索工具会被调用）。回复下方标出“查阅了知识库”。可清空重来。
-2. **保存的测试**：用户保存若干测试对话（来电方的几句话 + 应该出现 / 不应出现的内容），一键全部运行，逐条显示通过或失败及助理的回复。优先使用 Telnyx 的 Tests / Simulation（控制台 Tests 页面、`*_assistants_ai_tests` 系列 API）；若 §20.6 验证不适合，则用试聊接口自建（规则同上，用简单的包含 / 不包含检查，不引入额外的评分模型）。
-3. **浏览器语音试拨**：在浏览器里用麦克风直接和助理通话，用于检查声音、发音和节奏。依赖 `telephony_settings.supports_unauthenticated_web_calls` 与 Telnyx WebRTC，见 §20.6。
+1. **文字试聊**：Assistant 页面上的聊天面板，用 Telnyx 的 `POST /v2/ai/assistants/{id}/chat`（2026-10-26 已验证：同一 `conversation_id` 可多轮，检索工具会被调用）。每次试聊先建一个对话（`POST /v2/ai/conversations`），变量的值放在对话的 metadata 中（已验证可替换 `{{变量}}`）。回复下方标出“查阅了知识库”。可清空重来。Assistant 刚更新后几秒内，试聊偶尔返回错误，自动重试一次后再显示错误。
+2. **保存的测试**：用户保存若干测试对话（来电方的几句话 + 应该出现 / 不应出现的内容），一键全部运行，逐条显示通过或失败及助理的回复。用试聊接口自建：按顺序发送来电方的话，用简单的包含 / 不包含检查，不引入额外的评分模型。不用 Telnyx Tests：它由模型扮演来电者、模型打分，结果不固定，每次约 30 秒，价格未公布，且在文字测试中忽略指定的版本（§20.6 验证）。
+3. **浏览器语音试拨**：在浏览器里用麦克风直接和助理通话，用于检查声音、发音和节奏。接入方式待定（§20.7 决定 10）。
 
 **产品规则**
 
 - 试聊与测试针对草稿版本（见 D）；D 交付前针对当前版本。
 - 试聊不产生通话记录，不出现在通话列表中。
-- 文字试聊与保存的测试免费，按条数限量：每位用户每 24 小时最多 100 条助理回复（试聊与测试合计，测试中每一轮算一条）；每个 Assistant 最多保存 20 个测试，每个测试最多 10 轮。按 GLM-5.2 加检索估算，一条回复成本远低于 1 美分，用满上限每位用户每天约在 1 美元以内（§20.7 决定 2，§20.6 核实单价后可调整）。
+- 文字试聊与保存的测试免费，按条数限量：每位用户每 24 小时最多 100 条助理回复（试聊与测试合计，测试中每一轮算一条）；每个 Assistant 最多保存 10 个测试，每个测试最多 5 轮（全部运行一次最多 50 条）。按 GLM-5.2 的价格（每百万 token 输入 $1、输出 $4）估算，指令和知识库较长时一条回复约 1 美分，用满上限每位用户每天约 1 美元，通常远低于此（§20.7 决定 2）。
 - 浏览器语音试拨与电话同价（每分钟 $0.15），余额 ≤ 0 时不可试拨；记入收费流水，不出现在通话列表中（§20.7 决定 3）。
-- 试聊时由我们显式传入所有变量的值（Telnyx 试聊不替换 Assistant 上的自定义变量默认值，见 `docs/telnyx-api-notes.md` §16）。
+- 试聊时由我们显式传入所有变量的值（放在对话 metadata 中；Telnyx 试聊不替换 Assistant 上的自定义变量默认值，见 `docs/telnyx-api-notes.md` §16、§18）。
 
 ### 20.3 C. 名称的发音与识别
 
 **范围**
 
 - **发音**：每个 Assistant 一份“发音”列表，最多 30 条，每条为“写法 → 读法”（例如 VFi → V Fi，Airppp → Air P P P）。放在“基本信息”的声音旁边，可用当前声音试听一句包含该词的话。
-- **识别提示**：在“对话”部分的关键词旁边加一段识别提示（例如“来电者会提到 VFi，听起来像 Wi-Fi”），长度上限以 Telnyx 为准（控制台显示 1,750 字符）。
+- **识别提示**：在“对话”部分的关键词旁边加一段识别提示（例如“来电者会提到 VFi，听起来像 Wi-Fi”），最多 1,750 字符。按 Telnyx 的要求描述内容，不写指令；只对我们使用的 `assemblyai/universal-3-5-pro` 有效。
 
 **方案**
 
-- 发音用 Telnyx Pronunciation Dictionary（控制台 AI Suite → Pronunciation Dictionaries；Assistant 的 `voice_settings.pronunciation_dict_id`）。每个 Assistant 一份，随 Assistant 删除。
+- 发音用 Telnyx Pronunciation Dictionary（Assistant 的 `voice_settings.pronunciation_dict_id`，已验证可保存，设为 `null` 即去掉）。只为发音列表不为空的 Assistant 建一份，列表清空或 Assistant 删除时删除。条目用 alias 类型（`写法 → 读法`），写法 ≤ 200 字符。
+- **名额：Telnyx 每个组织最多 50 份词典，所有用户共用平台账户。** 用满前需请 Telnyx 提高上限；用满时保存发音列表提示暂不可用，不影响 Agent 的其他设置。
+- 试听：TTS 接口不支持词典，试听时由我们先按发音列表替换文字再合成。
+- 各 TTS 模型（Ultra、KokoroTTS、克隆声音、ElevenLabs）以及中文句子中的英文词是否生效，只能在通话中确认：C 上线后第一次彩排时检查。
 - 识别提示写入 `transcription.settings.prompt`，保存在 Agent 现有的通话行为设置中；发音列表新增表。
 - 完成后更新 Nyquiste 前台助理：从指令中删除“V Fi”“Air P P P”“Wi-Fi”三条规则，改用发音列表和识别提示，并重新彩排。
 
@@ -507,15 +510,20 @@ API 请求已接受、资源已创建、资源已可用和实际操作成功，�
 
 **方案**
 
-- 优先使用 Telnyx 版本：更新时 `promote_to_main=false` 生成非主版本，测试针对该版本，上线时 promote（控制台“Save as new version”“Switch version”，API `*_assistants_ai_versions`）。若 §20.6 验证试聊无法指定版本，则草稿测试使用隐藏的克隆 Assistant（2026-10-26 模型评测中已验证克隆可用，测试后删除）。
-- 现有的平台配置重新同步（`platformFingerprint`、`resyncStaleAgents`）以及由知识库引起的同步只作用于已上线版本，不得把草稿推上线，也不得丢掉 Telnyx 上未上线的版本（见 §20.6）。
+- 使用 Telnyx 版本（已验证，见 `docs/telnyx-api-notes.md` §18）：主版本是上线版本，接听来电和外呼。草稿是一个非主版本：第一次保存草稿时用 `promote_to_main=false` 创建，之后用 `POST …/versions/{version_id}` 原地更新（不产生新版本）。
+- 草稿的路由规则：为每个有草稿的 Assistant 建一条规则，把 `telnyx_end_user_target` 为 `vfi-draft-<Agent ID>` 的对话交给草稿版本。试聊和测试建对话时带上这个值，因此针对草稿；真实来电和外呼的这个值是电话号码，不会命中。Telnyx 每个 Assistant 最多保留 10 个版本，但被规则引用的版本不会被删除，草稿因此不会因后台同步而丢失。
+- 上线：先把草稿推送到草稿版本，再 promote（一次调用）。promote 会删除路由规则；之后再保存草稿时重新创建草稿版本和规则。放弃草稿：删除草稿版本和规则，`agents` 恢复为上线配置。
+- 平台配置重新同步（`platformFingerprint`、`resyncStaleAgents`）只更新主版本（`promote_to_main=true`，以上线配置为内容），草稿另行更新，不会被推上线。由知识库引起的同步（检索工具、桶）同时更新主版本和草稿版本，因为资料的增删立即对两者生效（决定 9）。
+- 每次更新主版本都会占用 Telnyx 的一个版本名额，Telnyx 上的旧版本可能随时被删除，因此“最近 5 个上线版本”的内容保存在我们的数据库中，恢复时写回草稿。
 - 已上线配置与版本历史存新表；`agents` 现有的列保存草稿。
 
 ### 20.5 实现顺序
 
 C → A → B1（先针对当前版本）→ D → B2、B3（针对草稿）。每项单独 PR。所有界面改动先出 mock，确认后再实现；文案 5 种语言；不使用全大写；设置放在它所服务的位置（§19.2）。
 
-### 20.6 待 Telnyx 验证（实现前）
+### 20.6 Telnyx 验证〔2026-10-26 已完成，记录见 `docs/telnyx-api-notes.md` §18〕
+
+结论已写入上文各节。只能在真实通话中确认的项：发音词典对各 TTS 模型及中文句中英文词的效果、识别提示的效果（C 上线后彩排时检查）；insight Webhook 的实际送达（A 上线后第一通电话检查）。以下为原验证清单。
 
 - A：每个 Assistant 一个 insight group 是否有数量限制或费用；insight 结果是否按 insight id 返回；字段 insight 用的模型与费用；insight 完成时的 Webhook（`webhook` 字段）何时发送、内容与签名，能否作为发信触发；`post_conversation_settings` 的作用（控制台 Post-Conversation Processing），是否比我们轮询更合适。
 - B：Tests / Simulation 的 API 能力（能否定义多轮来电内容和判断标准、能否指定版本、费用）；试聊接口能否指定版本、能否传入变量；试聊是否生成对话记录并运行 insight（会额外产生费用，需要时在试聊后删除）。浏览器语音试拨：`supports_unauthenticated_web_calls` 是否让任何知道 Assistant ID 的人都能拨打（计费在我们账户上），优先改用短期 WebRTC 凭证；这类通话是否经过我们的 Call Control 应用（余额检查、录音、变量、计费都依赖它），以及计费。
@@ -523,7 +531,7 @@ C → A → B1（先针对当前版本）→ D → B2、B3（针对草稿）。�
 - C：试听接口能否带发音列表。
 - D：非主版本是否接听来电；promote 是否原子；版本数量上限；版本与知识库、工具的关系；以 `promote_to_main=true` 更新主版本时，未上线的版本是否保留。
 
-### 20.7 产品决定〔2026-10-26 产品负责人确认〕
+### 20.7 产品决定〔2026-10-26 产品负责人确认；决定 10 待定〕
 
 1. 每通电话后的邮件默认关闭；收件人可设置（默认账户邮箱，最多 3 个地址）。
 2. 文字试聊与保存的测试免费，设每日上限（取值见 §20.2）。
@@ -534,10 +542,11 @@ C → A → B1（先针对当前版本）→ D → B2、B3（针对草稿）。�
 7. 新建的 Assistant 首次保存不自动上线。
 8. 知识库使用方式属于草稿。
 9. 知识库资料的增删不进入草稿，立即生效。原因：每个 Agent 一个存储桶，检索工具指向整个桶，桶里的资料对所有版本都可见。删除必须立即生效（§18.2“删除即永久删除”：否则已删除的内容会继续在来电中被读出）。添加若要只对草稿可见，需要草稿单独一个桶（占用账户 100 个桶的上限、资料重复向量化），不值得。
+10. 待定（B3 前决定，不影响其他各项）：浏览器语音试拨的接入方式。Telnyx 只提供匿名接入（WebRTC `anonymous_login`，可指定版本），需开启 `supports_unauthenticated_web_calls`，开启期间任何知道 Assistant ID 的人都能拨打，费用记在平台账户上；这类通话不经过我们的 Call Control 应用，没有余额检查、录音和通话变量，费用只能在通话结束后按对话时长补扣。可选：（a）匿名接入，只在用户打开试拨面板期间开启，结束后关闭；（b）浏览器经 WebRTC 凭证拨打该 Assistant 的号码，走现有的接听流程，但只能测试上线版本，且需要该 Assistant 已关联号码。
 
 ### 20.8 实现影响（粗估）
 
 - A：新增字段配置（表结构 + 表单）、per-Assistant insight 同步、结果解析、通话页展示、发信与去重。中等。
-- B1：聊天面板 + 服务端代理（不暴露 key）+ 用量限制。中等偏小。B2：取决于 Telnyx Tests；自建为中等。B3：WebRTC 接入，中等偏大。
+- B1：聊天面板 + 服务端代理（不暴露 key）+ 用量限制。中等偏小。B2：用试聊接口自建，中等。B3：WebRTC 接入，中等偏大。
 - C：发音列表（表结构 + 表单 + 同步）、识别提示（一个字段）。小。
 - D：草稿与上线两套状态、版本列表、与重新同步逻辑的配合。中等偏大，牵涉最广。
