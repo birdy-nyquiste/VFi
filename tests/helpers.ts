@@ -42,6 +42,16 @@ export async function makeLine(balanceCents = 1000) {
   return { user, agent, number };
 }
 
+/** Another active number for the user, answered by `agentId` if given. */
+export async function addNumber(userId: string, agentId: string | null = null, createdAt = new Date()) {
+  const e164 = `+1628${String(Math.floor(Math.random() * 1e7)).padStart(7, "0")}`;
+  const [number] = await db
+    .insert(phoneNumbers)
+    .values({ userId, e164, status: "active", agentId, providerNumberId: `num_${e164}`, createdAt })
+    .returning();
+  return number;
+}
+
 let seq = 0;
 export function event(type: CallEvent["type"], fields: Partial<CallEvent> = {}): CallEvent {
   return { id: `evt_${++seq}_${randomUUID()}`, type, rawType: type, occurredAt: new Date(), ...fields };

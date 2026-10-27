@@ -190,7 +190,7 @@ async function checkInbound(
   if (!voiceUsable) {
     return { outcome: stored("outcomeKeyRejected"), cause: "CALL_REJECTED" };
   }
-  if (await hasOtherActiveCall(call.userId, call.id, q)) {
+  if (call.phoneNumberId && (await hasOtherActiveCall(call.phoneNumberId, call.id, q))) {
     return { outcome: stored("outcomeBusy"), cause: "USER_BUSY" };
   }
   return { agent };

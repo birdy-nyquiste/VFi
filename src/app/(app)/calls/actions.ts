@@ -14,6 +14,7 @@ export async function startCallAction(_: ActionState, form: FormData): Promise<A
     const call = await startOutboundCall(user, {
       agentId: String(form.get("agentId")),
       to: String(form.get("to") ?? ""),
+      numberId: form.get("numberId") ? String(form.get("numberId")) : undefined,
       goal: String(form.get("goal") ?? ""),
       variables: Object.fromEntries(
         [...form.entries()].flatMap(([k, v]) => (k.startsWith("var.") ? [[k.slice(4), String(v)]] : [])),

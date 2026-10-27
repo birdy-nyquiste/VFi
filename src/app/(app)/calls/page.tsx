@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ActionForm, SubmitButton } from "@/components/forms";
-import { Card, DirectionIcon, Empty, Field, Notice, PageHeader, StatusBadge, inputClass } from "@/components/ui";
+import { Card, DirectionIcon, Empty, Field, FilterChips, Notice, PageHeader, StatusBadge, inputClass } from "@/components/ui";
 import { config } from "@/lib/config";
 import { formatCallerNumber, formatCents, formatDateTime, formatDuration, formatPhone } from "@/lib/format";
 import { listUserAgents, MAX_CALL_GOAL_LENGTH } from "@/server/agents";
@@ -13,26 +13,39 @@ import { listUserNumbers } from "@/server/numbers";
 import { startCallAction } from "./actions";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { readVariables } from "@/lib/agent-settings";
-import type { Agent } from "@/db/schema";
+import type { Agent, PhoneNumber } from "@/db/schema";
+import { defaultCallerNumber } from "@/lib/caller-number";
+import { isUuid } from "@/lib/uuid";
 import { AgentFields, type CallAgent } from "./agent-fields";
 import { viewerTimeZone } from "@/server/time-zone";
 
-function callAgent(a: Agent): CallAgent {
+function callAgent(a: Agent, numbers: PhoneNumber[]): CallAgent {
   const ask = readVariables(a.variables).filter((v) => v.askPerCall);
-  return { id: a.id, name: a.name, ask: ask.map(({ key, value }) => ({ key, value })) };
+  return { id: a.id, name: a.name, ask: ask.map(({ key, value }) => ({ key, value })), numberId: defaultCallerNumber(numbers, a.id)?.id ?? "" };
+}
+
+/** The user's own number on the call: the one called, or the one it was placed from. */
+function ourNumber(call: { direction: string; fromNumber: string; toNumber: string }): string {
+  return call.direction === "inbound" ? call.toNumber : call.fromNumber;
 }
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getTranslations("calls"))("title") };
 }
 
-export default async function CallsPage({ searchParams }: { searchParams: Promise<{ to?: string }> }) {
+export default async function CallsPage({ searchParams }: { searchParams: Promise<{ to?: string; number?: string }> }) {
   const user = await requireUser();
   // "Call them back" on a call page opens this form with the number filled in.
-  const { to } = await searchParams;
-  const [rows, agents, numbers] = await Promise.all([listUserCalls(user.id), listUserAgents(user.id), listUserNumbers(user.id)]);
+  const { to, number } = await searchParams;
+  const [agents, numbers] = await Promise.all([listUserAgents(user.id), listUserNumbers(user.id)]);
+  // The list is filtered by one of the user's numbers once they have more than one.
+  const filterNumbers = numbers.filter((n) => n.status === "active").sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  const showNumbers = filterNumbers.length > 1;
+  const filter = showNumbers && number && isUuid(number) ? filterNumbers.find((n) => n.id === number) : undefined;
+  const rows = await listUserCalls(user.id, 50, filter?.id);
   const readyAgents = agents.filter((a) => a.status === "ready");
   const activeNumber = numbers.find((n) => n.status === "active");
+  const agentNames = new Map(agents.map((a) => [a.id, a.name]));
   const [t, tc, locale] = await Promise.all([getTranslations("calls"), getTranslations("common"), getLocale()]);
   const tz = await viewerTimeZone();
   const numberLink = (chunks: React.ReactNode) => (
@@ -66,39 +79,63 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
         ) : (
           <ActionForm action={startCallAction} className="space-y-3">
             {/* The number's agent only if it's ready: an id not in the list would hide the shown agent's per-call fields. */}
-            <AgentFields agents={readyAgents.map(callAgent)} defaultAgentId={readyAgents.find((a) => a.id === activeNumber.agentId)?.id ?? readyAgents[0].id}>
+            <AgentFields
+              agents={readyAgents.map((a) => callAgent(a, numbers))}
+              numbers={filterNumbers.map((n) => {
+                const name = n.agentId ? agentNames.get(n.agentId) : undefined;
+                return { id: n.id, number: formatPhone(n.e164), label: name ? `${formatPhone(n.e164)} · ${name}` : formatPhone(n.e164) };
+              })}
+              defaultAgentId={readyAgents.find((a) => a.id === activeNumber.agentId)?.id ?? readyAgents[0].id}
+              after={
+                <>
+                  <Field
+                    label={t("goal")}
+                    hint={t.rich("goalHint", { code: (chunks) => <code>{chunks}</code> })}
+                  >
+                    <textarea
+                      name="goal"
+                      rows={2}
+                      maxLength={MAX_CALL_GOAL_LENGTH}
+                      placeholder={t("goalPlaceholder")}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <SubmitButton pendingText={t("dialing")}>{t("call")}</SubmitButton>
+                </>
+              }
+            >
               <Field label={t("to")}>
                 <input name="to" required inputMode="tel" placeholder="(415) 555-0100" defaultValue={to ? formatPhone(to) : undefined} className={inputClass} />
               </Field>
             </AgentFields>
-            <Field
-              label={t("goal")}
-              hint={t.rich("goalHint", { code: (chunks) => <code>{chunks}</code> })}
-            >
-              <textarea
-                name="goal"
-                rows={2}
-                maxLength={MAX_CALL_GOAL_LENGTH}
-                placeholder={t("goalPlaceholder")}
-                className={inputClass}
-              />
-            </Field>
-            <SubmitButton pendingText={t("dialing")}>{t("call")}</SubmitButton>
           </ActionForm>
         )}
-        <p className="mt-3 text-xs text-stone-500">
-          {t("callerId", { number: activeNumber ? formatPhone(activeNumber.e164) : "" })}
-        </p>
+        {(!activeNumber || readyAgents.length === 0) && (
+          <p className="mt-3 text-xs text-stone-500">
+            {t("callerId", { number: activeNumber ? formatPhone(activeNumber.e164) : "" })}
+          </p>
+        )}
       </Card>
 
+      {showNumbers && (
+        <FilterChips
+          label={tc("filterByNumber")}
+          chips={[
+            { href: "/calls", label: tc("allNumbers"), active: !filter },
+            ...filterNumbers.map((n) => ({ href: `/calls?number=${n.id}`, label: formatPhone(n.e164), active: filter?.id === n.id })),
+          ]}
+        />
+      )}
+
       {rows.length === 0 ? (
-        <Empty>{t("empty")}</Empty>
+        <Empty>{filter ? t("emptyForNumber") : t("empty")}</Empty>
       ) : (
         <Card className="overflow-x-auto p-0">
           <table className="w-full text-sm">
             <thead className="border-b border-stone-100 text-left text-[13px] text-stone-500">
               <tr>
                 <th className="px-6 py-3.5 font-normal">{t("colCall")}</th>
+                {showNumbers && <th className="hidden px-3 py-3.5 font-normal sm:table-cell">{t("colYourNumber")}</th>}
                 <th className="hidden px-3 py-3.5 font-medium sm:table-cell">{tc("agent")}</th>
                 <th className="px-3 py-3.5 font-normal">{t("colStatus")}</th>
                 <th className="hidden px-3 py-3.5 text-right font-medium sm:table-cell">{t("colDuration")}</th>
@@ -114,9 +151,13 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
                       <DirectionIcon inbound={call.direction === "inbound"} label={t(call.direction === "inbound" ? "directionInbound" : "directionOutbound")} />
                       {formatCallerNumber(call.direction === "inbound" ? call.fromNumber : call.toNumber, tc("unknownNumber"))}
                     </Link>
-                    {/* On phones the time goes here instead of in its own column. */}
-                    <div className="mt-0.5 text-xs text-stone-500 sm:hidden">{formatDateTime(call.createdAt, locale, tz)}</div>
+                    {/* On phones the time (and our number) go here instead of in their own columns. */}
+                    <div className="mt-0.5 text-xs text-stone-500 sm:hidden">
+                      {formatDateTime(call.createdAt, locale, tz)}
+                      {showNumbers && <span className="tabular-nums"> · {formatPhone(ourNumber(call))}</span>}
+                    </div>
                   </td>
+                  {showNumbers && <td className="hidden whitespace-nowrap px-3 py-3.5 tabular-nums text-stone-600 sm:table-cell">{formatPhone(ourNumber(call))}</td>}
                   <td className="hidden px-3 py-3.5 text-stone-600 sm:table-cell">{agentName ?? "—"}</td>
                   <td className="px-3 py-3.5"><StatusBadge status={call.status} /></td>
                   <td className="hidden px-3 py-3.5 text-right tabular-nums sm:table-cell">{formatDuration(call.durationSec)}</td>

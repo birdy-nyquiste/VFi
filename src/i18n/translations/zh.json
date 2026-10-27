@@ -15,7 +15,9 @@
     "name": "名称",
     "agent": "助理",
     "language": "语言",
-    "sentenceGap": ""
+    "sentenceGap": "",
+    "allNumbers": "全部号码",
+    "filterByNumber": "按号码筛选"
   },
   "languages": {
     "en": "英语",
@@ -129,14 +131,15 @@
     "stepCredit": "充值",
     "stepAgent": "创建助理（选择或克隆声音）",
     "stepNumber": "获取电话号码",
-    "stepConnect": "将助理连接到你的号码",
+    "stepConnect": "将助理连接到号码",
     "stepCall": "拨打或接听第一通电话",
     "recentCalls": "最近通话",
     "allCalls": "全部通话",
     "noCalls": "还没有通话。",
     "placeCall": "发起通话",
     "liveCall": "{name}正在与 {number} 通话",
-    "openCall": "查看通话"
+    "openCall": "查看通话",
+    "numbers": "号码"
   },
   "agents": {
     "title": "助理",
@@ -334,7 +337,7 @@
   },
   "numbers": {
     "title": "电话号码",
-    "description": "美国本地号码，每月 {price}，从余额中扣除。",
+    "description": "美国本地号码，每个每月 {price}，从余额中扣除。每个账户最多 {max} 个。",
     "empty": "你还没有号码。在下方搜索一个吧。",
     "renews": "{date} 续费",
     "receivesTexts": "可在<link>短信</link>中接收短信（每段 {price}）。不支持回复。",
@@ -366,7 +369,8 @@
     "agentConnected": "已连接助理。",
     "agentDisconnected": "已断开助理。",
     "simulatedCall": "已发起模拟来电，几秒后请查看通话。",
-    "simulatedText": "已收到模拟短信，请查看短信。"
+    "simulatedText": "已收到模拟短信，请查看短信。",
+    "atLimit": "你已有 {max} 个号码，这是每个账户的上限。释放一个后才能换一个新号码。"
   },
   "calls": {
     "title": "通话",
@@ -416,7 +420,11 @@
     "callBackAction": "发起通话",
     "playRecording": "播放录音",
     "pauseRecording": "暂停录音",
-    "seekRecording": "录音进度"
+    "seekRecording": "录音进度",
+    "callFrom": "拨出号码",
+    "colYourNumber": "我方号码",
+    "emptyForNumber": "这个号码还没有通话。",
+    "yourNumber": "我方号码 {number}"
   },
   "messages": {
     "title": "短信",
@@ -438,7 +446,9 @@
     "noText": "（无文字）",
     "footer": "无法在 VFi 中回复。短信会在 {days} 天后删除。",
     "nameSaved": "名称已保存。",
-    "nameRemoved": "名称已移除。"
+    "nameRemoved": "名称已移除。",
+    "toNumber": "发至 {number}",
+    "emptyForNumber": "这个号码还没有收到短信。"
   },
   "account": {
     "title": "账户",
@@ -626,7 +636,7 @@
     "balanceEmptyCall": "你的余额已用完，请充值后再拨打电话。",
     "noActiveNumber": "你需要一个已激活的电话号码才能拨打电话。",
     "cantCallOwnNumber": "不能拨打你自己的 VFi 号码。",
-    "callInProgress": "另一通电话正在进行中，请等它结束。",
+    "callInProgress": "这个号码正在通话中。请等它结束，或换一个号码拨打。",
     "callNotFound": "找不到该通话。",
     "callStillLive": "通话仍在进行中，无法删除。",
     "recordingDeleteFailed": "无法删除录音，请稍后再试。",

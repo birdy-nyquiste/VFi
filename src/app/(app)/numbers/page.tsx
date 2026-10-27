@@ -56,7 +56,7 @@ export default async function NumbersPage({ searchParams }: { searchParams: Prom
       {activating && <AutoRefresh everyMs={5000} />}
       <PageHeader
         title={t("title")}
-        description={t("description", { price: formatCents(config.pricing.numberMonthlyCents, locale) })}
+        description={t("description", { price: formatCents(config.pricing.numberMonthlyCents, locale), max: config.limits.numbersPerUser })}
       />
 
       {balanceCents < 0 && numbers.some((n) => n.status === "active") && (
@@ -157,6 +157,12 @@ export default async function NumbersPage({ searchParams }: { searchParams: Prom
             </Card>
           ))}
         </div>
+      )}
+
+      {!canBuy && (
+        <p className="rounded-[20px] border border-dashed border-stone-300 px-5 py-4 text-sm text-stone-600">
+          {t("atLimit", { max: config.limits.numbersPerUser })}
+        </p>
       )}
 
       {canBuy && (

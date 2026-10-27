@@ -164,18 +164,21 @@ describe("number purchase", () => {
     expect((await listRecentNegativeBalanceReleases(u.id)).map((n) => n.e164)).toEqual(["+14155551234"]);
   });
 
-  it("enforces one number per user", async () => {
+  it("enforces three numbers per user", async () => {
     const u = await makeUser(5000);
     await purchaseNumber(u, "+14155551234");
-    await expect(purchaseNumber(u, "+14155551235")).rejects.toThrow(/up to 1/);
+    await purchaseNumber(u, "+14155551235");
+    await purchaseNumber(u, "+14155551236");
+    await expect(purchaseNumber(u, "+14155551237")).rejects.toThrow(/up to 3/);
+    expect(await balance(u.id)).toBe(4100);
   });
 
-  it("lets only one of two simultaneous purchases through", async () => {
+  it("lets simultaneous purchases through only up to the limit", async () => {
     const u = await makeUser(5000);
-    const results = await Promise.allSettled([purchaseNumber(u, "+14155551234"), purchaseNumber(u, "+14155551235")]);
-    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
-    expect(await db.select().from(phoneNumbers)).toHaveLength(1);
-    expect(await balance(u.id)).toBe(4700);
+    const results = await Promise.allSettled(["+14155551234", "+14155551235", "+14155551236", "+14155551237"].map((n) => purchaseNumber(u, n)));
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(3);
+    expect(await db.select().from(phoneNumbers)).toHaveLength(3);
+    expect(await balance(u.id)).toBe(4100);
   });
 
   it("charges each renewal period once", async () => {

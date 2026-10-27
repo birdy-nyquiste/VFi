@@ -20,7 +20,7 @@ import {
 import { parseTelnyxEnvelope } from "@/server/telnyx/events";
 import { mockProvider } from "@/server/telnyx/mock";
 import type { InboundMessageEvent } from "@/server/telnyx";
-import { makeLine, makeUser, resetDb } from "./helpers";
+import { addNumber, makeLine, makeUser, resetDb } from "./helpers";
 
 beforeEach(resetDb);
 afterEach(() => vi.restoreAllMocks());
@@ -155,6 +155,28 @@ describe("conversations", () => {
     expect(deleted.every((m) => m.body === null && m.deletedAt)).toBe(true);
     // Billing stays.
     expect(await balance(user.id)).toBe(994);
+  });
+
+  it("keeps a sender's texts to different numbers in separate conversations", async () => {
+    const { user, number } = await makeLine(1000);
+    const second = await addNumber(user.id);
+    const t0 = Date.now();
+    await handleInboundMessage(text(number.e164, { from: "+12025550001", text: "to first", occurredAt: new Date(t0) }));
+    await handleInboundMessage(text(second.e164, { from: "+12025550001", text: "to second", occurredAt: new Date(t0 + 1000) }));
+
+    expect((await listConversations(user.id)).map((c) => [c.to, c.last.body])).toEqual([
+      [second.e164, "to second"],
+      [number.e164, "to first"],
+    ]);
+    expect((await listConversations(user.id, 500, number.e164)).map((c) => c.last.body)).toEqual(["to first"]);
+    expect((await getConversation(user.id, "+12025550001", second.e164)).map((m) => m.body)).toEqual(["to second"]);
+    // A link without the receiving number shows all of the sender's texts.
+    expect(await getConversation(user.id, "+12025550001")).toHaveLength(2);
+
+    expect(await markConversationRead(user.id, "+12025550001", new Date(t0 + 5000), number.e164)).toBe(1);
+    expect(await countUnreadMessages(user.id)).toBe(1);
+    await deleteConversation(user.id, "+12025550001", number.e164);
+    expect((await listConversations(user.id)).map((c) => c.to)).toEqual([second.e164]);
   });
 
   it("lists every sender with full counts, however many texts a busier sender has", async () => {

@@ -15,7 +15,9 @@
     "name": "Tên",
     "agent": "Trợ lý",
     "language": "Ngôn ngữ",
-    "sentenceGap": " "
+    "sentenceGap": " ",
+    "allNumbers": "Tất cả các số",
+    "filterByNumber": "Lọc theo số"
   },
   "languages": {
     "en": "Tiếng Anh",
@@ -129,14 +131,15 @@
     "stepCredit": "Nạp tiền vào tài khoản",
     "stepAgent": "Tạo trợ lý (chọn hoặc nhân bản một giọng nói)",
     "stepNumber": "Lấy một số điện thoại",
-    "stepConnect": "Kết nối trợ lý với số của bạn",
+    "stepConnect": "Kết nối một trợ lý với một số",
     "stepCall": "Thực hiện hoặc nhận cuộc gọi đầu tiên",
     "recentCalls": "Cuộc gọi gần đây",
     "allCalls": "Tất cả cuộc gọi",
     "noCalls": "Chưa có cuộc gọi nào.",
     "placeCall": "Gọi điện",
     "liveCall": "{name} đang gọi với {number}",
-    "openCall": "Mở cuộc gọi"
+    "openCall": "Mở cuộc gọi",
+    "numbers": "Số điện thoại"
   },
   "agents": {
     "title": "Trợ lý",
@@ -334,7 +337,7 @@
   },
   "numbers": {
     "title": "Số điện thoại",
-    "description": "Số nội hạt Hoa Kỳ, {price}/tháng, trừ vào số dư của bạn.",
+    "description": "Số nội hạt Hoa Kỳ, {price}/tháng mỗi số, trừ vào số dư của bạn. Tối đa {max} số mỗi tài khoản.",
     "empty": "Bạn chưa có số điện thoại nào. Hãy tìm một số bên dưới.",
     "renews": "Gia hạn vào {date}",
     "receivesTexts": "Nhận tin nhắn ({price}/phân đoạn) trong <link>Tin nhắn</link>. Không hỗ trợ trả lời.",
@@ -366,7 +369,8 @@
     "agentConnected": "Đã kết nối trợ lý.",
     "agentDisconnected": "Đã ngắt kết nối trợ lý.",
     "simulatedCall": "Đã thực hiện cuộc gọi mô phỏng — xem mục Cuộc gọi sau vài giây.",
-    "simulatedText": "Đã nhận tin nhắn mô phỏng — xem mục Tin nhắn."
+    "simulatedText": "Đã nhận tin nhắn mô phỏng — xem mục Tin nhắn.",
+    "atLimit": "Bạn đã có {max} số, mức tối đa cho một tài khoản. Hãy trả lại một số để lấy số khác."
   },
   "calls": {
     "title": "Cuộc gọi",
@@ -416,11 +420,15 @@
     "callBackAction": "Gọi điện",
     "playRecording": "Phát bản ghi âm",
     "pauseRecording": "Tạm dừng bản ghi âm",
-    "seekRecording": "Vị trí bản ghi âm"
+    "seekRecording": "Vị trí bản ghi âm",
+    "callFrom": "Gọi từ số",
+    "colYourNumber": "Số của bạn",
+    "emptyForNumber": "Số này chưa có cuộc gọi nào.",
+    "yourNumber": "Số của bạn {number}"
   },
   "messages": {
     "title": "Tin nhắn",
-    "description": "Tin nhắn gửi đến số của bạn, {price} mỗi phân đoạn. Chỉ nhận: không hỗ trợ trả lời.",
+    "description": "Tin nhắn gửi đến các số của bạn, {price} mỗi phân đoạn. Chỉ nhận: không hỗ trợ trả lời.",
     "smsOff": "Tính năng nhận tin nhắn chưa được bật cho dịch vụ này.",
     "getNumber": "<link>Lấy một số điện thoại</link> để bắt đầu nhận tin nhắn.",
     "smsSettingUp": "Tính năng nhắn tin cho {number} vẫn đang được thiết lập. Hãy quay lại sau.",
@@ -438,7 +446,9 @@
     "noText": "(không có nội dung)",
     "footer": "Bạn không thể trả lời từ VFi. Tin nhắn bị xóa sau {days} ngày.",
     "nameSaved": "Đã lưu tên.",
-    "nameRemoved": "Đã gỡ tên."
+    "nameRemoved": "Đã gỡ tên.",
+    "toNumber": "Gửi đến {number}",
+    "emptyForNumber": "Số này chưa nhận được tin nhắn nào."
   },
   "account": {
     "title": "Tài khoản",
@@ -625,8 +635,8 @@
     "goalTooLong": "Mục tiêu cuộc gọi phải dưới {max} ký tự.",
     "balanceEmptyCall": "Số dư của bạn đã hết. Hãy nạp tiền để thực hiện cuộc gọi.",
     "noActiveNumber": "Bạn cần một số điện thoại đang hoạt động để gọi đi.",
-    "cantCallOwnNumber": "Bạn không thể gọi đến số VFi của chính mình.",
-    "callInProgress": "Đang có một cuộc gọi khác. Hãy đợi cuộc gọi đó kết thúc.",
+    "cantCallOwnNumber": "Bạn không thể gọi đến các số VFi của chính mình.",
+    "callInProgress": "Số này đang có cuộc gọi. Hãy đợi cuộc gọi kết thúc hoặc gọi từ số khác.",
     "callNotFound": "Không tìm thấy cuộc gọi.",
     "callStillLive": "Không thể xóa cuộc gọi đang diễn ra.",
     "recordingDeleteFailed": "Không thể xóa bản ghi âm. Hãy thử lại sau ít phút.",

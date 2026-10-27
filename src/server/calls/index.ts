@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, isNull, lt } from "drizzle-orm";
+import { and, desc, eq, isNull, lt, ne } from "drizzle-orm";
 import { db, withUserLock } from "@/db";
 import { agents, calls, phoneNumbers, type Agent, type Call, type User } from "@/db/schema";
 import { MAX_VARIABLE_VALUE_LENGTH, readVariables } from "@/lib/agent-settings";
@@ -7,6 +7,7 @@ import { UserError } from "@/lib/errors";
 import { outcomeColumns, stored } from "@/lib/stored-text";
 import { normalizeLineBreaks } from "@/lib/text";
 import { toE164US } from "@/lib/format";
+import { defaultCallerNumber } from "@/lib/caller-number";
 import { isUuid } from "@/lib/uuid";
 import { hasSpendableBalance } from "@/server/billing/ledger";
 import { getUserAgent, MAX_CALL_GOAL_LENGTH } from "@/server/agents";
@@ -16,12 +17,13 @@ import { isElevenLabsVoice } from "@/server/telnyx/stock-voices";
 import { callRef, failedCallFields, hasOtherActiveCall, isCallLive, STALE_CALL_MS } from "./state";
 import { fetchCallResults } from "./results";
 
-export async function listUserCalls(userId: string, limit = 50) {
+/** The user's latest calls; only those on one of their numbers when `phoneNumberId` is given. */
+export async function listUserCalls(userId: string, limit = 50, phoneNumberId?: string) {
   return db
     .select({ call: calls, agentName: agents.name })
     .from(calls)
     .leftJoin(agents, eq(calls.agentId, agents.id))
-    .where(and(eq(calls.userId, userId), isNull(calls.deletedAt)))
+    .where(and(eq(calls.userId, userId), isNull(calls.deletedAt), phoneNumberId ? eq(calls.phoneNumberId, phoneNumberId) : undefined))
     .orderBy(desc(calls.createdAt))
     .limit(limit);
 }
@@ -48,7 +50,7 @@ export async function callAgentName(call: Call): Promise<string | null> {
 
 export async function startOutboundCall(
   user: User,
-  input: { agentId: string; to: string; goal?: string; variables?: Record<string, string> },
+  input: { agentId: string; to: string; numberId?: string; goal?: string; variables?: Record<string, string> },
 ): Promise<Call> {
   const to = toE164US(input.to);
   if (!to) throw new UserError("invalidPhone");
@@ -66,16 +68,17 @@ export async function startOutboundCall(
     throw new UserError("agentVoiceKeyRejected");
   }
 
-  const [from] = await db
+  const owned = await db
     .select()
     .from(phoneNumbers)
-    .where(and(eq(phoneNumbers.userId, user.id), eq(phoneNumbers.status, "active")));
-  if (!from) throw new UserError("noActiveNumber");
-  if (from.e164 === to) throw new UserError("cantCallOwnNumber");
+    .where(and(eq(phoneNumbers.userId, user.id), ne(phoneNumbers.status, "released")));
+  const from = input.numberId ? owned.find((n) => n.id === input.numberId && n.status === "active") : defaultCallerNumber(owned, agent.id);
+  if (!from) throw new UserError(input.numberId ? "numberNotFound" : "noActiveNumber");
+  if (owned.some((n) => n.e164 === to)) throw new UserError("cantCallOwnNumber");
 
-  // Busy check + insert under the user's lock so two clicks can't start two calls.
+  // Busy check + insert under the user's lock so two clicks can't start two calls on one number.
   const call = await withUserLock(user.id, async (tx) => {
-    if (await hasOtherActiveCall(user.id, undefined, tx)) {
+    if (await hasOtherActiveCall(from.id, undefined, tx)) {
       throw new UserError("callInProgress");
     }
     const [inserted] = await tx

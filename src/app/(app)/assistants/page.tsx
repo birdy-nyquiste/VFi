@@ -48,7 +48,7 @@ export default async function AgentsPage() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {agents.map((a) => {
-            const num = numbers.find((n) => n.agentId === a.id && n.status === "active");
+            const nums = numbers.filter((n) => n.agentId === a.id && n.status === "active");
             return (
               <Link key={a.id} href={`/assistants/${a.id}`} className={`group rounded-[20px] ${focusRing}`}>
                 <Card className="h-full transition-colors group-hover:border-stone-900">
@@ -61,7 +61,7 @@ export default async function AgentsPage() {
                     <p className="mt-2 text-xs text-red-600">{t("keyRejected")}</p>
                   )}
                   <p className="mt-4 text-[13px] text-stone-500">
-                    {tl(a.language)} · {num ? t("answers", { number: formatPhone(num.e164) }) : t("notOnNumber")}
+                    {tl(a.language)} · {nums.length ? t("answers", { number: nums.map((n) => formatPhone(n.e164)).join(", ") }) : t("notOnNumber")}
                   </p>
                 </Card>
               </Link>

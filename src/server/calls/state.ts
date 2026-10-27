@@ -30,14 +30,14 @@ export function failedCallFields(endedAt: Date) {
   return { endedAt, durationSec: 0, billedCents: 0, resultsFetched: true } satisfies Partial<Call>;
 }
 
-/** Whether the user already has a call in flight (we allow one at a time). */
-export async function hasOtherActiveCall(userId: string, exceptCallId?: string, q: Queryable = db): Promise<boolean> {
+/** Whether the number already has a call in flight (each number takes one at a time). */
+export async function hasOtherActiveCall(phoneNumberId: string, exceptCallId?: string, q: Queryable = db): Promise<boolean> {
   const active = await q
     .select({ id: calls.id })
     .from(calls)
     .where(
       and(
-        eq(calls.userId, userId),
+        eq(calls.phoneNumberId, phoneNumberId),
         inArray(calls.status, ["initiated", "answered"]),
         isNull(calls.endedAt),
         exceptCallId ? ne(calls.id, exceptCallId) : undefined,
