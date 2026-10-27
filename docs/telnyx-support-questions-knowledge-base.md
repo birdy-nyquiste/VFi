@@ -1,7 +1,7 @@
 # Questions for Telnyx support: knowledge bases for AI Assistants
 
-Draft, 2026-10-20. Background: SPEC §18. Not sent yet. A portal spike on 2026-10-20 answered parts of 3, 5 and 9
-(see `docs/telnyx-api-notes.md` §15). Questions 1, 3, 4 and 12 block the build; question 2 must be settled before we
+Draft, 2026-10-20. Background: SPEC §8. Not sent yet. A portal spike on 2026-10-20 answered parts of 3, 5 and 9
+(see `docs/telnyx-api-notes.md` §13). Questions 1, 3, 4 and 12 block the build; question 2 must be settled before we
 reach the bucket limit.
 
 ---

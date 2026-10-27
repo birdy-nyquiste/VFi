@@ -4,7 +4,7 @@ import type { StoredText } from "@/lib/stored-text";
 
 /**
  * Provider-neutral voice platform interface. Business code depends on this,
- * never on Telnyx request/response shapes (SPEC §3.8).
+ * never on Telnyx request/response shapes (SPEC §1.3).
  */
 
 export interface AvailableNumber {
@@ -254,7 +254,7 @@ export interface VoiceProvider {
   embeddingStatuses(bucket: string): Promise<Map<string, EmbeddingStatus>>;
   /**
    * Crawl a website into the bucket (same-domain pages, embedded as they arrive). There is no way to
-   * tell when a crawl has finished: its task reports success at once (docs/telnyx-api-notes.md §17).
+   * tell when a crawl has finished: its task reports success at once (docs/telnyx-api-notes.md §13).
    */
   crawlUrl(bucket: string, url: string): Promise<{ taskId: string }>;
   /** Turn embedding off, then delete the (empty) bucket. Succeeds if it is already gone. */

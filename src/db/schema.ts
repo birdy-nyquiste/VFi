@@ -211,7 +211,7 @@ export const agents = pgTable("agents", {
   deletedAt: ts("deleted_at"),
 });
 
-// ---------- Knowledge base (SPEC §18) ----------
+// ---------- Knowledge base (SPEC §8) ----------
 
 /** How an agent uses its knowledge base on calls. */
 export const knowledgeMode = pgEnum("knowledge_mode", ["off", "reference", "strict"]);
@@ -221,7 +221,7 @@ export const knowledgeSourceStatus = pgEnum("knowledge_source_status", ["process
 
 /**
  * An agent's knowledge base: one provider storage bucket. A separate table rather than columns on
- * `agents`, because previews share the production database before migrations run (SPEC §18.3).
+ * `agents`, because previews share the production database before migrations run (SPEC §2.6).
  */
 export const agentKnowledge = pgTable("agent_knowledge", {
   agentId: uuid("agent_id").primaryKey().references(() => agents.id),
@@ -316,7 +316,7 @@ export const calls = pgTable(
   (t) => [index("calls_user_idx").on(t.userId, t.createdAt), index("calls_session_idx").on(t.providerCallSessionId)],
 );
 
-// ---------- Text messages (receive only; SPEC §17) ----------
+// ---------- Text messages (receive only; SPEC §7) ----------
 
 export const messages = pgTable(
   "messages",

@@ -22,7 +22,7 @@ import { voiceProvider } from "./telnyx";
 import type { StoredObject } from "./telnyx/types";
 
 /**
- * Per-agent knowledge bases (SPEC §18): one provider storage bucket per agent that the assistant
+ * Per-agent knowledge bases (SPEC §8): one provider storage bucket per agent that the assistant
  * searches during calls. Sources are paid once, never edited, and deleted permanently.
  */
 
@@ -56,7 +56,7 @@ async function crawledPages(bucket: string): Promise<StoredObject[]> {
 /**
  * Whether a crawl has gone quiet: nothing written since its submission or its newest page for the
  * quiet period. Telnyx reports a crawl finished as soon as it starts and never says when it ends
- * (docs/telnyx-api-notes.md §17), so this is the only sign a crawl is done.
+ * (docs/telnyx-api-notes.md §13), so this is the only sign a crawl is done.
  */
 function crawlIsQuiet(s: Pick<KnowledgeSource, "createdAt">, pages: StoredObject[]): boolean {
   const lastWrite = Math.max(s.createdAt.getTime(), ...pages.map((p) => p.modifiedAt.getTime()));

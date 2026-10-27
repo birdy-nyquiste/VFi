@@ -12,7 +12,7 @@ import { makeLine, resetDb } from "./helpers";
 beforeEach(resetDb);
 afterEach(() => vi.restoreAllMocks());
 
-/** SPEC §13.8: each user's resources and records are isolated. */
+/** SPEC §2.4: each user's resources and records are isolated. */
 describe("per-user isolation", () => {
   async function twoUsers() {
     const a = await makeLine(1000);

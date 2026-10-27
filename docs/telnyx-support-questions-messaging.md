@@ -1,6 +1,6 @@
 # Questions for Telnyx support: receive-only SMS for VFi
 
-Draft, 2026-10-16. Background: SPEC §17 and `docs/telnyx-api-notes.md` §14. Not sent yet.
+Draft, 2026-10-16. Background: SPEC §7 and `docs/telnyx-api-notes.md` §12. Not sent yet.
 
 ---
 

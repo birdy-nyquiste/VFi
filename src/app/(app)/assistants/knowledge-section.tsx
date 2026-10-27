@@ -17,7 +17,7 @@ import {
 } from "./knowledge-actions";
 import { KnowledgeFileInput } from "./knowledge-file-input";
 
-/** The agent's knowledge base: how it's used, its sources, and forms to add more (SPEC §18). */
+/** The agent's knowledge base: how it's used, its sources, and forms to add more (SPEC §8). */
 export async function KnowledgeSection({ agent }: { agent: Agent }) {
   const [{ base, sources, website, notApplied, notRemoved }, used, t, locale] = await Promise.all([
     getAgentKnowledge(agent),

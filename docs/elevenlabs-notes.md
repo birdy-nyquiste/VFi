@@ -14,8 +14,8 @@ account and is billed through our ledger**.
 
 ## 1. How it fits our stack
 
-Calls run on Telnyx AI Assistants (SPEC §3), so we never stream TTS ourselves. Telnyx already supports ElevenLabs as
-an assistant TTS provider (see telnyx-api-notes §8 and §12):
+Calls run on Telnyx AI Assistants (SPEC §1.3), so we never stream TTS ourselves. Telnyx already supports ElevenLabs as
+an assistant TTS provider (see telnyx-api-notes §7 and §8):
 - `voice_settings.voice` takes `ElevenLabs.<ModelId>.<VoiceId>`, e.g. `ElevenLabs.eleven_multilingual_v2.21m00Tcm4TlvDq8ikWAM`.
   The `ModelId` part is optional. (Confirmed in the Telnyx OpenAPI spec, 2026-10-17.)
 - `voice_settings.api_key_ref` is the **identifier** of a Telnyx Integration Secret that holds the ElevenLabs key.
@@ -39,7 +39,7 @@ Code impact (rough):
 - `voicePreview` for an ElevenLabs clone would call ElevenLabs TTS, or Telnyx `/text-to-speech/speech` if it accepts
   the key (**UNCONFIRMED**).
 
-**Possible unblocker (UNCONFIRMED):** the Telnyx L2 block (telnyx-api-notes §13, error `10010`) is about *Telnyx*
+**Possible unblocker (UNCONFIRMED):** the Telnyx L2 block (telnyx-api-notes §11, error `10010`) is about *Telnyx*
 cloned voices. An ElevenLabs voice is a third-party voice and may not be gated. If so, cloning could ship on live
 without waiting for L2 verification (`VOICE_CLONING` is off in live today). This is the first thing to test.
 
