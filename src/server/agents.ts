@@ -2,7 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { and, eq, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { z } from "zod";
-import { db, withUserLock } from "@/db";
+import { db, tableExists, withUserLock } from "@/db";
 import { agentKnowledge, agents, elevenLabsKeys, knowledgeSources, phoneNumbers, type Agent, type KnowledgeMode } from "@/db/schema";
 import {
   agentVariable,
@@ -322,7 +322,13 @@ async function pushLatest(a: Agent, withKnowledge = true): Promise<Agent | null>
     if (!lostClaim) {
       const [u] = await db
         .update(agents)
-        .set({ providerAssistantId: assistantId, status: "ready", failureReason: null, failureMsg: null, syncedConfig: agentFingerprint(knowledge, insights.hash ?? "pending") })
+        .set({
+          providerAssistantId: assistantId,
+          status: "ready",
+          failureReason: null,
+          failureMsg: null,
+          syncedConfig: agentFingerprint(knowledge, insights.hash === null ? "pending" : insights.hash),
+        })
         .where(unchangedSince(a))
         .returning();
       if (u) return u;
@@ -541,10 +547,7 @@ export async function deleteAgent(userId: string, agentId: string): Promise<void
     // The knowledge base goes with the agent, permanently: clear what we hold now; the provider copy is
     // removed by cleanUpKnowledge() (SPEC §8.5). Whatever the feature flag says, but only where the
     // tables exist (previews run before the production migration).
-    const [{ exists }] = (await tx.execute(sql`select to_regclass('public.knowledge_sources') is not null as exists`)) as unknown as {
-      exists: boolean;
-    }[];
-    if (!exists) return;
+    if (!(await tableExists(tx, "knowledge_sources"))) return;
     await tx.update(knowledgeSources).set(DELETED_SOURCE).where(eq(knowledgeSources.agentId, a.id));
     await tx.update(agentKnowledge).set({ status: "deleting" }).where(eq(agentKnowledge.agentId, a.id));
   });

@@ -677,13 +677,14 @@
     "subjectTooLong": "主题请少于 {max} 个字符。",
     "noteTooLong": "开头说明请少于 {max} 个字符。",
     "fieldNameRequired": "每项通话结果都需要名称。",
-    "fieldNameTooLong": "通话结果名称请简短（最多 40 个字符）。",
-    "fieldDescriptionTooLong": "每项“记录内容”请少于 200 个字符。",
-    "fieldOptionTooLong": "每个选项请少于 40 个字符。",
-    "tooManyFieldOptions": "每项通话结果最多 8 个选项。",
+    "fieldNameTooLong": "通话结果名称请少于 {max} 个字符。",
+    "fieldDescriptionTooLong": "每项“记录什么”请少于 {max} 个字符。",
+    "fieldOptionTooLong": "每个选项请少于 {max} 个字符。",
+    "tooManyFieldOptions": "每项通话结果最多 {max} 个选项。",
     "tooManyFields": "每个助理最多记录 {max} 项通话结果。",
     "fieldNameDuplicate": "有两项通话结果都叫“{name}”，请使用不同的名称。",
-    "fieldNeedsOptions": "“{name}”是“几个选项之一”，请至少提供 2 个选项。"
+    "fieldNeedsOptions": "“{name}”是“几个选项之一”，请至少提供 2 个选项。",
+    "tagTooLong": "标签请少于 {max} 个字符。"
   },
   "comingSoon": {
     "title": "即将上线",
@@ -759,6 +760,7 @@
     "badgeUrgent": "紧急",
     "badgeFollowup": "需跟进",
     "yes": "是",
-    "no": "否"
+    "no": "否",
+    "subjectHint": "留空则使用默认主题（助理的主语言）。"
   }
 }

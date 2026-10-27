@@ -18,6 +18,8 @@ export type FieldType = (typeof FIELD_TYPES)[number];
 /** How a "yes" on a yes/no field marks the call in the calls list. */
 export const FIELD_BADGES = ["none", "urgent", "followup"] as const;
 export type FieldBadge = (typeof FIELD_BADGES)[number];
+/** The mark a call gets in the calls list. */
+export type CallBadge = Exclude<FieldBadge, "none">;
 
 export const callField = z.object({
   /** Stable id, so renaming a field keeps its results and the email's urgent tag pointing at it. */
@@ -129,10 +131,10 @@ export function parseFieldResults(fields: CallField[], raw: string | null | unde
 }
 
 /** The badge a call gets: from the first yes/no field marked for one whose answer is yes. */
-export function callBadge(fields: CallField[], values: Record<string, FieldValue> | null): Exclude<FieldBadge, "none"> | null {
+export function callBadge(fields: CallField[], values: Record<string, FieldValue> | null): CallBadge | null {
   if (!values) return null;
   const hit = fields.find((f) => f.type === "yesno" && f.badge !== "none" && values[f.key] === true);
-  return hit ? (hit.badge as Exclude<FieldBadge, "none">) : null;
+  return hit ? (hit.badge as CallBadge) : null;
 }
 
 const YES_NO: Record<Language, [string, string]> = { en: ["Yes", "No"], zh: ["是", "否"] };

@@ -2,6 +2,8 @@ CREATE TABLE "agent_call_results" (
 	"agent_id" uuid PRIMARY KEY NOT NULL,
 	"fields" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"email" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"fields_since" timestamp with time zone,
+	"email_since" timestamp with time zone,
 	"insight_group_id" text,
 	"summary_insight_id" text,
 	"fields_insight_id" text,

@@ -68,11 +68,9 @@ export function ResultsSection({
   const t = useTranslations("callResults");
   const tl = useTranslations("languages");
   const [fields, setFields] = useState<CallField[]>(initial.fields);
-  const [email, setEmail] = useState<EmailSettings>({
-    ...initial.email,
-    subject: initial.email.subject || defaultSubject(language),
-    tagText: initial.email.tagText || defaultTagText(language),
-  });
+  // An empty subject or tag stays empty: the default in the agent's language is used when sending, so it
+  // follows a later language change. The defaults show as placeholders.
+  const [email, setEmail] = useState<EmailSettings>(initial.email);
   const [newRecipient, setNewRecipient] = useState("");
   const [testMessage, setTestMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [sending, startSending] = useTransition();
@@ -259,10 +257,11 @@ export function ResultsSection({
                 )}
               </Field>
 
-              <Field label={t("subject")}>
+              <Field label={t("subject")} hint={t("subjectHint")}>
                 <input
                   ref={subjectRef}
                   value={email.subject}
+                  placeholder={defaultSubject(language)}
                   maxLength={MAX_SUBJECT_LENGTH}
                   onFocus={() => (lastText.current = "subject")}
                   onChange={(e) => setEmail((s) => ({ ...s, subject: e.target.value }))}
@@ -328,6 +327,7 @@ export function ResultsSection({
                 <Field label={t("tag")}>
                   <input
                     value={email.tagText}
+                    placeholder={defaultTagText(language)}
                     maxLength={MAX_TAG_LENGTH}
                     disabled={!tagField}
                     onChange={(e) => setEmail((s) => ({ ...s, tagText: e.target.value }))}

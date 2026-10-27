@@ -18,7 +18,7 @@ export const TEST_EMAILS_PER_HOUR = 5;
 export const EMAIL_PARTS = ["caller", "time", "fields", "summary", "link"] as const;
 export type EmailPart = (typeof EMAIL_PARTS)[number];
 
-const emailAddress = z.string().trim().toLowerCase().email().max(254);
+const emailAddress = z.string().trim().toLowerCase().pipe(z.email().max(254));
 
 export const emailSettings = z.object({
   enabled: z.boolean().catch(false),

@@ -12,6 +12,7 @@ import {
 } from "drizzle-orm/pg-core";
 import type { Locale } from "@/i18n/locales";
 import type { AgentBehavior, AgentVariable } from "@/lib/agent-settings";
+import type { CallBadge } from "@/lib/call-fields";
 import type { Language } from "@/lib/language";
 import type { StoredMessage } from "@/lib/stored-text";
 
@@ -401,6 +402,10 @@ export const agentCallResults = pgTable("agent_call_results", {
   fields: jsonb("fields").$type<unknown[]>().notNull().default([]),
   /** EmailSettings (src/lib/call-email.ts). */
   email: jsonb("email").$type<Record<string, unknown>>().notNull().default({}),
+  /** When the fields last changed: calls that started earlier get no field results (they were asked other things). */
+  fieldsSince: ts("fields_since"),
+  /** When the email was last turned on: calls that started earlier aren't emailed. */
+  emailSince: ts("email_since"),
   insightGroupId: text("insight_group_id"),
   summaryInsightId: text("summary_insight_id"),
   fieldsInsightId: text("fields_insight_id"),
@@ -422,13 +427,15 @@ export const callResults = pgTable("call_results", {
   /** Field key → value. Null when the provider returned none, or once purged. */
   values: jsonb("values").$type<Record<string, string | boolean | null>>(),
   /** "urgent" or "followup" from a yes/no field, for the calls list. */
-  badge: text("badge").$type<"urgent" | "followup">(),
-  /** "off" (email not on), "pending" (being sent), "sent", "failed". */
-  emailStatus: text("email_status").$type<"off" | "pending" | "sent" | "failed">().notNull(),
+  badge: text("badge").$type<CallBadge>(),
+  emailStatus: text("email_status").$type<EmailStatus>().notNull(),
   emailedTo: jsonb("emailed_to").$type<string[]>(),
   emailedAt: ts("emailed_at"),
   createdAt: createdAt(),
 });
+
+/** "off" (email not on for the call), "pending" (being sent), "sent", "failed" (not retried). */
+export type EmailStatus = "off" | "pending" | "sent" | "failed";
 
 export type AgentCallResults = typeof agentCallResults.$inferSelect;
 export type CallResultRow = typeof callResults.$inferSelect;

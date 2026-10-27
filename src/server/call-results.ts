@@ -2,13 +2,18 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
-import { db, type Queryable } from "@/db";
+import { db, tableExists, type Queryable } from "@/db";
 import { agentCallResults, agents, callResults, calls, users, type Agent, type AgentCallResults, type Call, type CallResultRow } from "@/db/schema";
 import { readBehavior } from "@/lib/agent-settings";
 import {
   callBadge,
   callField,
   fieldsProblem,
+  type CallBadge,
+  MAX_FIELD_DESCRIPTION_LENGTH,
+  MAX_FIELD_NAME_LENGTH,
+  MAX_FIELD_OPTION_LENGTH,
+  MAX_FIELD_OPTIONS,
   MAX_FIELDS,
   normalizeField,
   fieldsJsonSchema,
@@ -47,12 +52,7 @@ import { voiceProvider, type CallResults } from "./telnyx";
  */
 let tablesSeen = false;
 export async function callResultsTablesExist(q: Queryable = db): Promise<boolean> {
-  if (tablesSeen) return true;
-  const [{ exists }] = (await q.execute(sql`select to_regclass('public.call_results') is not null as exists`)) as unknown as {
-    exists: boolean;
-  }[];
-  tablesSeen = exists;
-  return exists;
+  return (tablesSeen ||= await tableExists(q, "call_results"));
 }
 
 /** An agent's fields and email settings, as stored (defaults when it has none). */
@@ -74,7 +74,18 @@ export async function getAgentResultsRow(agentId: string, q: Queryable = db): Pr
 /** Store an agent's fields and email settings (validated by the caller). */
 export async function saveResultsSettings(agentId: string, settings: AgentResultsSettings, q: Queryable = db): Promise<void> {
   if (!(await callResultsTablesExist(q))) return;
-  const values = { fields: settings.fields, email: settings.email, updatedAt: new Date() };
+  const now = new Date();
+  const [before] = await q.select().from(agentCallResults).where(eq(agentCallResults.agentId, agentId));
+  const was = readResultsSettings(before);
+  const fieldsChanged = JSON.stringify(was.fields) !== JSON.stringify(settings.fields);
+  const values = {
+    fields: settings.fields,
+    email: settings.email,
+    // Calls from before a change get nothing from it (SPEC §9.2): see deliverCallResults.
+    fieldsSince: fieldsChanged || !before?.fieldsSince ? now : before.fieldsSince,
+    emailSince: settings.email.enabled && !was.email.enabled ? now : (before?.emailSince ?? null),
+    updatedAt: now,
+  };
   await q
     .insert(agentCallResults)
     .values({ agentId, ...values })
@@ -114,10 +125,11 @@ export async function desiredInsightsHashes(list: Pick<Agent, "id" | "name" | "l
 
 /**
  * Make the agent's insight group match its fields. Returns the group to put on the assistant and the
- * hash it was set up from; on failure, the group it had (if any) and no hash, so the agent stays stale
- * and is retried. Never throws: a provider problem here mustn't fail saving the agent.
+ * hash it was set up from. On failure the hash is null (and the group is the one it had, if any), so the
+ * agent stays stale and is retried; before the tables exist (previews) there is no hash at all, matching
+ * what desiredInsightsHashes expects there. Never throws: a provider problem mustn't fail saving the agent.
  */
-export async function ensureInsights(agent: Agent): Promise<{ groupId?: string; hash?: string }> {
+export async function ensureInsights(agent: Agent): Promise<{ groupId?: string; hash?: string | null }> {
   try {
     if (!(await callResultsTablesExist())) return {};
     const row = await getAgentResultsRow(agent.id);
@@ -136,7 +148,7 @@ export async function ensureInsights(agent: Agent): Promise<{ groupId?: string; 
   } catch (err) {
     console.error("ensureInsights failed", agent.id, err);
     const row = await getAgentResultsRow(agent.id).catch(() => null);
-    return { groupId: row?.insightGroupId ?? undefined };
+    return { groupId: row?.insightGroupId ?? undefined, hash: null };
   }
 }
 
@@ -168,18 +180,23 @@ export async function deliverCallResults(call: Call, results: CallResults | null
   if (call.status !== "completed" || !call.agentId || !(await callResultsTablesExist())) return;
   const [agent] = await db.select().from(agents).where(eq(agents.id, call.agentId));
   if (!agent) return;
-  const { fields, email } = readResultsSettings(await getAgentResultsRow(agent.id));
+  const settingsRow = await getAgentResultsRow(agent.id);
+  const settings = readResultsSettings(settingsRow);
+  // Only for calls that started after the fields were set up and after the email was turned on.
+  const after = (since: Date | null | undefined) => Boolean(since && call.createdAt >= since);
+  const fields = after(settingsRow?.fieldsSince) ? settings.fields : [];
+  const email = settings.email.enabled && after(settingsRow?.emailSince) ? settings.email : null;
   const values = fields.length ? parseFieldResults(fields, results?.fields) : null;
   const [row] = await db
     .insert(callResults)
-    .values({ callId: call.id, fields, values, badge: callBadge(fields, values), emailStatus: email.enabled ? "pending" : "off" })
+    .values({ callId: call.id, fields, values, badge: callBadge(fields, values), emailStatus: email ? "pending" : "off" })
     .onConflictDoNothing()
     .returning();
-  if (!row || !email.enabled) return;
+  if (!row || !email) return;
 
-  const [user] = await db.select({ email: users.email }).from(users).where(eq(users.id, call.userId));
-  const to = email.recipients.length ? email.recipients : [user.email];
+  let to: string[] = email.recipients;
   try {
+    if (!to.length) to = (await db.select({ email: users.email }).from(users).where(eq(users.id, call.userId))).map((u) => u.email);
     const rendered = renderCallEmail(email, callEmailData(call, agent, fields, values), agent.language);
     await sendEmail({ to, ...rendered });
     await db.update(callResults).set({ emailStatus: "sent", emailedTo: to, emailedAt: new Date() }).where(eq(callResults.callId, call.id));
@@ -207,6 +224,9 @@ function callEmailData(call: Call, agent: Agent, fields: CallField[], values: Re
   };
 }
 
+/** An email still "pending" after this was cut off mid-send (the server stopped); the call page then says it failed. */
+export const EMAIL_SEND_TIMEOUT_MS = 10 * 60 * 1000;
+
 /** A finished call's stored results, for its page. */
 export async function getCallResultRow(callId: string): Promise<CallResultRow | null> {
   if (!(await callResultsTablesExist())) return null;
@@ -215,8 +235,8 @@ export async function getCallResultRow(callId: string): Promise<CallResultRow | 
 }
 
 /** Badges for the calls list, by call id. */
-export async function callBadges(callIds: string[]): Promise<Map<string, "urgent" | "followup">> {
-  const out = new Map<string, "urgent" | "followup">();
+export async function callBadges(callIds: string[]): Promise<Map<string, CallBadge>> {
+  const out = new Map<string, CallBadge>();
   if (!callIds.length || !(await callResultsTablesExist())) return out;
   const rows = await db
     .select({ callId: callResults.callId, badge: callResults.badge })
@@ -229,7 +249,7 @@ export async function callBadges(callIds: string[]): Promise<Map<string, "urgent
 /** Retention and user deletes: the field results go with the rest of the call's content. */
 export async function purgeCallResults(callId: string, q: Queryable = db): Promise<void> {
   if (!(await callResultsTablesExist(q))) return;
-  await q.update(callResults).set({ fields: null, values: null }).where(eq(callResults.callId, callId));
+  await q.update(callResults).set({ fields: null, values: null, badge: null }).where(eq(callResults.callId, callId));
 }
 
 /**
@@ -278,14 +298,15 @@ export async function findCallForInsights(conversationId?: string, callControlId
   return null;
 }
 
-const FIELD_ERRORS = new Set([
-  "fieldNameRequired",
-  "fieldNameTooLong",
-  "fieldDescriptionTooLong",
-  "fieldOptionTooLong",
-  "tooManyFieldOptions",
-  "tooManyFields",
-]);
+/** The limit each field error names, so the message and the check can't disagree. */
+const FIELD_ERRORS: Record<string, number> = {
+  fieldNameRequired: 1,
+  fieldNameTooLong: MAX_FIELD_NAME_LENGTH,
+  fieldDescriptionTooLong: MAX_FIELD_DESCRIPTION_LENGTH,
+  fieldOptionTooLong: MAX_FIELD_OPTION_LENGTH,
+  tooManyFieldOptions: MAX_FIELD_OPTIONS,
+  tooManyFields: MAX_FIELDS,
+};
 
 /**
  * The fields and email settings posted with the agent form, checked strictly (stored values are read
@@ -296,7 +317,8 @@ export function parseResultsInput(raw: unknown): AgentResultsSettings {
   const parsed = z.array(callField).max(MAX_FIELDS, "tooManyFields").safeParse(Array.isArray(r.fields) ? r.fields : []);
   if (!parsed.success) {
     const message = parsed.error.issues[0]?.message;
-    throw new UserError(message && FIELD_ERRORS.has(message) ? (message as ErrorKey) : "invalidInput", { max: MAX_FIELDS });
+    if (message && message in FIELD_ERRORS) throw new UserError(message as ErrorKey, { max: FIELD_ERRORS[message] });
+    throw new UserError("invalidInput");
   }
   const fields = parsed.data.map(normalizeField);
   const problem = fieldsProblem(fields);
@@ -312,6 +334,8 @@ export function parseResultsInput(raw: unknown): AgentResultsSettings {
   if (subject.length > MAX_SUBJECT_LENGTH) throw new UserError("subjectTooLong", { max: MAX_SUBJECT_LENGTH });
   const note = String(e.note ?? "").trim();
   if (note.length > MAX_NOTE_LENGTH) throw new UserError("noteTooLong", { max: MAX_NOTE_LENGTH });
+  const tagText = String(e.tagText ?? "").trim();
+  if (tagText.length > MAX_TAG_LENGTH) throw new UserError("tagTooLong", { max: MAX_TAG_LENGTH });
   const tagField = fields.some((f) => f.key === e.tagField && f.type === "yesno") ? String(e.tagField) : null;
   const include = (e.include ?? {}) as Record<string, unknown>;
   const email = readEmailSettings({
@@ -321,7 +345,7 @@ export function parseResultsInput(raw: unknown): AgentResultsSettings {
     note,
     include: Object.fromEntries(EMAIL_PARTS.map((p) => [p, include[p] !== false])),
     tagField,
-    tagText: String(e.tagText ?? "").trim().slice(0, MAX_TAG_LENGTH),
+    tagText,
   });
   return { fields, email };
 }

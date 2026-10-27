@@ -671,13 +671,16 @@ today. All text in five languages.
 
 - One template per Assistant, set up with the email switch and recipients. Without changes the default template is
   used, written in the Assistant's main language.
-- **Subject:** one line, can use variables. Default: "{{assistant name}}: call from {{caller number}}".
+- **Subject:** one line, can use variables. Left empty, the default is used: "{{Assistant}}: call from
+  {{Caller number}}" in the Assistant's main language at the time of sending (so it follows a language change). The
+  tag text works the same way.
 - **Opening note:** optional paragraph at the top (for example "Please call back within 2 hours").
 - **What's included:** checkboxes for caller number, call time and length, fields table, summary, call page link.
   The order is fixed.
 - **Urgent tag:** optional text put before the subject (default "[Urgent]") when a chosen yes/no field is yes.
 - **Variables:** Assistant name, caller number, our number, call time, call length, and each field by name. An empty
-  field becomes "—". Typing `{{` in the subject or note suggests the available variables. An unknown variable shows
+  field becomes "—". The available variables are listed as buttons; clicking one inserts it where the cursor is in
+  the subject or note. Built-in variables work by their English or Chinese name. An unknown variable shows
   a warning (saving still works) and becomes empty when sent. A field that is deleted or renamed is treated as
   unknown, and the settings show a warning.
 - **No custom HTML.** The body is plain text in our fixed layout, so it renders the same in every mail app, nothing
@@ -690,11 +693,12 @@ today. All text in five languages.
 - Email only for calls the Assistant actually answered or placed; not for calls rejected for low balance or never
   connected.
 - Summary and fields are written in the Assistant's main language.
-- Fields apply to calls after they're set up; old calls aren't filled in.
-- Field results follow the 30-day retention like the summary. Emails never include the recording or full
+- Fields apply to calls that start after they're set up or last changed; earlier calls get no field results.
+  Likewise the email goes only for calls that start after it was turned on.
+- Field results, and the badge they give, follow the 30-day retention like the summary. Emails never include the recording or full
   transcript.
-- If the summary or fields aren't ready within `RESULTS_WAIT_MS`, the email still goes, saying "summary not
-  available".
+- If the summary or fields aren't ready within `RESULTS_WAIT_MS`, or Telnyx reports that they failed, the email
+  still goes, saying the summary isn't available.
 - The sender is the same as for sign-in emails (Resend; no own domain yet).
 
 **How it works**
@@ -716,7 +720,8 @@ today. All text in five languages.
   Assistant had its own group take the first completed insight as the summary.
 - **Sending:** the write that makes a call's results final inserts its `call_results` row; only the request that
   inserts it sends the email (the page, the daily job and the webhook can all race). The row records "off",
-  "sent" or "failed" and who it went to. A failed email isn't retried.
+  "sent" or "failed" and who it went to. A failed email isn't retried; one still "pending" after 10 minutes (the
+  server stopped mid-send) is shown as failed.
 - **Test emails** use the settings on screen (saved or not) and sample answers, go to the account email, and are
   limited to 5 per Assistant per hour (timestamps kept on the settings row).
 - **Timely trigger:** the insight group's webhook. When all of a call's insights finish (or finally fail), Telnyx

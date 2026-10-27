@@ -545,12 +545,15 @@ export function createTelnyxProvider(cfg: TelnyxConfig): VoiceProvider {
       const done = ins.data.find((i) => i.status === "completed");
       // Not completed yet, including before Telnyx has created any insight entry right after hangup: the
       // transcript is returned anyway, and the summary is fetched again until RESULTS_WAIT_MS makes it final.
-      const summaryPending = !done;
+      // A request that finally failed won't complete either, so the results are final now, without a summary.
+      const failed = !done && ins.data.some((i) => i.status === "failed");
+      const summaryPending = !done && !failed;
       const results = done?.conversation_insights ?? [];
-      // By id when the agent has its own insights; calls from before that, and agents on the platform
-      // group, have just the summary first.
       const byId = (id: string | null | undefined) => (id ? results.find((r) => r.insight_id === id)?.result : undefined);
-      const summary = byId(insights?.summaryId) ?? (insights?.fieldsId ? results.find((r) => r.insight_id !== insights.fieldsId) : results[0])?.result;
+      // By insight id when the agent has its own insights. Calls from before that, and agents on the
+      // platform group, only have a summary: the first result that isn't the fields.
+      const firstOther = results.find((r) => !insights?.fieldsId || r.insight_id !== insights.fieldsId)?.result;
+      const summary = byId(insights?.summaryId) ?? firstOther;
       const fields = byId(insights?.fieldsId);
       return { transcript, summary, summaryPending, fields };
     },

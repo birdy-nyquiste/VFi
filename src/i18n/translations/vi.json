@@ -677,13 +677,14 @@
     "subjectTooLong": "Tiêu đề phải ít hơn {max} ký tự.",
     "noteTooLong": "Lời nhắn đầu thư phải ít hơn {max} ký tự.",
     "fieldNameRequired": "Mỗi kết quả cuộc gọi cần có tên.",
-    "fieldNameTooLong": "Đặt tên kết quả cuộc gọi ngắn gọn (tối đa 40 ký tự).",
-    "fieldDescriptionTooLong": "Mỗi mục \"Cần ghi lại gì\" phải ít hơn 200 ký tự.",
-    "fieldOptionTooLong": "Mỗi lựa chọn phải ít hơn 40 ký tự.",
-    "tooManyFieldOptions": "Mỗi kết quả cuộc gọi có tối đa 8 lựa chọn.",
+    "fieldNameTooLong": "Tên kết quả cuộc gọi phải ít hơn {max} ký tự.",
+    "fieldDescriptionTooLong": "Mỗi mục \"Cần ghi lại gì\" phải ít hơn {max} ký tự.",
+    "fieldOptionTooLong": "Mỗi lựa chọn phải ít hơn {max} ký tự.",
+    "tooManyFieldOptions": "Mỗi kết quả cuộc gọi có tối đa {max} lựa chọn.",
     "tooManyFields": "Mỗi trợ lý ghi lại được tối đa {max} kết quả cuộc gọi.",
     "fieldNameDuplicate": "Có hai kết quả cùng tên \"{name}\". Hãy đặt tên khác nhau.",
-    "fieldNeedsOptions": "\"{name}\" là \"Một trong\": hãy thêm ít nhất 2 lựa chọn."
+    "fieldNeedsOptions": "\"{name}\" là \"Một trong\": hãy thêm ít nhất 2 lựa chọn.",
+    "tagTooLong": "Nhãn phải ít hơn {max} ký tự."
   },
   "comingSoon": {
     "title": "Sắp ra mắt",
@@ -759,6 +760,7 @@
     "badgeUrgent": "Gấp",
     "badgeFollowup": "Cần theo dõi",
     "yes": "Có",
-    "no": "Không"
+    "no": "Không",
+    "subjectHint": "Để trống để dùng tiêu đề mặc định, bằng ngôn ngữ chính của trợ lý."
   }
 }

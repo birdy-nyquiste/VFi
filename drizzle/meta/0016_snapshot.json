@@ -1,5 +1,5 @@
 {
-  "id": "1b2b62ed-15ad-4e10-84f0-dce068b7f2d0",
+  "id": "ae37ec38-6db9-48fd-b5f0-c784ab248c49",
   "prevId": "dd5d0190-94c9-4585-ae1f-f77ed0715048",
   "version": "7",
   "dialect": "postgresql",
@@ -27,6 +27,18 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'{}'::jsonb"
+        },
+        "fields_since": {
+          "name": "fields_since",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_since": {
+          "name": "email_since",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         },
         "insight_group_id": {
           "name": "insight_group_id",

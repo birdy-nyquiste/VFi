@@ -677,13 +677,14 @@
     "subjectTooLong": "件名は {max} 文字未満にしてください。",
     "noteTooLong": "冒頭のメモは {max} 文字未満にしてください。",
     "fieldNameRequired": "通話結果にはそれぞれ名前が必要です。",
-    "fieldNameTooLong": "通話結果の名前は短くしてください（40 文字まで）。",
-    "fieldDescriptionTooLong": "「記録する内容」はそれぞれ 200 文字未満にしてください。",
-    "fieldOptionTooLong": "選択肢はそれぞれ 40 文字未満にしてください。",
-    "tooManyFieldOptions": "通話結果の選択肢は 8 個までです。",
+    "fieldNameTooLong": "通話結果の名前は {max} 文字未満にしてください。",
+    "fieldDescriptionTooLong": "「記録する内容」はそれぞれ {max} 文字未満にしてください。",
+    "fieldOptionTooLong": "選択肢はそれぞれ {max} 文字未満にしてください。",
+    "tooManyFieldOptions": "通話結果の選択肢は {max} 個までです。",
     "tooManyFields": "1 つのアシスタントで記録できる通話結果は {max} 件までです。",
     "fieldNameDuplicate": "「{name}」という通話結果が 2 つあります。別々の名前を付けてください。",
-    "fieldNeedsOptions": "「{name}」は「いずれか 1 つ」です。選択肢を 2 つ以上入力してください。"
+    "fieldNeedsOptions": "「{name}」は「いずれか 1 つ」です。選択肢を 2 つ以上入力してください。",
+    "tagTooLong": "タグは {max} 文字未満にしてください。"
   },
   "comingSoon": {
     "title": "近日公開",
@@ -759,6 +760,7 @@
     "badgeUrgent": "緊急",
     "badgeFollowup": "要フォロー",
     "yes": "はい",
-    "no": "いいえ"
+    "no": "いいえ",
+    "subjectHint": "空欄にすると、アシスタントのメイン言語の既定の件名になります。"
   }
 }

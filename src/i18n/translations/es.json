@@ -677,13 +677,14 @@
     "subjectTooLong": "El asunto debe tener menos de {max} caracteres.",
     "noteTooLong": "La nota inicial debe tener menos de {max} caracteres.",
     "fieldNameRequired": "Cada resultado de llamada necesita un nombre.",
-    "fieldNameTooLong": "Usa nombres cortos para los resultados (40 caracteres como máximo).",
-    "fieldDescriptionTooLong": "Cada \"Qué registrar\" debe tener menos de 200 caracteres.",
-    "fieldOptionTooLong": "Cada opción debe tener menos de 40 caracteres.",
-    "tooManyFieldOptions": "Un resultado de llamada puede tener hasta 8 opciones.",
+    "fieldNameTooLong": "Los nombres de los resultados deben tener menos de {max} caracteres.",
+    "fieldDescriptionTooLong": "Cada \"Qué registrar\" debe tener menos de {max} caracteres.",
+    "fieldOptionTooLong": "Cada opción debe tener menos de {max} caracteres.",
+    "tooManyFieldOptions": "Un resultado de llamada puede tener hasta {max} opciones.",
     "tooManyFields": "Un asistente puede registrar hasta {max} resultados de llamada.",
     "fieldNameDuplicate": "Hay dos resultados llamados \"{name}\". Dale a cada uno un nombre distinto.",
-    "fieldNeedsOptions": "\"{name}\" es \"Una de\": dale al menos 2 opciones."
+    "fieldNeedsOptions": "\"{name}\" es \"Una de\": dale al menos 2 opciones.",
+    "tagTooLong": "La etiqueta debe tener menos de {max} caracteres."
   },
   "comingSoon": {
     "title": "Próximamente",
@@ -759,6 +760,7 @@
     "badgeUrgent": "Urgente",
     "badgeFollowup": "Seguimiento",
     "yes": "Sí",
-    "no": "No"
+    "no": "No",
+    "subjectHint": "Déjalo vacío para usar el predeterminado, en el idioma principal del asistente."
   }
 }

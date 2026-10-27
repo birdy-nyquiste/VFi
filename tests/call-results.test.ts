@@ -137,6 +137,10 @@ describe("saving an agent's call results", () => {
     expect(() => parseResultsInput(results([name, { ...name, key: "fx" }]))).toThrow(/named "Name"/);
     expect(() => parseResultsInput(results([], { recipients: ["a@b.co", "not-an-email"] }))).toThrow(/not-an-email/);
     expect(() => parseResultsInput(results([], { recipients: ["a@b.co", "b@b.co", "c@b.co", "d@b.co"] }))).toThrow(/up to 3/);
+    expect(() => parseResultsInput(results([], { tagText: "x".repeat(31) }))).toThrow(/under 30/);
+    expect(() => parseResultsInput(results([{ ...name, name: "x".repeat(41) }]))).toThrow(/under 40/);
+    // Left empty, the subject and tag stay empty: the defaults are filled in when sending, in the agent's language.
+    expect(parseResultsInput(results([], { subject: "  ", tagText: "" })).email).toMatchObject({ subject: "", tagText: "" });
     // A tag can only point at an existing yes/no field.
     expect(parseResultsInput(results([name], { tagField: "fname" })).email.tagField).toBeNull();
     expect(parseResultsInput(results([urgent], { enabled: true, tagField: "furgent" })).email).toMatchObject({ enabled: true, tagField: "furgent" });
@@ -153,6 +157,9 @@ describe("after a call", () => {
       insightGroupId: "g1",
       summaryInsightId: "s1",
       fieldsInsightId: "f1",
+      // Set up before the call started.
+      fieldsSince: new Date(Date.now() - 60 * 60_000),
+      emailSince: new Date(Date.now() - 60 * 60_000),
     });
     const endedAt = new Date(Date.now() - 60_000);
     const [call] = await db
@@ -241,13 +248,34 @@ describe("after a call", () => {
     expect(sent[0].text).toContain("The summary wasn't ready in time");
   });
 
-  it("deletes the field results with the call's content", async () => {
+  it("deletes the field results, and the badge they gave, with the call's content", async () => {
     const { call } = await setUp({ enabled: false });
     await fetchCallResults(call);
     const [finished] = await db.select().from(calls).where(eq(calls.id, call.id));
     await purgeCallContent(finished);
     const [row] = await db.select().from(callResults).where(eq(callResults.callId, call.id));
-    expect(row).toMatchObject({ values: null, fields: null });
+    expect(row).toMatchObject({ values: null, fields: null, badge: null });
+  });
+
+  it("gives calls from before the fields or the email were set up neither", async () => {
+    const { call, agent } = await setUp({ enabled: true });
+    await db
+      .update(agentCallResults)
+      // Set up after the call started.
+      .set({ fieldsSince: new Date(call.createdAt.getTime() + 1000), emailSince: new Date(call.createdAt.getTime() + 1000) })
+      .where(eq(agentCallResults.agentId, agent.id));
+    await fetchCallResults(call);
+    const [row] = await db.select().from(callResults).where(eq(callResults.callId, call.id));
+    expect(row).toMatchObject({ fields: [], values: null, badge: null, emailStatus: "off" });
+    expect(sent).toHaveLength(0);
+  });
+
+  it("finishes at once, without a summary, when the provider's insights failed", async () => {
+    const { call } = await setUp({ enabled: true });
+    vi.mocked(mockProvider.getCallResults).mockResolvedValue({ transcript: [], summaryPending: false });
+    await fetchCallResults(call);
+    expect(sent).toHaveLength(1);
+    expect(sent[0].text).toContain("The summary wasn't ready in time");
   });
 });
 

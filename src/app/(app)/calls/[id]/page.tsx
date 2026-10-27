@@ -11,7 +11,7 @@ import { showStored, type StoredMessage } from "@/lib/stored-text";
 import { requireUser } from "@/server/auth";
 import { callAgentName, getUserCall } from "@/server/calls";
 import { listUserNumbers } from "@/server/numbers";
-import { getCallResultRow } from "@/server/call-results";
+import { EMAIL_SEND_TIMEOUT_MS, getCallResultRow } from "@/server/call-results";
 import { readFields, type FieldValue } from "@/lib/call-fields";
 import { activeNumbersByAge, ourNumber } from "@/lib/phone-numbers";
 import { isAwaitingResults, isCallLive } from "@/server/calls/state";
@@ -52,6 +52,9 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
   if (!call) notFound();
   const [agentName, numbers, results] = await Promise.all([callAgentName(call), listUserNumbers(call.userId), getCallResultRow(call.id)]);
   const resultFields = readFields(results?.fields);
+  // A send cut off midway (the server stopped) never finishes: after a while, say it didn't go.
+  const emailStatus =
+    results?.emailStatus === "pending" && Date.now() - results.createdAt.getTime() > EMAIL_SEND_TIMEOUT_MS ? "failed" : results?.emailStatus;
   // Which of the user's numbers took or placed the call; shown only once they have more than one.
   const shownOurNumber = activeNumbersByAge(numbers).length > 1 ? ourNumber(call) : null;
   const live = isCallLive(call);
@@ -104,7 +107,7 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
 
       {call.status === "completed" && (
         <>
-          {results && (resultFields.length > 0 || results.emailStatus !== "off") && (
+          {results && (resultFields.length > 0 || emailStatus !== "off") && (
             <Card>
               <CardTitle>{tr("resultsTitle")}</CardTitle>
               {resultFields.length > 0 && (
@@ -117,11 +120,11 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
                   ))}
                 </dl>
               )}
-              {results.emailStatus !== "off" && (
-                <p className={`mt-3 text-[13px] ${results.emailStatus === "failed" ? "text-red-600" : "text-stone-500"}`}>
-                  {results.emailStatus === "sent"
+              {emailStatus !== "off" && (
+                <p className={`mt-3 text-[13px] ${emailStatus === "failed" ? "text-red-600" : "text-stone-500"}`}>
+                  {emailStatus === "sent"
                     ? tr("emailedTo", { to: (results.emailedTo ?? []).join(", "), time: formatDateTime(results.emailedAt, locale, tz) })
-                    : results.emailStatus === "failed"
+                    : emailStatus === "failed"
                       ? tr("emailFailed", { to: (results.emailedTo ?? []).join(", ") })
                       : tr("emailPending")}
                 </p>

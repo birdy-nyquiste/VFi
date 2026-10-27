@@ -677,13 +677,14 @@
     "subjectTooLong": "Keep the subject under {max} characters.",
     "noteTooLong": "Keep the opening note under {max} characters.",
     "fieldNameRequired": "Every call result needs a name.",
-    "fieldNameTooLong": "Keep call result names short (40 characters at most).",
-    "fieldDescriptionTooLong": "Keep each \"What to record\" under 200 characters.",
-    "fieldOptionTooLong": "Keep each option under 40 characters.",
-    "tooManyFieldOptions": "A call result can have up to 8 options.",
+    "fieldNameTooLong": "Keep call result names under {max} characters.",
+    "fieldDescriptionTooLong": "Keep each \"What to record\" under {max} characters.",
+    "fieldOptionTooLong": "Keep each option under {max} characters.",
+    "tooManyFieldOptions": "A call result can have up to {max} options.",
     "tooManyFields": "An Assistant can record up to {max} call results.",
     "fieldNameDuplicate": "Two call results are named \"{name}\". Give each a different name.",
-    "fieldNeedsOptions": "\"{name}\" is \"One of\": give it at least 2 options."
+    "fieldNeedsOptions": "\"{name}\" is \"One of\": give it at least 2 options.",
+    "tagTooLong": "Keep the tag under {max} characters."
   },
   "comingSoon": {
     "title": "Coming soon",
@@ -759,6 +760,7 @@
     "badgeUrgent": "Urgent",
     "badgeFollowup": "Follow-up",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "subjectHint": "Leave empty for the default, in the Assistant's main language."
   }
 }

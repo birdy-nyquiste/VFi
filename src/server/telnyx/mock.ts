@@ -27,11 +27,6 @@ const g = globalThis as unknown as {
 const state = (g.__mockTelnyx ??= { calls: new Map(), clones: new Map(), buckets: new Map() });
 state.buckets ??= new Map();
 
-/**
- * Knowledge-base simulation knobs. In dev, failure paths are triggered by content instead:
- * text containing "mock:unreadable" fails to embed; crawled URLs containing "too-large" or "empty"
- * bring in more text than a website source may have, or none.
- */
 /** Insight groups made by syncInsights, by group id; tests read them. Calls get sample field values from them. */
 // Kept on globalThis like the rest of the mock state, so a dev-server reload doesn't forget the groups.
 export const mockInsights = ((globalThis as unknown as { __mockInsights?: { groups: Map<string, { spec: InsightsSpec; ids: InsightIds }>; failSync: boolean } }).__mockInsights ??= {
@@ -54,6 +49,11 @@ function sampleFieldResult(schema: Record<string, unknown> | undefined): string 
   return JSON.stringify(out);
 }
 
+/**
+ * Knowledge-base simulation knobs. In dev, failure paths are triggered by content instead:
+ * text containing "mock:unreadable" fails to embed; crawled URLs containing "too-large" or "empty"
+ * bring in more text than a website source may have, or none.
+ */
 export const mockKnowledge = {
   /** How long embedding takes. */
   delayMs: 2000,
