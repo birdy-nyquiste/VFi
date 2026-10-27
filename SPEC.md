@@ -674,8 +674,10 @@ today. All text in five languages.
 - One template per Assistant, set up with the email switch and recipients. Without changes the default template is
   used, written in the Assistant's main language.
 - **Subject:** one line, can use variables. Left empty, the default is used: "{{Assistant}}: call from
-  {{Caller number}}" in the Assistant's main language at the time of sending (so it follows a language change). The
-  tag text works the same way.
+  {{Caller number}}", or "{{Assistant}}: call to {{Caller number}}" for calls the Assistant placed, in the
+  Assistant's main language at the time of sending (so it follows a language change). The tag text works the same
+  way. On calls the Assistant placed, the email labels the other party's number "Number called" instead of
+  "Caller". The settings preview shows a call the Assistant answered.
 - **Opening note:** optional paragraph at the top (for example "Please call back within 2 hours").
 - **What's included:** checkboxes for caller number, call time and length, fields table, summary, call page link.
   The order is fixed.
@@ -737,7 +739,8 @@ today. All text in five languages.
 - **Data** (new tables only, §2.6): `agent_call_results` (fields, email settings, the insight ids and hash, test
   email times) and `call_results` (per call: the fields as they were, the values, the badge, the email status).
   Retention and deleting a call clear the fields and values; deleting an Assistant deletes its insight group.
-- **To check on the first real call after A ships:** that the insight webhook is actually delivered.
+- **Checked on a real call (2026-10-27):** the insight webhook arrived and the email went out under a minute after
+  hang-up, with no page open.
 
 ---
 
@@ -750,7 +753,6 @@ Grouped here so nothing gets lost; details are in the linked sections.
 | Telnyx support questions on knowledge bases (retention, vector deletion, empty buckets, crawl billing) | Turning the knowledge base and website sources on in production | §8.7 |
 | Telnyx support questions on receiving texts (STOP/HELP auto-replies, cost) | Nothing; texting is live | §7 |
 | Is AI inference included in the `call.cost` webhook's cost parts? | Reconciliation accuracy | API notes §6 |
-| Insight webhook delivery on a real call | Confirms A's timely email | §9.2 |
 
 ---
 
@@ -760,6 +762,7 @@ Newest first. Each line points to where the rule now lives.
 
 | Date | Decision | Section |
 | --- | --- | --- |
+| 2026-10-27 | Emails for calls the Assistant placed say "call to" and "Number called"; insight webhook confirmed on a real call | §9.2 |
 | 2026-10-27 | Kept from the A build: Outreach's "needs follow-up" field, a badge setting per yes/no field, no retry for failed emails, deleting an Assistant deletes its insight group; recipients may be any address | §9.2 |
 | 2026-10-27 | A built: call-result fields, badges and the email after each call, from a mock approved the same day | §9.2 |
 | 2026-10-27 | Rewrote this spec in English, organized by feature | — |

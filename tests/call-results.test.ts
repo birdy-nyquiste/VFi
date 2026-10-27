@@ -84,6 +84,17 @@ describe("the email template", () => {
     );
   });
 
+  it("describes calls the agent placed as calls to the number", () => {
+    const outbound = { ...data, direction: "outbound" as const };
+    const en = renderCallEmail(settings(), outbound, "en");
+    expect(en.subject).toBe("Front Desk: call to (650) 555-0133");
+    expect(en.text).toContain("Number called: (650) 555-0133");
+    expect(en.text).not.toContain("Caller:");
+    expect(renderCallEmail(settings(), outbound, "zh").subject).toBe("Front Desk：拨给 (650) 555-0133 的通话");
+    // A subject the user wrote is kept as is.
+    expect(renderCallEmail(settings({ subject: "{{Assistant}}" }), outbound, "en").subject).toBe("Front Desk");
+  });
+
   it("leaves unknown variables empty and reports them", () => {
     expect(unknownVariables("Hi {{Nope}} {{Name}} {{助理}}", [name])).toEqual(["Nope"]);
     expect(renderCallEmail(settings({ subject: "A{{Nope}}B" }), data, "en").subject).toBe("AB");
