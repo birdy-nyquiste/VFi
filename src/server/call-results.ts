@@ -213,6 +213,7 @@ function callEmailData(call: Call, agent: Agent, fields: CallField[], values: Re
   const { locale, unknownNumber } = emailFormat(agent.language);
   return {
     assistant: agent.name,
+    direction: call.direction,
     caller: formatCallerNumber(inbound ? call.fromNumber : call.toNumber, unknownNumber),
     ourNumber: formatPhone(inbound ? call.toNumber : call.fromNumber),
     time: new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone }).format(

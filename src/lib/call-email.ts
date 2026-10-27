@@ -52,8 +52,9 @@ const BUILT_IN = {
 } as const;
 type BuiltIn = keyof typeof BUILT_IN;
 
-export function defaultSubject(language: Language): string {
-  return COPY[language].subject;
+/** The subject used when the user leaves it empty: "call from" for calls the agent answered, "call to" for ones it placed. */
+export function defaultSubject(language: Language, direction: CallDirection = "inbound"): string {
+  return COPY[language].subject[direction];
 }
 
 export function defaultTagText(language: Language): string {
@@ -88,8 +89,12 @@ export function unknownVariables(text: string, fields: Pick<CallField, "name">[]
   return [...new Set([...text.matchAll(VARIABLE)].map((m) => m[1]).filter((n) => !known.has(n.toLowerCase())))];
 }
 
+export type CallDirection = "inbound" | "outbound";
+
 export interface CallEmailData {
   assistant: string;
+  /** Inbound: the other party called the agent. Outbound: the agent placed the call. */
+  direction: CallDirection;
   /** Formatted. */
   caller: string;
   ourNumber: string;
@@ -105,11 +110,11 @@ export interface CallEmailData {
 /** Everything the email says that depends on the agent's language. A new language is one more entry here. */
 const COPY = {
   en: {
-    subject: "{{Assistant}}: call from {{Caller number}}",
+    subject: { inbound: "{{Assistant}}: call from {{Caller number}}", outbound: "{{Assistant}}: call to {{Caller number}}" },
     tag: "[Urgent]",
     locale: "en-US",
     unknownNumber: "Unknown number",
-    caller: "Caller",
+    caller: { inbound: "Caller", outbound: "Number called" },
     ourNumber: "Your number",
     assistant: "Assistant",
     time: "Time",
@@ -127,11 +132,11 @@ const COPY = {
     },
   },
   zh: {
-    subject: "{{助理}}：来自 {{对方号码}} 的通话",
+    subject: { inbound: "{{助理}}：来自 {{对方号码}} 的通话", outbound: "{{助理}}：拨给 {{对方号码}} 的通话" },
     tag: "[紧急]",
     locale: "zh-CN",
     unknownNumber: "未知号码",
-    caller: "对方号码",
+    caller: { inbound: "对方号码", outbound: "对方号码" },
     ourNumber: "我方号码",
     assistant: "助理",
     time: "时间",
@@ -177,11 +182,11 @@ export function renderCallEmail(settings: EmailSettings, data: CallEmailData, la
   const tagged = tagField && data.values?.[tagField.key] === true;
   const tag = tagged ? (settings.tagText || defaultTagText(language)) + " " : "";
   // One line: a field value with a line break mustn't split the subject.
-  const subject = (tag + fill(settings.subject || defaultSubject(language), data, language)).replace(/\s+/g, " ").trim();
+  const subject = (tag + fill(settings.subject || defaultSubject(language, data.direction), data, language)).replace(/\s+/g, " ").trim();
   const note = fill(settings.note, data, language).trim();
 
   const facts: [string, string][] = [];
-  if (settings.include.caller) facts.push([L.caller, data.caller], [L.ourNumber, data.ourNumber]);
+  if (settings.include.caller) facts.push([L.caller[data.direction], data.caller], [L.ourNumber, data.ourNumber]);
   facts.push([L.assistant, data.assistant]);
   if (settings.include.time) facts.push([L.time, data.time], [L.length, data.length]);
   const results: [string, string][] = settings.include.fields
@@ -234,6 +239,7 @@ export function sampleEmailData(fields: CallField[], assistant: string, language
   );
   return {
     assistant,
+    direction: "inbound",
     caller: "(650) 555-0133",
     ourNumber: "(415) 555-0142",
     time: sample.time,

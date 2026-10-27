@@ -483,7 +483,7 @@ apply to Azure only. Secrets live in Integration Secrets (`/v2/integration_secre
 - **Insight model (Live 2026-10-26):** `insight_settings.model` must be `zai-org/GLM-5.3-Flash` (default) or
   `meta-llama/Llama-3.3-70B-Instruct`; it runs every insight in the group. A few insights per call cost a fraction of
   a cent.
-- **Insight webhook (Live 2026-10-26, signature checked; delivery after a real call not yet seen):** set on the group
+- **Insight webhook (Live 2026-10-26, signature checked; delivered after a real call 2026-10-27, under a minute after hang-up):** set on the group
   (no per-Assistant override; `POST /ai/conversations/insights` also takes a `webhook`). One `POST` per conversation's
   insight request, sent when the group's insights complete or finally fail, with a result for each insight:
 
@@ -736,7 +736,6 @@ Collected from the sections above.
 | Canonical endpoint for putting a number on a messaging profile | §12 |
 | Unregistered-traffic carrier fee on received texts; 10DLC monthly fees | §12 |
 | `bucket_ids` takes bucket names | §13 |
-| Insight webhook delivered after a real call | §10 |
 | Knowledge-base retention, vector deletion, crawl billing (support questions) | §13 |
 
 ---
