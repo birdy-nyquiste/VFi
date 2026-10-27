@@ -664,7 +664,9 @@ today. All text in five languages.
 - **Mock:** https://claude.ai/artifact/LFXM1LoQyWGAVE7pqM1TcM (approved 2026-10-27). The settings are two cards
   after "Ending calls" on the Assistant page, saved with the rest of the form.
 - **Email after each call:** optional per Assistant, **off by default**. Recipients default to the account email;
-  the user can set up to 3 addresses instead. The email holds the other party's number, our number (§9.1), the
+  the user can set up to 3 addresses instead. Any address is allowed, not just the account's domain: teams often
+  use personal or shared inboxes, a real email only follows a call the user paid for, and test emails go only to
+  the account email. The email holds the other party's number, our number (§9.1), the
   Assistant's name, the fields, the summary and a link to the call page, laid out by the email template.
 
 **Email template**
@@ -729,7 +731,9 @@ today. All text in five languages.
   §10). `/api/webhooks/telnyx` receives it, fetches and stores results, and sends the email. Opening the call page
   and the daily job remain the fallback, including the "summary not available" email after `RESULTS_WAIT_MS`.
 - **Templates:** variable substitution happens on our server, in one function shared by preview, test email and
-  real email, with its own tests.
+  real email, with its own tests. Everything the email says that depends on the Assistant's language (default
+  subject and tag, labels, date format, sample answers) is in one table in `src/lib/call-email.ts`, so adding a
+  language is one entry there.
 - **Data** (new tables only, §2.6): `agent_call_results` (fields, email settings, the insight ids and hash, test
   email times) and `call_results` (per call: the fields as they were, the values, the badge, the email status).
   Retention and deleting a call clear the fields and values; deleting an Assistant deletes its insight group.
@@ -756,6 +760,7 @@ Newest first. Each line points to where the rule now lives.
 
 | Date | Decision | Section |
 | --- | --- | --- |
+| 2026-10-27 | Kept from the A build: Outreach's "needs follow-up" field, a badge setting per yes/no field, no retry for failed emails, deleting an Assistant deletes its insight group; recipients may be any address | §9.2 |
 | 2026-10-27 | A built: call-result fields, badges and the email after each call, from a mock approved the same day | §9.2 |
 | 2026-10-27 | Rewrote this spec in English, organized by feature | — |
 | 2026-10-27 | Each number takes one call at a time; up to 3 calls per account | §9.1 |

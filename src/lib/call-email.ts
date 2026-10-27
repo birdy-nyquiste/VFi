@@ -53,11 +53,16 @@ const BUILT_IN = {
 type BuiltIn = keyof typeof BUILT_IN;
 
 export function defaultSubject(language: Language): string {
-  return language === "zh" ? "{{助理}}：来自 {{对方号码}} 的通话" : "{{Assistant}}: call from {{Caller number}}";
+  return COPY[language].subject;
 }
 
 export function defaultTagText(language: Language): string {
-  return language === "zh" ? "[紧急]" : "[Urgent]";
+  return COPY[language].tag;
+}
+
+/** How the email writes the call's time, and the caller when there's no number. */
+export function emailFormat(language: Language): { locale: string; unknownNumber: string } {
+  return { locale: COPY[language].locale, unknownNumber: COPY[language].unknownNumber };
 }
 
 /** The variable names to offer in the editor: built-ins in the agent's language, then the fields. */
@@ -97,8 +102,13 @@ export interface CallEmailData {
   link: string;
 }
 
-const LABELS = {
+/** Everything the email says that depends on the agent's language. A new language is one more entry here. */
+const COPY = {
   en: {
+    subject: "{{Assistant}}: call from {{Caller number}}",
+    tag: "[Urgent]",
+    locale: "en-US",
+    unknownNumber: "Unknown number",
     caller: "Caller",
     ourNumber: "Your number",
     assistant: "Assistant",
@@ -109,8 +119,18 @@ const LABELS = {
     noSummary: "The summary wasn't ready in time. Open the call to see the transcript.",
     open: "Open the call in VFi",
     footer: (name: string) => `You get this because email after each call is on for ${name}. Turn it off on the Assistant's page in VFi.`,
+    sample: {
+      text: (field: string) => `(sample ${field.toLowerCase()})`,
+      time: "Oct 27, 2026, 11:40 AM",
+      summary:
+        "Sample: Dana Lee asked about after-hours call answering for three warehouses. She needs English and Mandarin and wants a quote today.",
+    },
   },
   zh: {
+    subject: "{{助理}}：来自 {{对方号码}} 的通话",
+    tag: "[紧急]",
+    locale: "zh-CN",
+    unknownNumber: "未知号码",
     caller: "对方号码",
     ourNumber: "我方号码",
     assistant: "助理",
@@ -121,8 +141,13 @@ const LABELS = {
     noSummary: "摘要未能及时生成，请打开通话查看转写。",
     open: "在 VFi 中打开通话",
     footer: (name: string) => `你收到这封邮件，是因为 ${name} 开启了每通电话后的邮件。可在 VFi 的助理页面关闭。`,
+    sample: {
+      text: (field: string) => `（${field}的示例内容）`,
+      time: "2026年10月27日 上午11:40",
+      summary: "示例：Dana Lee 来电询问三个仓库的下班后接听服务，需要中英双语，希望今天拿到报价。",
+    },
   },
-} as const;
+} satisfies Record<Language, unknown>;
 
 function fill(text: string, data: CallEmailData, language: Language): string {
   const known = lookup(data.fields);
@@ -147,7 +172,7 @@ export interface RenderedEmail {
 }
 
 export function renderCallEmail(settings: EmailSettings, data: CallEmailData, language: Language): RenderedEmail {
-  const L = LABELS[language];
+  const L = COPY[language];
   const tagField = settings.tagField && data.fields.find((f) => f.key === settings.tagField && f.type === "yesno");
   const tagged = tagField && data.values?.[tagField.key] === true;
   const tag = tagged ? (settings.tagText || defaultTagText(language)) + " " : "";
@@ -200,24 +225,22 @@ export function renderCallEmail(settings: EmailSettings, data: CallEmailData, la
 
 /** Example answers for the settings preview and the test email. */
 export function sampleEmailData(fields: CallField[], assistant: string, language: Language, link: string): CallEmailData {
-  const zh = language === "zh";
+  const sample = COPY[language].sample;
   const values = Object.fromEntries(
     fields.map((f): [string, FieldValue] => [
       f.key,
-      f.type === "yesno" ? true : f.type === "choice" ? (f.options[0] ?? null) : zh ? `（${f.name}的示例内容）` : `(sample ${f.name.toLowerCase()})`,
+      f.type === "yesno" ? true : f.type === "choice" ? (f.options[0] ?? null) : sample.text(f.name),
     ]),
   );
   return {
     assistant,
     caller: "(650) 555-0133",
     ourNumber: "(415) 555-0142",
-    time: zh ? "2026年10月27日 上午11:40" : "Oct 27, 2026, 11:40 AM",
+    time: sample.time,
     length: "2:14",
     fields,
     values,
-    summary: zh
-      ? "示例：Dana Lee 来电询问三个仓库的下班后接听服务，需要中英双语，希望今天拿到报价。"
-      : "Sample: Dana Lee asked about after-hours call answering for three warehouses. She needs English and Mandarin and wants a quote today.",
+    summary: sample.summary,
     link,
   };
 }

@@ -25,6 +25,7 @@ import {
 } from "@/lib/call-fields";
 import {
   EMAIL_PARTS,
+  emailFormat,
   MAX_NOTE_LENGTH,
   MAX_RECIPIENTS,
   MAX_SUBJECT_LENGTH,
@@ -209,11 +210,12 @@ export async function deliverCallResults(call: Call, results: CallResults | null
 function callEmailData(call: Call, agent: Agent, fields: CallField[], values: ReturnType<typeof parseFieldResults>) {
   const inbound = call.direction === "inbound";
   const timeZone = readBehavior(agent.behavior).timeZone;
+  const { locale, unknownNumber } = emailFormat(agent.language);
   return {
     assistant: agent.name,
-    caller: formatCallerNumber(inbound ? call.fromNumber : call.toNumber, agent.language === "zh" ? "未知号码" : "Unknown number"),
+    caller: formatCallerNumber(inbound ? call.fromNumber : call.toNumber, unknownNumber),
     ourNumber: formatPhone(inbound ? call.toNumber : call.fromNumber),
-    time: new Intl.DateTimeFormat(agent.language === "zh" ? "zh-CN" : "en-US", { dateStyle: "medium", timeStyle: "short", timeZone }).format(
+    time: new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone }).format(
       call.answeredAt ?? call.createdAt,
     ),
     length: formatDuration(call.durationSec),
