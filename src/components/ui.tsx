@@ -166,9 +166,15 @@ export function Field({
   );
 }
 
-function withControl(children: ReactNode, control: FieldControl) {
-  const isControl =
-    isValidElement(children) && (children.type === "input" || children.type === "select" || children.type === "textarea" || children.type === Counted);
+function withControl(children: ReactNode, control: FieldControl): ReactNode {
+  if (!isValidElement(children)) return children;
+  // The box inside a <Counted> gets the ids here, while it is still a plain element: a client component
+  // can't read its children's props, which may reach it from the server as lazy references.
+  if (children.type === Counted) {
+    const counted = children as ReactElement<{ children: ReactNode }>;
+    return cloneElement(counted, {}, withControl(counted.props.children, control));
+  }
+  const isControl = children.type === "input" || children.type === "select" || children.type === "textarea";
   return isControl ? cloneElement(children as ReactElement<FieldControl>, control) : children;
 }
 
