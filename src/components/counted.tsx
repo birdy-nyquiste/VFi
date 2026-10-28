@@ -1,25 +1,19 @@
 "use client";
 
-import { cloneElement, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactElement } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useLocale } from "next-intl";
 import type { Locale } from "@/i18n/locales";
 import { formatNumber } from "@/lib/format";
-import type { FieldControl } from "./ui";
-
-type BoxProps = { id?: string; "aria-describedby"?: string };
 
 /**
  * A text box with its length and limit under it ("42 / 200"), so the limit is never a surprise.
  * Wraps one <input> or <textarea> that has a maxLength. It reads the box itself, so it works for
- * controlled and uncontrolled boxes, text inserted by code, and forms that reset. Inside a Field it
- * passes the label's id on to the box. `className` is for the wrapper, e.g. a grid column span.
+ * controlled and uncontrolled boxes, text inserted by code, and forms that reset. It never looks at
+ * its children's props (from a server component they can arrive as lazy references, not elements):
+ * inside a Field, the Field gives the box its label's id, and the counter is linked to the box here
+ * through the DOM. `className` is for the wrapper, e.g. a grid column span.
  */
-export function Counted({
-  children,
-  className,
-  id,
-  "aria-describedby": describedBy,
-}: { children: ReactElement<BoxProps>; className?: string } & Partial<FieldControl>) {
+export function Counted({ children, className }: { children: ReactNode; className?: string }) {
   const wrapper = useRef<HTMLDivElement>(null);
   const counterId = useId();
   const locale = useLocale() as Locale;
@@ -32,6 +26,15 @@ export function Counted({
 
   // After every render, for boxes whose value comes from state.
   useLayoutEffect(read);
+
+  // Add the counter to the box's description, keeping what the box already has (e.g. a Field's hint).
+  // Every render, since React rewrites the attribute whenever the box's own value for it changes.
+  useLayoutEffect(() => {
+    const box = wrapper.current?.querySelector<HTMLInputElement | HTMLTextAreaElement>("input, textarea");
+    if (!box || !count) return;
+    const ids = (box.getAttribute("aria-describedby") ?? "").split(" ").filter(Boolean);
+    if (!ids.includes(counterId)) box.setAttribute("aria-describedby", [...ids, counterId].join(" "));
+  });
 
   // Typing, and forms that clear themselves after a successful submit.
   useEffect(() => {
@@ -46,14 +49,9 @@ export function Counted({
     };
   }, [read]);
 
-  const box = cloneElement(children, {
-    id: id ?? children.props.id,
-    "aria-describedby": [describedBy, children.props["aria-describedby"], count ? counterId : undefined].filter(Boolean).join(" ") || undefined,
-  });
-
   return (
     <div ref={wrapper} className={className}>
-      {box}
+      {children}
       {count && (
         <p
           id={counterId}
