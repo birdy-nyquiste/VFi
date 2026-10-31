@@ -67,8 +67,11 @@ export function ActionForm({
   className,
   message = "end",
   resetOnSuccess = false,
+  id,
 }: {
   action: (state: ActionState, data: FormData) => Promise<ActionState>;
+  /** For a submit button elsewhere on the page that names this form (`form="…"`). */
+  id?: string;
   children: ReactNode;
   className?: string;
   /** Where the result message goes: after the fields, or wherever the form puts <FormMessage />. */
@@ -89,6 +92,7 @@ export function ActionForm({
   return (
     <form
       ref={formRef}
+      id={id}
       className={className}
       onSubmit={(e) => {
         e.preventDefault();

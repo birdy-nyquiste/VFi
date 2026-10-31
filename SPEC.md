@@ -257,7 +257,8 @@ Fixed retail prices, configurable. Telnyx's cost is recorded separately and neve
 
 ### 5.1 Settings
 
-The Assistant page has four parts, in the order a user sets things up. Everything except name, voice, greeting and
+The Assistant page is in tabs, one per part, in the order a user sets things up: Identity, Instructions,
+Conversation, Ending calls, Call results (§9.2) and Knowledge Base (§8). Everything except name, voice, greeting and
 instructions has a default.
 
 | Part | Settings |
@@ -267,7 +268,12 @@ instructions has a default.
 | Conversation | Response timing (fast / medium / patient = wait 0.4 / 0.8 / 1.2 s), whether the caller can interrupt, whether the greeting can be interrupted, key terms (with the speech-recognition model shown) |
 | Ending the call | Hang up when the conversation is over (on by default; Telnyx `hangup` tool), maximum call length (5 / 10 / 15 / 30 min, default 30), hang up after silence (never / 30 / 60 s, default 60) |
 
-Below these: the knowledge base (§8) and deleting the Assistant.
+- **Save and Delete** sit in a bar between the page title and the tabs, the same on every tab. All the settings
+  tabs are one form: Save saves every tab, switching tabs keeps edits, and a dot on a tab (and "Unsaved changes on
+  …" beside Save) marks unsaved edits. If a required field on a hidden tab is missing, saving opens that tab.
+- The Knowledge Base tab saves as before (sources as they're added, the mode with its own Save); Save doesn't
+  cover it. On a new Assistant it says sources can be added once it's created.
+- The open tab is in the address (`?tab=instructions`) and the page reopens on it after saving.
 
 ### 5.2 Templates
 
@@ -751,7 +757,7 @@ Before this, an Assistant that called someone and reached voicemail talked to th
 
 **What it does**
 
-- One setting per Assistant, in the "Ending calls" card: **If a call it places reaches voicemail**
+- One setting per Assistant, in the "Ending calls" tab: **If a call it places reaches voicemail**
   - **Hang up:** hangs up without saying anything.
   - **Leave a message, then hang up:** waits for the beep, says the user's message word for word in the
     Assistant's voice, and hangs up.
@@ -812,6 +818,7 @@ Newest first. Each line points to where the rule now lives.
 
 | Date | Decision | Section |
 | --- | --- | --- |
+| 2026-10-31 | Assistant page in tabs, one per card; Save and Delete in a bar outside the tabs | §5.1 |
 | 2026-10-31 | Voicemail on calls the Assistant places: hang up (default), leave a fixed message, or keep talking; billed as usual; no results email except for Keep talking | §9.3 |
 | 2026-10-27 | Emails for calls the Assistant placed say "call to" and "Number called"; insight webhook confirmed on a real call | §9.2 |
 | 2026-10-27 | Kept from the A build: Outreach's "needs follow-up" field, a badge setting per yes/no field, no retry for failed emails, deleting an Assistant deletes its insight group; recipients may be any address | §9.2 |

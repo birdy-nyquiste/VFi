@@ -152,7 +152,6 @@
     "notOnNumber": "Not on a number",
     "all": "All Assistants",
     "keyRejectedNotice": "This Assistant can't take or make calls: ElevenLabs rejected your API key, so its voice can't speak. <link>Replace the key</link> or pick another voice.",
-    "dangerZone": "Danger zone",
     "deleteConfirm": "Delete {name}?",
     "deleteConfirmNumber": "Delete {name}? Its number will stop answering calls.",
     "deleteConfirmKnowledge": "Delete {name}? Its Knowledge Base is deleted permanently and isn't refunded.",
@@ -249,7 +248,11 @@
       "continue": "The Assistant carries on as if a person answered. Rarely useful."
     },
     "voicemailText": "Message to leave",
-    "voicemailTextHint": "Said once after the beep, word for word, in the Assistant's voice."
+    "voicemailTextHint": "Said once after the beep, word for word, in the Assistant's voice.",
+    "settingsTabs": "Assistant settings",
+    "unsavedTab": "Unsaved changes",
+    "unsavedOn": "Unsaved changes on {tabs}",
+    "knowledgeAfterCreate": "You can add a Knowledge Base once the Assistant is created."
   },
   "agentTemplates": {
     "pick": "Pick a starting point. You can change everything before you create the Assistant.",
