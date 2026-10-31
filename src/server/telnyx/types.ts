@@ -179,8 +179,8 @@ export interface CallEvent {
   failureReason?: string;
   /** call.cost: provider's total cost in USD, as sent (decimal string). */
   totalCostUsd?: string;
-  /** call.machine.premium.detection.ended: human_residence, human_business, machine, silence or fax_detected. */
-  machineResult?: string;
+  /** call.machine.premium.detection.ended: an answering machine picked up (not a person, silence or a fax). */
+  reachedMachine?: boolean;
 }
 
 /** A text that arrived at one of our numbers (message.received). We never send texts. */

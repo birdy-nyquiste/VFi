@@ -252,7 +252,7 @@ describe("after a call", () => {
     expect(sent).toHaveLength(0);
   });
 
-  it("neither stores fields nor emails for calls that reached voicemail", async () => {
+  it("neither stores fields nor emails for calls hung up or left a message on voicemail", async () => {
     const { call } = await setUp({ enabled: true });
     await db.update(calls).set({ direction: "outbound" }).where(eq(calls.id, call.id));
     await db.insert(callVoicemail).values({ callId: call.id, action: "message" });
@@ -260,6 +260,15 @@ describe("after a call", () => {
     await fetchCallResults(voicemail);
     expect(sent).toHaveLength(0);
     expect(await db.select().from(callResults).where(eq(callResults.callId, call.id))).toHaveLength(0);
+  });
+
+  it("reports calls that kept talking on voicemail as usual, in case a person answered after all", async () => {
+    const { call } = await setUp({ enabled: true });
+    await db.update(calls).set({ direction: "outbound" }).where(eq(calls.id, call.id));
+    await db.insert(callVoicemail).values({ callId: call.id, action: "continue" });
+    const [voicemail] = await db.select().from(calls).where(eq(calls.id, call.id));
+    await fetchCallResults(voicemail);
+    expect(sent).toHaveLength(1);
   });
 
   it("sends the email without a summary once the wait is over", async () => {

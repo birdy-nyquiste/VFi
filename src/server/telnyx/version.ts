@@ -7,5 +7,6 @@
  * v4: English-only voices get an "always reply in English" instruction.
  * v5: `tools` is always sent (empty, or the knowledge-base retrieval tool).
  * v6: per-agent behavior (hangup tool, call limits, turn-taking, voice speed, key terms) and variables.
+ * v7: telephony_settings.voicemail_detection from the agent's voicemail setting.
  */
-export const ASSISTANT_BODY_VERSION = 6;
+export const ASSISTANT_BODY_VERSION = 7;

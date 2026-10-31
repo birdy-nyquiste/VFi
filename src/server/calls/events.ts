@@ -12,7 +12,7 @@ import { isElevenLabsVoice } from "@/server/telnyx/stock-voices";
 import { withWebhookDedupe } from "@/server/webhooks";
 import { fetchCallResultsSoon } from "./results";
 import { callRef, failedCallFields, hasOtherActiveCall } from "./state";
-import { getCallVoicemail, recordVoicemail } from "./voicemail";
+import { getCallVoicemail, recordAssistantEnded, recordVoicemail } from "./voicemail";
 
 /**
  * Process one provider call event. Safe to call repeatedly with the same
@@ -219,6 +219,8 @@ async function onAnswered(e: CallEvent) {
     return;
   }
   if (call.direction === "inbound") return; // assistant already started by answer
+  // Voicemail was detected before this answer was processed, and the call is being hung up.
+  if ((await getCallVoicemail(call.id)) === "hangup") return;
 
   const [agent] = call.agentId ? await db.select().from(agents).where(eq(agents.id, call.agentId)) : [];
   if (!agent?.providerAssistantId) {
@@ -251,26 +253,31 @@ async function onAssistantStartFailed(e: CallEvent) {
 }
 
 /**
- * Answering machine detection finished on a call we placed. On voicemail, record what the agent does
- * there (its setting now) and, for "hangup", end the call: the provider only stops the assistant.
- * "message" ends in onConversationEnded once the message is left; "continue" goes on as a normal call.
+ * Answering machine detection found voicemail on a call we placed. Record what the agent does there
+ * (its setting now). "hangup": end the call, since the provider only stops the assistant. "message":
+ * end it once the assistant has left the message, which may already be the case if the webhooks
+ * arrived out of order. "continue": the call goes on as a normal one.
  */
 async function onMachineDetected(e: CallEvent) {
-  if (e.machineResult !== "machine") return;
+  if (!e.reachedMachine) return;
   const call = await findCall(e);
   if (!call || call.direction !== "outbound" || call.endedAt) return;
   const [agent] = call.agentId ? await db.select().from(agents).where(eq(agents.id, call.agentId)) : [];
   // A retry (after a failed hangup) gets the action stored the first time.
-  const action = await recordVoicemail(call.id, readBehavior(agent?.behavior).voicemailAction);
-  // Hangup failures throw, so the webhook is retried.
-  const ccid = call.providerCallControlId ?? e.callControlId;
-  if (action === "hangup" && ccid) await voiceProvider().hangup(ccid);
+  const state = await recordVoicemail(call.id, readBehavior(agent?.behavior).voicemailAction);
+  if (state?.action === "hangup" || (state?.action === "message" && state.assistantEndedAt)) await hangUpCall(call, e);
 }
 
-/** The assistant has finished; on a call that reached voicemail, that means the message was left. */
+/** The assistant finished on a call we placed; on one that reached voicemail with "message", the message was left. */
 async function onConversationEnded(e: CallEvent) {
   const call = await findCall(e);
-  if (!call || call.endedAt || (await getCallVoicemail(call.id)) !== "message") return;
+  if (!call || call.direction !== "outbound" || call.endedAt) return;
+  const state = await recordAssistantEnded(call.id, e.occurredAt);
+  if (state?.action === "message") await hangUpCall(call, e);
+}
+
+/** Hang up a call from one of its webhooks. Failures throw, so the webhook is retried. */
+async function hangUpCall(call: Call, e: CallEvent) {
   const ccid = call.providerCallControlId ?? e.callControlId;
   if (ccid) await voiceProvider().hangup(ccid);
 }

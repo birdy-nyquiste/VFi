@@ -238,14 +238,18 @@
     "tts": "Texto a voz",
     "setByVoice": " · definido por la voz",
     "voicemailAction": "Si una llamada que hace llega al buzón de voz",
-    "voicemailHangup": "Colgar",
-    "voicemailMessage": "Dejar un mensaje y colgar",
-    "voicemailContinue": "Seguir hablando",
-    "voicemailHangupHint": "El asistente cuelga sin decir nada.",
-    "voicemailMessageHint": "El asistente espera el tono, deja tu mensaje y cuelga.",
-    "voicemailContinueHint": "El asistente sigue como si hubiera contestado una persona. Rara vez es útil.",
-    "voicemailMessageLabel": "Mensaje que dejará",
-    "voicemailMessageLabelHint": "Se dice una vez después del tono, palabra por palabra, con la voz del asistente."
+    "voicemailOptions": {
+      "hangup": "Colgar",
+      "message": "Dejar un mensaje y colgar",
+      "continue": "Seguir hablando"
+    },
+    "voicemailHints": {
+      "hangup": "El asistente cuelga sin decir nada.",
+      "message": "El asistente espera el tono, deja tu mensaje y cuelga.",
+      "continue": "El asistente sigue como si hubiera contestado una persona. Rara vez es útil."
+    },
+    "voicemailText": "Mensaje que dejará",
+    "voicemailTextHint": "Se dice una vez después del tono, palabra por palabra, con la voz del asistente."
   },
   "agentTemplates": {
     "pick": "Elige un punto de partida. Puedes cambiarlo todo antes de crear el asistente.",
@@ -435,9 +439,16 @@
     "emptyForNumber": "Aún no hay llamadas en este número.",
     "yourNumber": "Tu número {number}",
     "voicemailBadge": "Buzón de voz",
-    "voicemailHangup": "Llegó al buzón de voz. El asistente colgó.",
-    "voicemailMessage": "Llegó al buzón de voz. El asistente dejó tu mensaje y colgó.",
-    "voicemailContinue": "Llegó al buzón de voz. El asistente siguió hablando."
+    "voicemailResult": {
+      "hangup": "Colgó",
+      "message": "Dejó un mensaje",
+      "continue": "Siguió hablando"
+    },
+    "voicemailNotice": {
+      "hangup": "Llegó al buzón de voz. El asistente colgó.",
+      "message": "Llegó al buzón de voz. El asistente dejó tu mensaje y colgó.",
+      "continue": "Llegó al buzón de voz. El asistente siguió hablando."
+    }
   },
   "messages": {
     "title": "Mensajes",
@@ -699,7 +710,7 @@
     "fieldNeedsOptions": "\"{name}\" es \"Una de\": dale al menos 2 opciones.",
     "tagTooLong": "La etiqueta debe tener menos de {max} caracteres.",
     "voicemailMessageRequired": "Escribe el mensaje para el buzón de voz o elige otra opción.",
-    "voicemailMessageTooLong": "El mensaje para el buzón de voz es demasiado largo. Usa menos de 500 caracteres."
+    "voicemailMessageTooLong": "El mensaje para el buzón de voz es demasiado largo. Usa 500 caracteres como máximo."
   },
   "comingSoon": {
     "title": "Próximamente",

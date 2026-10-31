@@ -1,5 +1,5 @@
 {
-  "id": "bd4f04c4-0379-45ea-8a5a-125010208ddb",
+  "id": "f18a390d-e596-4569-b68f-ebcec027e60c",
   "prevId": "ae37ec38-6db9-48fd-b5f0-c784ab248c49",
   "version": "7",
   "dialect": "postgresql",
@@ -439,7 +439,13 @@
           "name": "action",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "assistant_ended_at": {
+          "name": "assistant_ended_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",

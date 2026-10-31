@@ -238,14 +238,18 @@
     "tts": "Text-to-speech",
     "setByVoice": " · set by the voice",
     "voicemailAction": "If a call it places reaches voicemail",
-    "voicemailHangup": "Hang up",
-    "voicemailMessage": "Leave a message, then hang up",
-    "voicemailContinue": "Keep talking",
-    "voicemailHangupHint": "The Assistant hangs up without saying anything.",
-    "voicemailMessageHint": "The Assistant waits for the beep, leaves your message and hangs up.",
-    "voicemailContinueHint": "The Assistant carries on as if a person answered. Rarely useful.",
-    "voicemailMessageLabel": "Message to leave",
-    "voicemailMessageLabelHint": "Said once after the beep, word for word, in the Assistant's voice."
+    "voicemailOptions": {
+      "hangup": "Hang up",
+      "message": "Leave a message, then hang up",
+      "continue": "Keep talking"
+    },
+    "voicemailHints": {
+      "hangup": "The Assistant hangs up without saying anything.",
+      "message": "The Assistant waits for the beep, leaves your message and hangs up.",
+      "continue": "The Assistant carries on as if a person answered. Rarely useful."
+    },
+    "voicemailText": "Message to leave",
+    "voicemailTextHint": "Said once after the beep, word for word, in the Assistant's voice."
   },
   "agentTemplates": {
     "pick": "Pick a starting point. You can change everything before you create the Assistant.",
@@ -435,9 +439,16 @@
     "emptyForNumber": "No calls on this number yet.",
     "yourNumber": "Your number {number}",
     "voicemailBadge": "Reached voicemail",
-    "voicemailHangup": "Reached voicemail. The Assistant hung up.",
-    "voicemailMessage": "Reached voicemail. The Assistant left your message and hung up.",
-    "voicemailContinue": "Reached voicemail. The Assistant kept talking."
+    "voicemailResult": {
+      "hangup": "Hung up",
+      "message": "Message left",
+      "continue": "Kept talking"
+    },
+    "voicemailNotice": {
+      "hangup": "Reached voicemail. The Assistant hung up.",
+      "message": "Reached voicemail. The Assistant left your message and hung up.",
+      "continue": "Reached voicemail. The Assistant kept talking."
+    }
   },
   "messages": {
     "title": "Messages",
@@ -699,7 +710,7 @@
     "fieldNeedsOptions": "\"{name}\" is \"One of\": give it at least 2 options.",
     "tagTooLong": "Keep the tag under {max} characters.",
     "voicemailMessageRequired": "Write the message to leave on voicemail, or pick another option.",
-    "voicemailMessageTooLong": "The voicemail message is too long. Keep it under 500 characters."
+    "voicemailMessageTooLong": "The voicemail message is too long. Keep it to 500 characters or fewer."
   },
   "comingSoon": {
     "title": "Coming soon",

@@ -162,11 +162,11 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
                   <td className="hidden px-3 py-3.5 text-stone-600 sm:table-cell">{agentName ?? "—"}</td>
                   <td className="px-3 py-3.5">
                     <span className="flex flex-wrap items-center gap-1.5">
-                      <StatusBadge status={call.status} />
-                      {voicemails.has(call.id) && <Badge tone="amber">{t("voicemailBadge")}</Badge>}
+                      {voicemails.has(call.id) ? <Badge tone="amber">{t("voicemailBadge")}</Badge> : <StatusBadge status={call.status} />}
                       {badges.get(call.id) === "urgent" && <Badge tone="red">{tr("badgeUrgent")}</Badge>}
                       {badges.get(call.id) === "followup" && <Badge tone="amber">{tr("badgeFollowup")}</Badge>}
                     </span>
+                    {voicemails.has(call.id) && <div className="mt-0.5 text-xs text-stone-500">{t(`voicemailResult.${voicemails.get(call.id)!}`)}</div>}
                   </td>
                   <td className="hidden px-3 py-3.5 text-right tabular-nums sm:table-cell">{formatDuration(call.durationSec)}</td>
                   <td className="hidden px-3 py-3.5 text-right tabular-nums sm:table-cell">{call.billedCents != null ? formatCents(call.billedCents, locale) : "—"}</td>

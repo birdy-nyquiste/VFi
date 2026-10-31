@@ -238,14 +238,18 @@
     "tts": "语音合成",
     "setByVoice": " · 由声音决定",
     "voicemailAction": "外呼遇到语音信箱时",
-    "voicemailHangup": "挂断",
-    "voicemailMessage": "留言后挂断",
-    "voicemailContinue": "继续说话",
-    "voicemailHangupHint": "助理不说话，直接挂断。",
-    "voicemailMessageHint": "助理等到提示音后留下你的留言，然后挂断。",
-    "voicemailContinueHint": "助理当作有人接听，继续通话。一般用不到。",
-    "voicemailMessageLabel": "留言内容",
-    "voicemailMessageLabelHint": "提示音后用助理的声音逐字说一遍。"
+    "voicemailOptions": {
+      "hangup": "挂断",
+      "message": "留言后挂断",
+      "continue": "继续说话"
+    },
+    "voicemailHints": {
+      "hangup": "助理不说话，直接挂断。",
+      "message": "助理等到提示音后留下你的留言，然后挂断。",
+      "continue": "助理当作有人接听，继续通话。一般用不到。"
+    },
+    "voicemailText": "留言内容",
+    "voicemailTextHint": "提示音后用助理的声音逐字说一遍。"
   },
   "agentTemplates": {
     "pick": "选择一个起点。创建前可以修改所有内容。",
@@ -435,9 +439,16 @@
     "emptyForNumber": "这个号码还没有通话。",
     "yourNumber": "我方号码 {number}",
     "voicemailBadge": "转入语音信箱",
-    "voicemailHangup": "转入语音信箱，助理已挂断。",
-    "voicemailMessage": "转入语音信箱，助理已留下你的留言并挂断。",
-    "voicemailContinue": "转入语音信箱，助理继续说话。"
+    "voicemailResult": {
+      "hangup": "已挂断",
+      "message": "已留言",
+      "continue": "继续通话"
+    },
+    "voicemailNotice": {
+      "hangup": "转入语音信箱，助理已挂断。",
+      "message": "转入语音信箱，助理已留下你的留言并挂断。",
+      "continue": "转入语音信箱，助理继续说话。"
+    }
   },
   "messages": {
     "title": "短信",
@@ -699,7 +710,7 @@
     "fieldNeedsOptions": "“{name}”是“几个选项之一”，请至少提供 2 个选项。",
     "tagTooLong": "标签请少于 {max} 个字符。",
     "voicemailMessageRequired": "请填写语音信箱留言，或选择其他选项。",
-    "voicemailMessageTooLong": "语音信箱留言太长，请控制在 500 个字符以内。"
+    "voicemailMessageTooLong": "语音信箱留言太长，最多 500 个字符。"
   },
   "comingSoon": {
     "title": "即将上线",

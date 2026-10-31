@@ -238,14 +238,18 @@
     "tts": "Chuyển văn bản thành giọng nói",
     "setByVoice": " · do giọng nói quyết định",
     "voicemailAction": "Khi cuộc gọi đi gặp hộp thư thoại",
-    "voicemailHangup": "Gác máy",
-    "voicemailMessage": "Để lại lời nhắn rồi gác máy",
-    "voicemailContinue": "Tiếp tục nói",
-    "voicemailHangupHint": "Trợ lý gác máy mà không nói gì.",
-    "voicemailMessageHint": "Trợ lý đợi tiếng bíp, để lại lời nhắn của bạn rồi gác máy.",
-    "voicemailContinueHint": "Trợ lý tiếp tục như thể có người nghe máy. Hiếm khi cần.",
-    "voicemailMessageLabel": "Lời nhắn để lại",
-    "voicemailMessageLabelHint": "Đọc nguyên văn một lần sau tiếng bíp, bằng giọng của Trợ lý."
+    "voicemailOptions": {
+      "hangup": "Gác máy",
+      "message": "Để lại lời nhắn rồi gác máy",
+      "continue": "Tiếp tục nói"
+    },
+    "voicemailHints": {
+      "hangup": "Trợ lý gác máy mà không nói gì.",
+      "message": "Trợ lý đợi tiếng bíp, để lại lời nhắn của bạn rồi gác máy.",
+      "continue": "Trợ lý tiếp tục như thể có người nghe máy. Hiếm khi cần."
+    },
+    "voicemailText": "Lời nhắn để lại",
+    "voicemailTextHint": "Đọc nguyên văn một lần sau tiếng bíp, bằng giọng của trợ lý."
   },
   "agentTemplates": {
     "pick": "Chọn một điểm bắt đầu. Bạn có thể thay đổi mọi thứ trước khi tạo trợ lý.",
@@ -435,9 +439,16 @@
     "emptyForNumber": "Số này chưa có cuộc gọi nào.",
     "yourNumber": "Số của bạn {number}",
     "voicemailBadge": "Hộp thư thoại",
-    "voicemailHangup": "Gặp hộp thư thoại. Trợ lý đã gác máy.",
-    "voicemailMessage": "Gặp hộp thư thoại. Trợ lý đã để lại lời nhắn của bạn rồi gác máy.",
-    "voicemailContinue": "Gặp hộp thư thoại. Trợ lý tiếp tục nói."
+    "voicemailResult": {
+      "hangup": "Đã gác máy",
+      "message": "Đã để lại lời nhắn",
+      "continue": "Tiếp tục nói"
+    },
+    "voicemailNotice": {
+      "hangup": "Gặp hộp thư thoại. Trợ lý đã gác máy.",
+      "message": "Gặp hộp thư thoại. Trợ lý đã để lại lời nhắn của bạn rồi gác máy.",
+      "continue": "Gặp hộp thư thoại. Trợ lý tiếp tục nói."
+    }
   },
   "messages": {
     "title": "Tin nhắn",
@@ -699,7 +710,7 @@
     "fieldNeedsOptions": "\"{name}\" là \"Một trong\": hãy thêm ít nhất 2 lựa chọn.",
     "tagTooLong": "Nhãn phải ít hơn {max} ký tự.",
     "voicemailMessageRequired": "Hãy viết lời nhắn để lại trong hộp thư thoại, hoặc chọn tùy chọn khác.",
-    "voicemailMessageTooLong": "Lời nhắn hộp thư thoại quá dài. Hãy giữ dưới 500 ký tự."
+    "voicemailMessageTooLong": "Lời nhắn hộp thư thoại quá dài. Tối đa 500 ký tự."
   },
   "comingSoon": {
     "title": "Sắp ra mắt",

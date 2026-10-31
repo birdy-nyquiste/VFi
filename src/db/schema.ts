@@ -434,10 +434,15 @@ export const callResults = pgTable("call_results", {
   createdAt: createdAt(),
 });
 
-/** A call the agent placed that reached voicemail, and what the agent did there (its setting at the time; SPEC §9.3). */
+/**
+ * Voicemail on a call the agent placed (SPEC §9.3). Either webhook may arrive first, so each fills in its
+ * half: `action` when voicemail was detected (the agent's setting at the time), `assistantEndedAt` when the
+ * assistant finished. A row without an action is a call that hasn't reached voicemail (so far).
+ */
 export const callVoicemail = pgTable("call_voicemail", {
   callId: uuid("call_id").primaryKey().references(() => calls.id),
-  action: text("action").$type<VoicemailAction>().notNull(),
+  action: text("action").$type<VoicemailAction>(),
+  assistantEndedAt: ts("assistant_ended_at"),
   createdAt: createdAt(),
 });
 

@@ -1,6 +1,7 @@
 CREATE TABLE "call_voicemail" (
 	"call_id" uuid PRIMARY KEY NOT NULL,
-	"action" text NOT NULL,
+	"action" text,
+	"assistant_ended_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint

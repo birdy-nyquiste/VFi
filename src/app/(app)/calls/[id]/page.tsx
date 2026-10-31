@@ -32,7 +32,6 @@ const ROUTINE_OUTCOMES = new Set<StoredMessage["key"]>([
   "stored.outcomeEndedEarly",
   "stored.outcomeBusy",
 ]);
-const VOICEMAIL_NOTICES = { hangup: "voicemailHangup", message: "voicemailMessage", continue: "voicemailContinue" } as const;
 // The title and the page share one load per request: loading a call may ask the provider for its results.
 const loadCall = cache(async (id: string) => getUserCall((await requireUser()).id, id));
 
@@ -105,7 +104,7 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
           <p className="whitespace-pre-wrap text-sm text-stone-700">{call.goal}</p>
         </Card>
       )}
-      {voicemail && <Notice tone="amber">{t(VOICEMAIL_NOTICES[voicemail])}</Notice>}
+      {voicemail && <Notice tone="amber">{t(`voicemailNotice.${voicemail}`)}</Notice>}
       {call.outcome && (
         <Notice tone={call.outcomeMsg && ROUTINE_OUTCOMES.has(call.outcomeMsg.key) ? "amber" : "red"}>
           {showStored(locale, call.outcome, call.outcomeMsg)}

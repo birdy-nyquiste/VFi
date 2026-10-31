@@ -303,24 +303,28 @@ describe("outbound calls", () => {
 });
 
 describe("outbound calls that reach voicemail", () => {
-  async function answeredCall(behavior: Record<string, unknown>) {
+  async function placedCall(behavior: Record<string, unknown>) {
     const { user, agent, number } = await makeLine(1000);
     await db.update(agents).set({ behavior }).where(eq(agents.id, agent.id));
     const [c] = await db
       .insert(calls)
       .values({ userId: user.id, agentId: agent.id, phoneNumberId: number.id, direction: "outbound", fromNumber: number.e164, toNumber: "+14155551111", providerCallControlId: "cc-vm" })
       .returning();
-    const t0 = new Date("2026-10-31T10:00:00Z");
+    return c;
+  }
+  const t0 = new Date("2026-10-31T10:00:00Z");
+  async function answeredCall(behavior: Record<string, unknown>) {
+    const c = await placedCall(behavior);
     await handleCallEvent(event("call.answered", { callControlId: "cc-vm", clientState: c.id, occurredAt: t0 }));
-    return { c, t0 };
+    return c;
   }
   const voicemailOf = async (ccid: string) => getCallVoicemail((await callByCcid(ccid)).id);
-  const detected = (result: string, id = `amd-${result}`) =>
-    event("call.machine.premium.detection.ended", { id, callControlId: "cc-vm", machineResult: result });
+  const detected = (reachedMachine: boolean) => event("call.machine.premium.detection.ended", { callControlId: "cc-vm", reachedMachine });
+  const assistantEnded = () => event("call.conversation.ended", { callControlId: "cc-vm" });
 
   it("hangs up on voicemail by default, and bills the seconds connected as usual", async () => {
-    const { c, t0 } = await answeredCall({});
-    await handleCallEvent(detected("machine"));
+    const c = await answeredCall({});
+    await handleCallEvent(detected(true));
     expect(mockProvider.hangup).toHaveBeenCalledWith("cc-vm");
     expect(await voicemailOf("cc-vm")).toBe("hangup");
 
@@ -330,25 +334,45 @@ describe("outbound calls that reach voicemail", () => {
 
   it("leaves the message, then hangs up when the assistant is done", async () => {
     await answeredCall({ voicemailAction: "message", voicemailMessage: "Please call us back." });
-    await handleCallEvent(detected("machine"));
+    await handleCallEvent(detected(true));
     expect(mockProvider.hangup).not.toHaveBeenCalled();
     expect(await voicemailOf("cc-vm")).toBe("message");
-    await handleCallEvent(event("call.conversation.ended", { callControlId: "cc-vm" }));
+    await handleCallEvent(assistantEnded());
     expect(mockProvider.hangup).toHaveBeenCalledWith("cc-vm");
+  });
+
+  it("still hangs up after the message when the assistant's end is processed before the detection", async () => {
+    await answeredCall({ voicemailAction: "message", voicemailMessage: "Please call us back." });
+    await handleCallEvent(assistantEnded());
+    expect(mockProvider.hangup).not.toHaveBeenCalled();
+    expect(await voicemailOf("cc-vm")).toBeNull();
+    await handleCallEvent(detected(true));
+    expect(mockProvider.hangup).toHaveBeenCalledTimes(1);
+  });
+
+  it("doesn't start the assistant when voicemail was detected before the answer was processed", async () => {
+    const c = await placedCall({});
+    await handleCallEvent(detected(true));
+    expect(mockProvider.hangup).toHaveBeenCalledWith("cc-vm");
+    await handleCallEvent(event("call.answered", { callControlId: "cc-vm", clientState: c.id, occurredAt: t0 }));
+    expect(mockProvider.startAssistant).not.toHaveBeenCalled();
+    await handleCallEvent(event("call.hangup", { callControlId: "cc-vm", clientState: c.id, hangupCause: "normal_clearing", occurredAt: new Date(t0.getTime() + 3_000) }));
+    // Recorded as a voicemail call, billed as usual: not as an assistant that failed to start.
+    expect(await callByCcid("cc-vm")).toMatchObject({ status: "completed", chargeWaived: false, outcome: null });
   });
 
   it("keeps talking when set to, and only records that it reached voicemail", async () => {
     await answeredCall({ voicemailAction: "continue" });
-    await handleCallEvent(detected("machine"));
-    await handleCallEvent(event("call.conversation.ended", { callControlId: "cc-vm" }));
+    await handleCallEvent(detected(true));
+    await handleCallEvent(assistantEnded());
     expect(mockProvider.hangup).not.toHaveBeenCalled();
     expect(await voicemailOf("cc-vm")).toBe("continue");
   });
 
   it("does nothing when a person answers", async () => {
     await answeredCall({});
-    for (const result of ["human_residence", "human_business", "silence"]) await handleCallEvent(detected(result));
-    await handleCallEvent(event("call.conversation.ended", { callControlId: "cc-vm" }));
+    await handleCallEvent(detected(false));
+    await handleCallEvent(assistantEnded());
     expect(mockProvider.hangup).not.toHaveBeenCalled();
     expect(await voicemailOf("cc-vm")).toBeNull();
   });
@@ -356,9 +380,17 @@ describe("outbound calls that reach voicemail", () => {
   it("hangs up again when the webhook is retried after a failed hangup", async () => {
     await answeredCall({});
     vi.mocked(mockProvider.hangup).mockRejectedValueOnce(new Error("timeout"));
-    await expect(handleCallEvent(detected("machine"))).rejects.toThrow("timeout");
-    await handleCallEvent(detected("machine"));
+    const e = detected(true);
+    await expect(handleCallEvent(e)).rejects.toThrow("timeout");
+    await handleCallEvent(e);
     expect(mockProvider.hangup).toHaveBeenCalledTimes(2);
+  });
+
+  it("reads Telnyx's premium detection result", () => {
+    const parse = (result: string) =>
+      parseCallEnvelope({ data: { id: "e", event_type: "call.machine.premium.detection.ended", payload: { call_control_id: "cc", result } } });
+    expect(parse("machine")).toMatchObject({ type: "call.machine.premium.detection.ended", reachedMachine: true });
+    for (const r of ["human_residence", "human_business", "silence", "fax_detected"]) expect(parse(r).reachedMachine).toBe(false);
   });
 });
 

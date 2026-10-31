@@ -122,6 +122,6 @@ export function parseCallEnvelope(body: unknown): CallEvent {
     conversationId: str(p.conversation_id),
     failureReason: str(p.reason),
     totalCostUsd: str(p.total_cost),
-    machineResult: str(p.result),
+    reachedMachine: rawType === "call.machine.premium.detection.ended" ? p.result === "machine" : undefined,
   };
 }

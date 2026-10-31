@@ -360,6 +360,8 @@ Payload: `call_control_id`, `call_leg_id`, `call_session_id`, `client_state`, `t
 - `voicemail_detection` (outbound only; applies only when the dial enabled AMD): `on_voicemail_detected {action:
   stop_assistant|leave_message_and_stop_assistant|continue_assistant, voicemail_message {type: prompt|message,
   prompt, message}}`. Telnyx recommends Premium AMD with it. Stopping the assistant doesn't hang up the call.
+  Whether it applies when the assistant is started with `ai_assistant_start` (as VFi does on outbound calls), and
+  whether `call.conversation.ended` follows the voicemail message: **UNCONFIRMED**.
 - Other: `description`, `tool_ids`, `tools` (inline, **deprecated**), `mcp_servers`, `llm_api_key_ref`,
   `external_llm`, `fallback_config`, `dynamic_variables_webhook_url`, `post_conversation_settings`,
   `messaging_settings`, `websocket_settings`, `conversation_flow`, `privacy_settings {data_retention}` (false = no
