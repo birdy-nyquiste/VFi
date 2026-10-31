@@ -23,7 +23,8 @@
     "listRange": "{total} 件中 {from}–{to} 件",
     "pages": "ページ",
     "previousPage": "前のページ",
-    "nextPage": "次のページ"
+    "nextPage": "次のページ",
+    "numberReleased": "{number}（解約済み）"
   },
   "languages": {
     "en": "英語",
@@ -488,7 +489,8 @@
       "7d": "過去 7 日間",
       "30d": "過去 30 日間"
     },
-    "searchDigitsOnly": "通話は番号でのみ検索できます。番号の一部を入力してください。"
+    "searchDigitsOnly": "通話は番号でのみ検索できます。番号の一部を入力してください。",
+    "agentDeleted": "{name}（削除済み）"
   },
   "messages": {
     "title": "メッセージ",

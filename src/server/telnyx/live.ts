@@ -71,6 +71,15 @@ async function ignoreNotFound(p: Promise<unknown>): Promise<void> {
   }
 }
 
+/**
+ * A rate center as people would write the place: Telnyx sends it in capitals, sometimes with a district after a
+ * colon ("SAN FRANCISCO:MONTROSE-EVERGREEN DA"), which becomes "San Francisco". The UI never shows all caps.
+ */
+export function placeName(rateCenter: string | undefined): string | undefined {
+  const place = rateCenter?.split(":")[0].trim();
+  return place ? place.toLowerCase().replace(/(^|[\s\-'.])(\p{L})/gu, (_, sep: string, letter: string) => sep + letter.toUpperCase()) : undefined;
+}
+
 export function createTelnyxProvider(cfg: TelnyxConfig): VoiceProvider {
   if (!cfg.apiKey) throw new Error("TELNYX_API_KEY is required in live mode");
   if (!cfg.connectionId) throw new Error("TELNYX_CONNECTION_ID is required in live mode");
@@ -280,7 +289,7 @@ export function createTelnyxProvider(cfg: TelnyxConfig): VoiceProvider {
         .filter((n) => !endsWith || n.phone_number.endsWith(endsWith))
         .map((n) => ({
           e164: n.phone_number,
-          locality: n.region_information?.find((r) => r.region_type === "rate_center")?.region_name,
+          locality: placeName(n.region_information?.find((r) => r.region_type === "rate_center")?.region_name),
           region: n.region_information?.find((r) => r.region_type === "state")?.region_name,
           nearby: Boolean(n.best_effort),
         }))

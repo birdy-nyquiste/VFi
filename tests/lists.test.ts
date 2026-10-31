@@ -1,12 +1,13 @@
+import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { callResults, calls, callVoicemail, contacts, messages, type Call } from "@/db/schema";
+import { agents, callResults, calls, callVoicemail, contacts, messages, phoneNumbers, type Call } from "@/db/schema";
 import { listHref, readPage, singleValues } from "@/lib/list-params";
 import { applyLedger } from "@/server/billing/ledger";
 import { listLedger } from "@/server/billing/payments";
-import { findUserCalls } from "@/server/calls/list";
-import { listConversations } from "@/server/messages";
-import { makeLine, makeUser, resetDb } from "./helpers";
+import { callFilterOptions, findUserCalls } from "@/server/calls/list";
+import { listConversations, messageFilterNumbers } from "@/server/messages";
+import { addNumber, makeLine, makeUser, resetDb } from "./helpers";
 
 beforeEach(resetDb);
 
@@ -186,5 +187,52 @@ describe("billing activity", () => {
     expect(topups.total).toBe(8);
     expect(topups.entries.every((e) => e.kind === "topup")).toBe(true);
     expect((await listLedger(user.id, { page: 2 })).entries).toHaveLength(2);
+  });
+});
+
+describe("filter options", () => {
+  it("offers deleted Assistants and released numbers that calls were on, marked as gone", async () => {
+    const { user, agent, number } = await makeLine();
+    const [old] = await db
+      .insert(agents)
+      .values({ userId: user.id, name: "Old desk", instructions: "x", greeting: "x", language: "en", voiceRef: "v", status: "ready", deletedAt: new Date() })
+      .returning();
+    await db
+      .insert(agents)
+      .values({ userId: user.id, name: "Never used", instructions: "x", greeting: "x", language: "en", voiceRef: "v", status: "ready", deletedAt: new Date() });
+    const released = await addNumber(user.id);
+    await db.update(phoneNumbers).set({ status: "released" }).where(eq(phoneNumbers.id, released.id));
+    await addNumber(user.id).then((n) => db.update(phoneNumbers).set({ status: "released" }).where(eq(phoneNumbers.id, n.id)));
+    await db.insert(calls).values({
+      userId: user.id,
+      agentId: old.id,
+      phoneNumberId: released.id,
+      direction: "inbound",
+      fromNumber: "+12025550100",
+      toNumber: released.e164,
+    });
+
+    const { agents: a, numbers: n } = await callFilterOptions(user.id);
+    expect(a.map((o) => [o.label, o.gone])).toEqual([["Test agent", false], ["Old desk", true]]);
+    expect(n.map((o) => [o.id, o.gone])).toEqual([[number.id, false], [released.id, true]]);
+    expect(a.map((o) => o.id)).toContain(agent.id);
+    // Another user's calls never add options.
+    expect((await callFilterOptions((await makeUser()).id)).agents).toEqual([]);
+  });
+
+  it("offers a released number that still has texts, once per number", async () => {
+    const { user, number } = await makeLine();
+    const released = await addNumber(user.id);
+    await db.update(phoneNumbers).set({ status: "released" }).where(eq(phoneNumbers.id, released.id));
+    await db.insert(messages).values({
+      userId: user.id,
+      phoneNumberId: released.id,
+      fromNumber: "+12025550100",
+      toNumber: released.e164,
+      body: "hi",
+      providerMessageId: "old-1",
+      receivedAt: new Date(),
+    });
+    expect((await messageFilterNumbers(user.id)).map((o) => [o.id, o.gone])).toEqual([[number.id, false], [released.id, true]]);
   });
 });

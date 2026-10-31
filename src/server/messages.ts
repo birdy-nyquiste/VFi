@@ -156,6 +156,30 @@ export async function listConversations(
   return { conversations, total, page: shown };
 }
 
+/**
+ * The numbers the Messages filter offers: the active ones, plus any released number that still has texts, so
+ * every number a conversation shows can be filtered by. One per phone number, preferring the active one.
+ */
+export async function messageFilterNumbers(userId: string): Promise<{ id: string; e164: string; gone: boolean }[]> {
+  const rows = await db
+    .select({ id: phoneNumbers.id, e164: phoneNumbers.e164, gone: sql<boolean>`${phoneNumbers.status} <> 'active'` })
+    .from(phoneNumbers)
+    .where(
+      and(
+        eq(phoneNumbers.userId, userId),
+        or(
+          eq(phoneNumbers.status, "active"),
+          inArray(
+            phoneNumbers.id,
+            db.select({ id: messages.phoneNumberId }).from(messages).where(and(eq(messages.userId, userId), isNull(messages.deletedAt))),
+          ),
+        ),
+      ),
+    )
+    .orderBy(sql`${phoneNumbers.status} <> 'active'`, phoneNumbers.createdAt, phoneNumbers.id);
+  return rows.filter((n, i) => rows.findIndex((m) => m.e164 === n.e164) === i);
+}
+
 /** Texts from senders whose name contains `search`, or whose number contains its digits. */
 async function senderMatches(userId: string, search: string): Promise<SQL> {
   const digits = search.replace(/\D/g, "");

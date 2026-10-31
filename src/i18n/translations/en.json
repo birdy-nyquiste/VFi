@@ -23,7 +23,8 @@
     "listRange": "{from}–{to} of {total}",
     "pages": "Pages",
     "previousPage": "Previous page",
-    "nextPage": "Next page"
+    "nextPage": "Next page",
+    "numberReleased": "{number} (released)"
   },
   "languages": {
     "en": "English",
@@ -488,7 +489,8 @@
       "7d": "Last 7 days",
       "30d": "Last 30 days"
     },
-    "searchDigitsOnly": "Calls can only be searched by number. Type some of its digits."
+    "searchDigitsOnly": "Calls can only be searched by number. Type some of its digits.",
+    "agentDeleted": "{name} (deleted)"
   },
   "messages": {
     "title": "Messages",

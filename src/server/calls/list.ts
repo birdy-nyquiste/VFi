@@ -1,7 +1,7 @@
 import "server-only";
-import { and, asc, count, desc, eq, isNull, like, not, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull, like, not, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
-import { agents, callDirection, calls } from "@/db/schema";
+import { agents, callDirection, calls, phoneNumbers } from "@/db/schema";
 import { CALL_BADGES, type CallBadge } from "@/lib/call-fields";
 import { clampPage, oneOf, PAGE_SIZE, readPage } from "@/lib/list-params";
 import { markedAs } from "@/server/call-results";
@@ -65,6 +65,44 @@ export function readCallList(params: CallListParams, ctx: { agentIds: string[]; 
     sort: sort === "newest" ? undefined : sort,
   };
   return { filters, sort, page: readPage(params.page), shown, filtered: FILTER_PARAMS.some((k) => shown[k]) };
+}
+
+/** An Assistant or number the calls list can filter by; `gone` when it was deleted or released since. */
+export interface FilterOption {
+  id: string;
+  label: string;
+  gone: boolean;
+}
+
+/**
+ * What the Assistant and number filters offer: the current Assistants and active numbers, plus any deleted
+ * Assistant or released number that the user's calls were on, so every value the list shows can be filtered by.
+ */
+export async function callFilterOptions(userId: string): Promise<{ agents: FilterOption[]; numbers: FilterOption[] }> {
+  const visibleCalls = and(eq(calls.userId, userId), isNull(calls.deletedAt));
+  const [agentRows, numberRows] = await Promise.all([
+    db
+      .select({ id: agents.id, label: agents.name, gone: sql<boolean>`${agents.deletedAt} is not null` })
+      .from(agents)
+      .where(
+        and(
+          eq(agents.userId, userId),
+          or(isNull(agents.deletedAt), inArray(agents.id, db.select({ id: calls.agentId }).from(calls).where(visibleCalls))),
+        ),
+      )
+      .orderBy(sql`${agents.deletedAt} is not null`, agents.createdAt, agents.id),
+    db
+      .select({ id: phoneNumbers.id, label: phoneNumbers.e164, gone: sql<boolean>`${phoneNumbers.status} <> 'active'` })
+      .from(phoneNumbers)
+      .where(
+        and(
+          eq(phoneNumbers.userId, userId),
+          or(eq(phoneNumbers.status, "active"), inArray(phoneNumbers.id, db.select({ id: calls.phoneNumberId }).from(calls).where(visibleCalls))),
+        ),
+      )
+      .orderBy(sql`${phoneNumbers.status} <> 'active'`, phoneNumbers.createdAt, phoneNumbers.id),
+  ]);
+  return { agents: agentRows, numbers: numberRows };
 }
 
 const ORDER: Record<CallSort, SQL[]> = {

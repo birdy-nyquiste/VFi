@@ -23,7 +23,8 @@
     "listRange": "{from}–{to} de {total}",
     "pages": "Páginas",
     "previousPage": "Página anterior",
-    "nextPage": "Página siguiente"
+    "nextPage": "Página siguiente",
+    "numberReleased": "{number} (liberado)"
   },
   "languages": {
     "en": "Inglés",
@@ -488,7 +489,8 @@
       "7d": "Últimos 7 días",
       "30d": "Últimos 30 días"
     },
-    "searchDigitsOnly": "Las llamadas solo se pueden buscar por número. Escribe algunos de sus dígitos."
+    "searchDigitsOnly": "Las llamadas solo se pueden buscar por número. Escribe algunos de sus dígitos.",
+    "agentDeleted": "{name} (eliminado)"
   },
   "messages": {
     "title": "Mensajes",

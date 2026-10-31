@@ -1,7 +1,7 @@
 import { generateKeyPairSync, sign } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_BEHAVIOR } from "@/lib/agent-settings";
-import { createTelnyxProvider, HANGUP_TOOL_DESCRIPTION } from "@/server/telnyx/live";
+import { createTelnyxProvider, HANGUP_TOOL_DESCRIPTION, placeName } from "@/server/telnyx/live";
 import { MOCK_MODELS, toOfferedModels } from "@/server/telnyx/models";
 import { MOCK_CATALOG } from "@/server/telnyx/stock-voices";
 import { FeatureNotPermittedError } from "@/server/telnyx/types";
@@ -122,6 +122,15 @@ describe("number search", () => {
   it("says a trial account can't search by ending digits", async () => {
     respond(403, { errors: [{ code: "10039", title: "Feature limited" }] });
     await expect(provider.searchNumbers({ endsWith: "2026" })).rejects.toMatchObject({ key: "endingSearchUnavailable" });
+  });
+
+  it("writes places as people do, not in Telnyx's capitals", () => {
+    expect(placeName("SAN FRANCISCO:MONTROSE-EVERGREEN DA")).toBe("San Francisco");
+    expect(placeName("POINT REYES")).toBe("Point Reyes");
+    expect(placeName("WINSTON-SALEM")).toBe("Winston-Salem");
+    expect(placeName("COEUR D'ALENE")).toBe("Coeur D'Alene");
+    expect(placeName("")).toBeUndefined();
+    expect(placeName(undefined)).toBeUndefined();
   });
 
   it("asks for the ending and drops results that don't have it", async () => {

@@ -8,7 +8,7 @@ import { listHref, readPage, singleValues } from "@/lib/list-params";
 import { config } from "@/lib/config";
 import { formatCents, formatDateTime, formatPhone } from "@/lib/format";
 import { requireUser } from "@/server/auth";
-import { listConversations } from "@/server/messages";
+import { listConversations, messageFilterNumbers } from "@/server/messages";
 import { listUserNumbers } from "@/server/numbers";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { messagePreview, threadHref } from "./format";
@@ -26,12 +26,13 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
   const user = await requireUser();
   const params = singleValues(await searchParams);
   const { number } = params;
-  const numbers = await listUserNumbers(user.id);
+  const [numbers, options] = await Promise.all([listUserNumbers(user.id), messageFilterNumbers(user.id)]);
   const activeNumbers = activeNumbersByAge(numbers);
   const active = activeNumbers[0];
   // Conversations say which of the user's numbers they were sent to, and can be filtered by it, once there's more than one.
-  const showNumbers = activeNumbers.length > 1;
-  const filter = showNumbers && number && isUuid(number) ? activeNumbers.find((n) => n.id === number) : undefined;
+  // Released numbers that still have texts count too, so every number a conversation shows can be filtered by.
+  const showNumbers = options.length > 1;
+  const filter = showNumbers && number && isUuid(number) ? options.find((n) => n.id === number) : undefined;
   const search = params.q?.trim() || undefined;
   const unreadOnly = params.unread === "1";
   const oldestFirst = params.sort === "oldest";
@@ -53,7 +54,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
       <AutoRefresh everyMs={10_000} maxMs={Infinity} />
       <PageHeader
         title={t("title")}
-        description={t(showNumbers ? "descriptionMany" : "description", { price: formatCents(config.pricing.smsInboundPerPartCents, locale) })}
+        description={t(activeNumbers.length > 1 ? "descriptionMany" : "description", { price: formatCents(config.pricing.smsInboundPerPartCents, locale) })}
       />
 
       {!config.features.inboundSms ? (
@@ -100,7 +101,11 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
               label={tc("filterByNumber")}
               chips={[
                 { href: href({ number: undefined }), label: tc("allNumbers"), active: !filter },
-                ...activeNumbers.map((n) => ({ href: href({ number: n.id }), label: formatPhone(n.e164), active: filter?.id === n.id })),
+                ...options.map((n) => ({
+                href: href({ number: n.id }),
+                label: n.gone ? tc("numberReleased", { number: formatPhone(n.e164) }) : formatPhone(n.e164),
+                active: filter?.id === n.id,
+              })),
               ]}
             />
           )}

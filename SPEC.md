@@ -247,6 +247,7 @@ Fixed retail prices, configurable. Telnyx's cost is recorded separately and neve
   number in the area code has the ending, the search runs again across the US and says so. Results that don't
   end in the digits are dropped. Telnyx trial accounts can't use this filter (error 10039, shown as "not available
   on this account"); production is a paid account. Mock mode: area code 998 has no numbers, 999 only nearby ones.
+- Results show the place in normal capitals ("San Francisco", not Telnyx's "SAN FRANCISCO:MONTROSE-EVERGREEN DA").
 - Buying charges the first month up front; renewal is charged every 30 days by the daily job. A number order is
   pending until Telnyx reports it active; a failed order is refunded.
 - Each number has at most one Assistant. Without one, calls to it are rejected.
@@ -398,7 +399,9 @@ When platform model settings change, existing Assistants are re-synced automatic
 - **Filters:** direction; status (Initiated, Answered, Completed, Reached voicemail, Rejected, Failed: every status
   the list shows; a voicemail call is stored as completed but listed only under Reached voicemail, §9.3); Assistant
   (with more than one); time (today in the viewer's time zone, last 7 or 30 days); the user's number (with more
-  than one, §9.1); the Urgent and Follow-up marks (§9.2).
+  than one, §9.1); the Urgent and Follow-up marks (§9.2), once a call has one.
+- The Assistant and number filters offer every value the list can show: the current Assistants and active numbers,
+  plus deleted Assistants ("(deleted)") and released numbers ("(released)") that calls were on.
 - Search, filters, sort and page are in the address, so Back, reload and auto-refresh keep the view. Changing a
   filter goes back to page 1; a page past the end shows the last page.
 
@@ -415,7 +418,7 @@ Messages page. Typical uses: verification codes, a message from someone who coul
 
 The Messages list shows 15 conversations per page, by their latest text, newest or oldest first. It can be
 searched by the name the user gave a sender or by digits in the sender's number, and filtered to unread ones and
-(with several numbers) by the number texted.
+(with several numbers) by the number texted, including a released number that still has texts.
 
 ### Rules
 
@@ -843,6 +846,7 @@ Newest first. Each line points to where the rule now lives.
 
 | Date | Decision | Section |
 | --- | --- | --- |
+| 2026-10-31 | List filters include deleted Assistants and released numbers the list shows; number search shows places without all caps | §4, §6.4, §7 |
 | 2026-10-31 | Assistant page in tabs, one per card; Save and Delete in a bar outside the tabs | §5.1 |
 | 2026-10-31 | Calls, Messages and Billing activity get search, filters, sorting and 15-row pages; the status filter lists every status a call shows, voicemail included | §3.2, §6.4, §7 |
 | 2026-10-31 | Number search by the last 1–4 digits, widening to the whole US when the area code has none | §4 |

@@ -23,7 +23,8 @@
     "listRange": "第 {from}–{to} 条，共 {total} 条",
     "pages": "分页",
     "previousPage": "上一页",
-    "nextPage": "下一页"
+    "nextPage": "下一页",
+    "numberReleased": "{number}（已释放）"
   },
   "languages": {
     "en": "英语",
@@ -488,7 +489,8 @@
       "7d": "最近 7 天",
       "30d": "最近 30 天"
     },
-    "searchDigitsOnly": "通话只能按号码搜索，请输入号码中的几位数字。"
+    "searchDigitsOnly": "通话只能按号码搜索，请输入号码中的几位数字。",
+    "agentDeleted": "{name}（已删除）"
   },
   "messages": {
     "title": "短信",

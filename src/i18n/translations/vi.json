@@ -23,7 +23,8 @@
     "listRange": "{from}–{to} trên {total}",
     "pages": "Trang",
     "previousPage": "Trang trước",
-    "nextPage": "Trang sau"
+    "nextPage": "Trang sau",
+    "numberReleased": "{number} (đã trả lại)"
   },
   "languages": {
     "en": "Tiếng Anh",
@@ -488,7 +489,8 @@
       "7d": "7 ngày qua",
       "30d": "30 ngày qua"
     },
-    "searchDigitsOnly": "Chỉ có thể tìm cuộc gọi theo số. Hãy nhập vài chữ số của số đó."
+    "searchDigitsOnly": "Chỉ có thể tìm cuộc gọi theo số. Hãy nhập vài chữ số của số đó.",
+    "agentDeleted": "{name} (đã xóa)"
   },
   "messages": {
     "title": "Tin nhắn",
