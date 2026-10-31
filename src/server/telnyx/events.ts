@@ -9,6 +9,8 @@ const KNOWN: CallEventType[] = [
   "call.conversation.created",
   "call.conversation.start_failed",
   "call.cost",
+  "call.conversation.ended",
+  "call.machine.premium.detection.ended",
 ];
 
 function date(v: unknown): Date | undefined {
@@ -120,5 +122,6 @@ export function parseCallEnvelope(body: unknown): CallEvent {
     conversationId: str(p.conversation_id),
     failureReason: str(p.reason),
     totalCostUsd: str(p.total_cost),
+    machineResult: str(p.result),
   };
 }

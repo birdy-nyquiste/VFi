@@ -265,6 +265,11 @@ export const mockProvider: VoiceProvider = {
         if (c) c.answeredAt = new Date();
         void emit("call.answered", id);
         scheduleEnd(id, (MOCK_CALL_SECONDS * 1000) / TIME_SCALE);
+        if (to.endsWith("1111")) {
+          // Test convention: numbers ending in 1111 reach voicemail; the assistant (if it leaves a message) is done 3 s later.
+          void emit("call.machine.premium.detection.ended", id, { result: "machine" }, 800);
+          void emit("call.conversation.ended", id, {}, 3000);
+        }
       }, 1500);
     }
     return { callControlId: id, callSessionId: state.calls.get(id)!.sessionId };

@@ -10,6 +10,10 @@ export const MAX_CALL_MINUTES = [5, 10, 15, 30] as const;
 export const SILENCE_HANGUP_SECS = [0, 30, 60] as const;
 export const VOICE_SPEED = { min: 0.8, max: 1.2, step: 0.05 } as const;
 export const MAX_KEY_TERMS_LENGTH = 1000;
+export const MAX_VOICEMAIL_MESSAGE_LENGTH = 500;
+/** What the agent does when a call it places reaches voicemail (SPEC §9.3). */
+export const VOICEMAIL_ACTIONS = ["hangup", "message", "continue"] as const;
+export type VoicemailAction = (typeof VOICEMAIL_ACTIONS)[number];
 export const DEFAULT_TIME_ZONE = "America/New_York";
 
 export function isTimeZone(tz: string): boolean {
@@ -42,6 +46,9 @@ export const agentBehavior = z.object({
   endCallWhenDone: z.boolean().catch(true),
   maxCallMinutes: oneOf(MAX_CALL_MINUTES, 30),
   silenceHangupSecs: oneOf(SILENCE_HANGUP_SECS, 60),
+  voicemailAction: z.enum(VOICEMAIL_ACTIONS).catch("hangup"),
+  /** Said word for word after the beep when voicemailAction is "message". */
+  voicemailMessage: z.string().trim().max(MAX_VOICEMAIL_MESSAGE_LENGTH).catch(""),
   /** IANA zone {{current_time}} is given in. */
   timeZone: z.string().refine(isTimeZone).catch(DEFAULT_TIME_ZONE),
 });

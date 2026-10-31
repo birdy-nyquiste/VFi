@@ -39,6 +39,7 @@ import {
 import { config } from "@/lib/config";
 import { UserError, type ErrorKey } from "@/lib/errors";
 import { formatCallerNumber, formatDuration, formatPhone } from "@/lib/format";
+import { getCallVoicemail } from "./calls/voicemail";
 import { sendEmail } from "./email";
 import { voiceProvider, type CallResults } from "./telnyx";
 
@@ -179,6 +180,8 @@ export async function insightIdsFor(call: Pick<Call, "agentId">): Promise<{ summ
  */
 export async function deliverCallResults(call: Call, results: CallResults | null): Promise<void> {
   if (call.status !== "completed" || !call.agentId || !(await callResultsTablesExist())) return;
+  // A call that reached voicemail had no conversation to report on (SPEC §9.3).
+  if (await getCallVoicemail(call.id)) return;
   const [agent] = await db.select().from(agents).where(eq(agents.id, call.agentId));
   if (!agent) return;
   const settingsRow = await getAgentResultsRow(agent.id);

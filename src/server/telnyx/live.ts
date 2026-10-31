@@ -1,5 +1,5 @@
 import { createPublicKey, verify } from "node:crypto";
-import { RESPONSE_TIMING } from "@/lib/agent-settings";
+import { RESPONSE_TIMING, type VoicemailAction } from "@/lib/agent-settings";
 import { config } from "@/lib/config";
 import { stored } from "@/lib/stored-text";
 import { encodeClientState, parseTelnyxEnvelope } from "./events";
@@ -33,6 +33,14 @@ const KNOWLEDGE_RESULTS = 3;
 /** Shown to the model as the hangup tool's description: when it may end the call. */
 export const HANGUP_TOOL_DESCRIPTION =
   "End the call once the conversation is complete: the caller has said goodbye, or there is nothing left to do and you have said goodbye.";
+/** telephony_settings.voicemail_detection.on_voicemail_detected for each of our choices. */
+const VOICEMAIL_DETECTED: Record<VoicemailAction, (message: string) => Record<string, unknown>> = {
+  // Stopping the assistant doesn't end the call; we hang up when the detection webhook arrives.
+  hangup: () => ({ action: "stop_assistant" }),
+  // We hang up once the conversation (the message) has ended.
+  message: (message) => ({ action: "leave_message_and_stop_assistant", voicemail_message: { type: "message", message } }),
+  continue: () => ({ action: "continue_assistant" }),
+};
 /** 100 messages per page; a 30-minute call stays well under this. */
 const MAX_MESSAGE_PAGES = 10;
 // DER prefix that wraps a raw 32-byte Ed25519 key as SPKI.
@@ -160,6 +168,8 @@ export function createTelnyxProvider(cfg: TelnyxConfig): VoiceProvider {
         // Calls are recorded by our answer/dial commands. The assistant's own recording is on by
         // default and produced a second, duplicate recording on outbound calls.
         recording_settings: { enabled: false },
+        // Applies only to calls dialed with answering machine detection (dial below), so outbound only.
+        voicemail_detection: { on_voicemail_detected: VOICEMAIL_DETECTED[b.voicemailAction](b.voicemailMessage) },
       },
       ...((spec.insightGroupId ?? cfg.insightGroupId) ? { insight_settings: { insight_group_id: spec.insightGroupId ?? cfg.insightGroupId } } : {}),
     };
@@ -425,6 +435,9 @@ export function createTelnyxProvider(cfg: TelnyxConfig): VoiceProvider {
         to,
         client_state: encodeClientState(clientState),
         timeout_secs: 30,
+        // Premium detection, as Telnyx recommends for its assistants; its result arrives as
+        // call.machine.premium.detection.ended and the assistant acts on voicemail_detection.
+        answering_machine_detection: "premium",
         ...recordOpts,
       });
       return { callControlId: res.data.call_control_id, callSessionId: res.data.call_session_id };

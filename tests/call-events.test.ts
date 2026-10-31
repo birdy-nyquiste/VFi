@@ -5,6 +5,7 @@ import { agents, calls, ledgerEntries, phoneNumbers, users } from "@/db/schema";
 import { showStored } from "@/lib/stored-text";
 import { callAgentName, deleteCallRecord, startOutboundCall } from "@/server/calls";
 import { handleCallEvent } from "@/server/calls/events";
+import { getCallVoicemail } from "@/server/calls/voicemail";
 import { reopenCallsMissingSummary } from "@/server/calls/backfill";
 import { fetchCallResults } from "@/server/calls/results";
 import { isAwaitingResults, RESULTS_WAIT_MS } from "@/server/calls/state";
@@ -298,6 +299,66 @@ describe("outbound calls", () => {
     const vars = vi.mocked(mockProvider.startAssistant).mock.calls[0][1].variables;
     expect(vars).toMatchObject({ owner_name: "Alex", callback_number: "+12025550111", call_direction: "outbound" });
     expect(vars.current_time).toMatch(/GMT\+9/);
+  });
+});
+
+describe("outbound calls that reach voicemail", () => {
+  async function answeredCall(behavior: Record<string, unknown>) {
+    const { user, agent, number } = await makeLine(1000);
+    await db.update(agents).set({ behavior }).where(eq(agents.id, agent.id));
+    const [c] = await db
+      .insert(calls)
+      .values({ userId: user.id, agentId: agent.id, phoneNumberId: number.id, direction: "outbound", fromNumber: number.e164, toNumber: "+14155551111", providerCallControlId: "cc-vm" })
+      .returning();
+    const t0 = new Date("2026-10-31T10:00:00Z");
+    await handleCallEvent(event("call.answered", { callControlId: "cc-vm", clientState: c.id, occurredAt: t0 }));
+    return { c, t0 };
+  }
+  const voicemailOf = async (ccid: string) => getCallVoicemail((await callByCcid(ccid)).id);
+  const detected = (result: string, id = `amd-${result}`) =>
+    event("call.machine.premium.detection.ended", { id, callControlId: "cc-vm", machineResult: result });
+
+  it("hangs up on voicemail by default, and bills the seconds connected as usual", async () => {
+    const { c, t0 } = await answeredCall({});
+    await handleCallEvent(detected("machine"));
+    expect(mockProvider.hangup).toHaveBeenCalledWith("cc-vm");
+    expect(await voicemailOf("cc-vm")).toBe("hangup");
+
+    await handleCallEvent(event("call.hangup", { callControlId: "cc-vm", clientState: c.id, hangupCause: "normal_clearing", occurredAt: new Date(t0.getTime() + 5_000) }));
+    expect(await callByCcid("cc-vm")).toMatchObject({ status: "completed", durationSec: 5, billedCents: 15, outcome: null });
+  });
+
+  it("leaves the message, then hangs up when the assistant is done", async () => {
+    await answeredCall({ voicemailAction: "message", voicemailMessage: "Please call us back." });
+    await handleCallEvent(detected("machine"));
+    expect(mockProvider.hangup).not.toHaveBeenCalled();
+    expect(await voicemailOf("cc-vm")).toBe("message");
+    await handleCallEvent(event("call.conversation.ended", { callControlId: "cc-vm" }));
+    expect(mockProvider.hangup).toHaveBeenCalledWith("cc-vm");
+  });
+
+  it("keeps talking when set to, and only records that it reached voicemail", async () => {
+    await answeredCall({ voicemailAction: "continue" });
+    await handleCallEvent(detected("machine"));
+    await handleCallEvent(event("call.conversation.ended", { callControlId: "cc-vm" }));
+    expect(mockProvider.hangup).not.toHaveBeenCalled();
+    expect(await voicemailOf("cc-vm")).toBe("continue");
+  });
+
+  it("does nothing when a person answers", async () => {
+    await answeredCall({});
+    for (const result of ["human_residence", "human_business", "silence"]) await handleCallEvent(detected(result));
+    await handleCallEvent(event("call.conversation.ended", { callControlId: "cc-vm" }));
+    expect(mockProvider.hangup).not.toHaveBeenCalled();
+    expect(await voicemailOf("cc-vm")).toBeNull();
+  });
+
+  it("hangs up again when the webhook is retried after a failed hangup", async () => {
+    await answeredCall({});
+    vi.mocked(mockProvider.hangup).mockRejectedValueOnce(new Error("timeout"));
+    await expect(handleCallEvent(detected("machine"))).rejects.toThrow("timeout");
+    await handleCallEvent(detected("machine"));
+    expect(mockProvider.hangup).toHaveBeenCalledTimes(2);
   });
 });
 

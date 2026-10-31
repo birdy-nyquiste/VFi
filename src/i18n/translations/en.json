@@ -236,7 +236,16 @@
     "undefinedVariables": "The Assistant will read {names} as written, because no variable fills it in. Add it under Variables or fix the spelling.",
     "stt": "Speech recognition",
     "tts": "Text-to-speech",
-    "setByVoice": " · set by the voice"
+    "setByVoice": " · set by the voice",
+    "voicemailAction": "If a call it places reaches voicemail",
+    "voicemailHangup": "Hang up",
+    "voicemailMessage": "Leave a message, then hang up",
+    "voicemailContinue": "Keep talking",
+    "voicemailHangupHint": "The Assistant hangs up without saying anything.",
+    "voicemailMessageHint": "The Assistant waits for the beep, leaves your message and hangs up.",
+    "voicemailContinueHint": "The Assistant carries on as if a person answered. Rarely useful.",
+    "voicemailMessageLabel": "Message to leave",
+    "voicemailMessageLabelHint": "Said once after the beep, word for word, in the Assistant's voice."
   },
   "agentTemplates": {
     "pick": "Pick a starting point. You can change everything before you create the Assistant.",
@@ -424,7 +433,11 @@
     "callFrom": "Call from",
     "colYourNumber": "Your number",
     "emptyForNumber": "No calls on this number yet.",
-    "yourNumber": "Your number {number}"
+    "yourNumber": "Your number {number}",
+    "voicemailBadge": "Reached voicemail",
+    "voicemailHangup": "Reached voicemail. The Assistant hung up.",
+    "voicemailMessage": "Reached voicemail. The Assistant left your message and hung up.",
+    "voicemailContinue": "Reached voicemail. The Assistant kept talking."
   },
   "messages": {
     "title": "Messages",
@@ -684,7 +697,9 @@
     "tooManyFields": "An Assistant can record up to {max} call results.",
     "fieldNameDuplicate": "Two call results are named \"{name}\". Give each a different name.",
     "fieldNeedsOptions": "\"{name}\" is \"One of\": give it at least 2 options.",
-    "tagTooLong": "Keep the tag under {max} characters."
+    "tagTooLong": "Keep the tag under {max} characters.",
+    "voicemailMessageRequired": "Write the message to leave on voicemail, or pick another option.",
+    "voicemailMessageTooLong": "The voicemail message is too long. Keep it under 500 characters."
   },
   "comingSoon": {
     "title": "Coming soon",

@@ -185,6 +185,10 @@ https://developers.telnyx.com/api-reference/call-commands/dial
 - Useful: `client_state`, `webhook_url`, `timeout_secs` (default 30, 5–600), `time_limit_secs` (default 14400, 30–14400),
   `answering_machine_detection`, `record: "record-from-answer"`, `record_format` (`wav|mp3`, default mp3), `record_channels`
   (`single|dual`, default dual), `record_track`, `record_max_length`, `command_id`, `from_display_name`.
+- `answering_machine_detection`: `premium` | `premium_ios_call_screening_detection` | `detect` | `detect_beep` |
+  `detect_words` | `greeting_end` | `disabled` (default). VFi sends `premium` on every dial (SPEC §9.3). Premium's
+  result arrives as `call.machine.premium.detection.ended` with `result` `human_residence|human_business|machine|
+  silence|fax_detected`. Price: $0.0065 per call (standard $0.002), from the Call Control pricing page 2026-10-31.
 - An `assistant` object is accepted (same overrides as answer). Whether it starts the Assistant on answer:
   **UNCONFIRMED**. VFi dials without it and calls `ai_assistant_start` once the call is answered.
 - Response `data`: `call_control_id`, `call_leg_id`, `call_session_id`, `is_alive`, `recording_id` (with `record`),
@@ -259,6 +263,7 @@ Common payload: `call_control_id`, `call_leg_id`, `call_session_id`, `connection
 | `call.conversation.ended` | `assistant_id`, `conversation_id`, `duration_sec`, `reason`, `calling_party_type`, `llm_model`, `stt_model`, `tts_provider`, `tts_model_id`, `tts_voice_id` |
 | `call.conversation_insights.generated` | `insight_group_id`, `results[] {insight_id, result}`, `calling_party_type` |
 | `call.ai_gather.message_history_updated` | full `message_history[]` each time (only with `send_message_history_updates`) |
+| `call.machine.premium.detection.ended` | `result` (see Dial, §4); only on calls dialed with premium detection |
 | `call.cost` | see §6 |
 
 - **`call.hangup` has no `end_time`;** use `data.occurred_at`.
@@ -352,6 +357,9 @@ Payload: `call_control_id`, `call_leg_id`, `call_session_id`, `client_state`, `t
   (`aicoustics|krisp|deepfilternet|disabled`), `time_limit_secs` (default 1800), `user_idle_timeout_secs`,
   `user_idle_reply_secs` (default 10), `fallback_destination`, `send_message_history_updates`,
   `voicemail_detection`, `disable_dtmf`, `recording_settings`.
+- `voicemail_detection` (outbound only; applies only when the dial enabled AMD): `on_voicemail_detected {action:
+  stop_assistant|leave_message_and_stop_assistant|continue_assistant, voicemail_message {type: prompt|message,
+  prompt, message}}`. Telnyx recommends Premium AMD with it. Stopping the assistant doesn't hang up the call.
 - Other: `description`, `tool_ids`, `tools` (inline, **deprecated**), `mcp_servers`, `llm_api_key_ref`,
   `external_llm`, `fallback_config`, `dynamic_variables_webhook_url`, `post_conversation_settings`,
   `messaging_settings`, `websocket_settings`, `conversation_flow`, `privacy_settings {data_retention}` (false = no
@@ -736,6 +744,7 @@ Collected from the sections above.
 | Canonical endpoint for putting a number on a messaging profile | §12 |
 | Unregistered-traffic carrier fee on received texts; 10DLC monthly fees | §12 |
 | `bucket_ids` takes bucket names | §13 |
+| `voicemail_detection` applies when the assistant starts with `ai_assistant_start`; `call.conversation.ended` follows the voicemail message | §7 |
 | Knowledge-base retention, vector deletion, crawl billing (support questions) | §13 |
 
 ---

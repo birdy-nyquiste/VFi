@@ -12,6 +12,7 @@ import { isElevenLabsVoice } from "@/server/telnyx/stock-voices";
 import { withWebhookDedupe } from "@/server/webhooks";
 import { fetchCallResultsSoon } from "./results";
 import { callRef, failedCallFields, hasOtherActiveCall } from "./state";
+import { getCallVoicemail, recordVoicemail } from "./voicemail";
 
 /**
  * Process one provider call event. Safe to call repeatedly with the same
@@ -35,6 +36,10 @@ export async function handleCallEvent(event: CallEvent): Promise<void> {
         return onAssistantStartFailed(event);
       case "call.cost":
         return onCallCost(event);
+      case "call.machine.premium.detection.ended":
+        return onMachineDetected(event);
+      case "call.conversation.ended":
+        return onConversationEnded(event);
     }
   });
 }
@@ -243,6 +248,31 @@ async function onAssistantStartFailed(e: CallEvent) {
   console.error("Assistant failed to start", call.id, e.failureReason);
   // The call stays answered on the provider side; hang up so the caller isn't left in silence.
   await endWithoutCharge(call, stored("outcomeAgentFailed"));
+}
+
+/**
+ * Answering machine detection finished on a call we placed. On voicemail, record what the agent does
+ * there (its setting now) and, for "hangup", end the call: the provider only stops the assistant.
+ * "message" ends in onConversationEnded once the message is left; "continue" goes on as a normal call.
+ */
+async function onMachineDetected(e: CallEvent) {
+  if (e.machineResult !== "machine") return;
+  const call = await findCall(e);
+  if (!call || call.direction !== "outbound" || call.endedAt) return;
+  const [agent] = call.agentId ? await db.select().from(agents).where(eq(agents.id, call.agentId)) : [];
+  // A retry (after a failed hangup) gets the action stored the first time.
+  const action = await recordVoicemail(call.id, readBehavior(agent?.behavior).voicemailAction);
+  // Hangup failures throw, so the webhook is retried.
+  const ccid = call.providerCallControlId ?? e.callControlId;
+  if (action === "hangup" && ccid) await voiceProvider().hangup(ccid);
+}
+
+/** The assistant has finished; on a call that reached voicemail, that means the message was left. */
+async function onConversationEnded(e: CallEvent) {
+  const call = await findCall(e);
+  if (!call || call.endedAt || (await getCallVoicemail(call.id)) !== "message") return;
+  const ccid = call.providerCallControlId ?? e.callControlId;
+  if (ccid) await voiceProvider().hangup(ccid);
 }
 
 /** Our side failed after the call connected: hang up and waive the charge. */

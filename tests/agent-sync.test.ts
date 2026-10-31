@@ -373,6 +373,21 @@ describe("agent behavior and variables", () => {
     await expect(createAgent(u.id, { ...input, behavior: { keyTerms: "x".repeat(1001) } })).rejects.toThrow(/Key terms are too long/);
   });
 
+  it("needs a voicemail message only when it leaves one, and keeps it short", async () => {
+    const u = await makeUser();
+    await expect(createAgent(u.id, { ...input, behavior: { voicemailAction: "message", voicemailMessage: "  " } })).rejects.toThrow(
+      /Write the message to leave on voicemail/,
+    );
+    await expect(createAgent(u.id, { ...input, behavior: { voicemailAction: "message", voicemailMessage: "x".repeat(501) } })).rejects.toThrow(
+      /voicemail message is too long/,
+    );
+    const create = vi.spyOn(mockProvider, "createAssistant");
+    await createAgent(u.id, { ...input, behavior: { voicemailAction: "continue", voicemailMessage: "" } });
+    expect(create.mock.calls[0][0].behavior).toMatchObject({ voicemailAction: "continue" });
+    // Agents saved before the setting existed hang up on voicemail.
+    expect(readBehavior({}).voicemailAction).toBe("hangup");
+  });
+
   it("sends the agent's variables as defaults", async () => {
     const u = await makeUser();
     const create = vi.spyOn(mockProvider, "createAssistant");

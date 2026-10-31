@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import { agentCallResults, callResults, calls } from "@/db/schema";
+import { agentCallResults, callResults, calls, callVoicemail } from "@/db/schema";
 import { DEFAULT_EMAIL_SETTINGS, readEmailSettings, renderCallEmail, sampleEmailData, unknownVariables, type EmailSettings } from "@/lib/call-email";
 import { callBadge, fieldsJsonSchema, fieldsProblem, parseFieldResults, type CallField } from "@/lib/call-fields";
 import { createAgent, updateAgent } from "@/server/agents";
@@ -250,6 +250,16 @@ describe("after a call", () => {
     const [rejected] = await db.select().from(calls).where(eq(calls.id, call.id));
     await fetchCallResults(rejected);
     expect(sent).toHaveLength(0);
+  });
+
+  it("neither stores fields nor emails for calls that reached voicemail", async () => {
+    const { call } = await setUp({ enabled: true });
+    await db.update(calls).set({ direction: "outbound" }).where(eq(calls.id, call.id));
+    await db.insert(callVoicemail).values({ callId: call.id, action: "message" });
+    const [voicemail] = await db.select().from(calls).where(eq(calls.id, call.id));
+    await fetchCallResults(voicemail);
+    expect(sent).toHaveLength(0);
+    expect(await db.select().from(callResults).where(eq(callResults.callId, call.id))).toHaveLength(0);
   });
 
   it("sends the email without a summary once the wait is over", async () => {

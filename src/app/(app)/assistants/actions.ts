@@ -28,6 +28,8 @@ function fields(form: FormData) {
       endCallWhenDone: checked("endCallWhenDone"),
       maxCallMinutes: form.get("maxCallMinutes"),
       silenceHangupSecs: form.get("silenceHangupSecs"),
+      voicemailAction: form.get("voicemailAction"),
+      voicemailMessage: form.get("voicemailMessage") ?? "",
       timeZone: form.get("timeZone"),
     },
     variables: variablesField(form.get("variables")),
