@@ -242,8 +242,11 @@ Fixed retail prices, configurable. Telnyx's cost is recorded separately and neve
 
 **Status: Built.** Up to 3 numbers per account, each its own line: §9.1.
 
-- US local numbers only (no toll-free), searched by area code; nearby area codes are offered when the code is
-  sold out.
+- US local numbers only (no toll-free), searched by area code, by the last 1–4 digits ("Ends with", Telnyx
+  `filter[phone_number][ends_with]`), or both. Nearby area codes are offered when the code is sold out. When no
+  number in the area code has the ending, the search runs again across the US and says so. Results that don't
+  end in the digits are dropped. Telnyx trial accounts can't use this filter (error 10039, shown as "not available
+  on this account"); production is a paid account. Mock mode: area code 998 has no numbers, 999 only nearby ones.
 - Buying charges the first month up front; renewal is charged every 30 days by the daily job. A number order is
   pending until Telnyx reports it active; a failed order is refunded.
 - Each number has at most one Assistant. Without one, calls to it are rejected.
@@ -833,6 +836,7 @@ Newest first. Each line points to where the rule now lives.
 | Date | Decision | Section |
 | --- | --- | --- |
 | 2026-10-31 | Calls, Messages and Billing activity get search, filters, sorting and 15-row pages; the status filter lists every status a call shows, voicemail included | §3.2, §6.4, §7 |
+| 2026-10-31 | Number search by the last 1–4 digits, widening to the whole US when the area code has none | §4 |
 | 2026-10-31 | Voicemail on calls the Assistant places: hang up (default), leave a fixed message, or keep talking; billed as usual; no results email except for Keep talking | §9.3 |
 | 2026-10-27 | Emails for calls the Assistant placed say "call to" and "Number called"; insight webhook confirmed on a real call | §9.2 |
 | 2026-10-27 | Kept from the A build: Outreach's "needs follow-up" field, a badge setting per yes/no field, no retry for failed emails, deleting an Assistant deletes its insight group; recipients may be any address | §9.2 |
