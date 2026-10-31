@@ -9,7 +9,7 @@ import { failureColumns, stored, type StoredText } from "@/lib/stored-text";
 import { applyLedger, chargePurchase, refundPurchase, type Purchase } from "./billing/ledger";
 import { enableInboundSms } from "./messages";
 import { voiceProvider } from "./telnyx";
-import { isDefiniteRejection, type NumberOrderResult } from "./telnyx/types";
+import { isDefiniteRejection, type AvailableNumber, type NumberOrderResult } from "./telnyx/types";
 
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 /**
@@ -48,9 +48,17 @@ export async function listRecentNegativeBalanceReleases(userId: string): Promise
   return released.filter((n) => n.failureMsg?.key === "stored.numberReleasedNegative");
 }
 
-export async function searchAvailableNumbers(areaCode: string) {
+/**
+ * Numbers to buy, by area code and/or the last 1–4 digits. Few numbers in one area code end in given digits,
+ * so when none do, the search runs again across the US and `widened` says so.
+ */
+export async function searchAvailableNumbers(areaCode: string, endsWith = ""): Promise<{ numbers: AvailableNumber[]; widened: boolean }> {
   if (areaCode && !/^\d{3}$/.test(areaCode)) throw new UserError("areaCodeDigits");
-  return voiceProvider().searchNumbers({ areaCode: areaCode || undefined, limit: 10 });
+  if (endsWith && !/^\d{1,4}$/.test(endsWith)) throw new UserError("endingDigits");
+  const search = (area?: string) => voiceProvider().searchNumbers({ areaCode: area, endsWith: endsWith || undefined, limit: 10 });
+  const numbers = await search(areaCode || undefined);
+  if (numbers.length > 0 || !areaCode || !endsWith) return { numbers, widened: false };
+  return { numbers: await search(), widened: true };
 }
 
 function numberPurchase(n: Pick<PhoneNumber, "id" | "userId" | "e164">): Purchase {

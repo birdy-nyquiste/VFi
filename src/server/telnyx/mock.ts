@@ -121,13 +121,19 @@ const TIME_SCALE = 15;
 export const mockProvider: VoiceProvider = {
   name: "mock",
 
-  async searchNumbers({ areaCode, limit = 10 }) {
-    const area = areaCode && /^\d{3}$/.test(areaCode) ? areaCode : "415";
+  async searchNumbers({ areaCode, endsWith = "", limit = 10 }) {
+    // So the sold-out messages can be seen: 998 has no numbers at all, 999 only nearby ones.
+    if (areaCode === "998") return [];
+    const nearby = areaCode === "999";
+    const area = nearby ? "628" : areaCode && /^\d{3}$/.test(areaCode) ? areaCode : "415";
+    // With an ending, the exchange varies instead, so the numbers stay distinct.
     return Array.from({ length: limit }, (_, i) => ({
-      e164: `+1${area}555${String(1000 + ((i * 137) % 9000)).padStart(4, "0")}`,
+      e164: endsWith
+        ? `+1${area}${550 + i}${String(1000 + ((i * 137) % 9000)).slice(0, 4 - endsWith.length)}${endsWith}`
+        : `+1${area}555${String(1000 + ((i * 137) % 9000)).padStart(4, "0")}`,
       locality: "Mock City",
       region: "CA",
-      nearby: false,
+      nearby,
     }));
   },
 
