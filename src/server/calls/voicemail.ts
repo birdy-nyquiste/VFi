@@ -1,7 +1,7 @@
 import "server-only";
-import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, sql, type SQL } from "drizzle-orm";
 import { db, tableExists, type Queryable } from "@/db";
-import { callVoicemail } from "@/db/schema";
+import { calls, callVoicemail } from "@/db/schema";
 import type { VoicemailAction } from "@/lib/agent-settings";
 
 /**
@@ -9,7 +9,7 @@ import type { VoicemailAction } from "@/lib/agent-settings";
  * until it's seen the calls pages show no voicemail and detection is ignored. Once seen it stays seen.
  */
 let tableSeen = false;
-export async function voicemailTableExists(q: Queryable = db): Promise<boolean> {
+async function voicemailTableExists(q: Queryable = db): Promise<boolean> {
   return (tableSeen ||= await tableExists(q, "call_voicemail"));
 }
 
@@ -18,6 +18,15 @@ export async function getCallVoicemail(callId: string, q: Queryable = db): Promi
   if (!(await voicemailTableExists(q))) return null;
   const [row] = await q.select({ action: callVoicemail.action }).from(callVoicemail).where(eq(callVoicemail.callId, callId));
   return row?.action ?? null;
+}
+
+/**
+ * SQL that's true for a call that reached voicemail (it has an action), for filtering the calls list; null
+ * before the table exists, when no call has.
+ */
+export async function reachedVoicemail(): Promise<SQL | null> {
+  if (!(await voicemailTableExists())) return null;
+  return sql`exists (select 1 from ${callVoicemail} where ${callVoicemail.callId} = ${calls.id} and ${callVoicemail.action} is not null)`;
 }
 
 /** The calls among these that reached voicemail, for the calls list. */

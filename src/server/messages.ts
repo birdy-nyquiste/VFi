@@ -109,7 +109,6 @@ export interface ConversationQuery {
   unreadOnly?: boolean;
   oldestFirst?: boolean;
   page?: number;
-  pageSize?: number;
 }
 
 /**
@@ -119,7 +118,7 @@ export interface ConversationQuery {
  */
 export async function listConversations(
   userId: string,
-  { to, search, unreadOnly, oldestFirst, page = 1, pageSize = PAGE_SIZE }: ConversationQuery = {},
+  { to, search, unreadOnly, oldestFirst, page = 1 }: ConversationQuery = {},
 ): Promise<{ conversations: Conversation[]; total: number; page: number }> {
   const visible = and(eq(messages.userId, userId), isNull(messages.deletedAt), to ? eq(messages.toNumber, to) : undefined);
   const unread = sql<number>`(count(*) filter (where ${messages.readAt} is null))::int`;
@@ -132,12 +131,12 @@ export async function listConversations(
       .groupBy(messages.fromNumber, messages.toNumber)
       .having(unreadOnly ? sql`${unread} > 0` : undefined);
   const [{ total }] = await db.select({ total: count() }).from(grouped().as("g"));
-  const shown = clampPage(page, total, pageSize);
+  const shown = clampPage(page, total);
   const latestAt = sql`max(${messages.receivedAt})`;
   const groups = await grouped()
     .orderBy(oldestFirst ? asc(latestAt) : desc(latestAt), asc(messages.fromNumber), asc(messages.toNumber))
-    .limit(pageSize)
-    .offset((shown - 1) * pageSize);
+    .limit(PAGE_SIZE)
+    .offset((shown - 1) * PAGE_SIZE);
   if (groups.length === 0) return { conversations: [], total, page: shown };
   const [latest, names] = await Promise.all([
     db

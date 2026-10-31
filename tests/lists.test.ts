@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { callResults, calls, callVoicemail, contacts, messages, type Call } from "@/db/schema";
-import { listHref, readPage } from "@/lib/list-params";
+import { listHref, readPage, singleValues } from "@/lib/list-params";
 import { applyLedger } from "@/server/billing/ledger";
 import { listLedger } from "@/server/billing/payments";
 import { findUserCalls } from "@/server/calls/list";
@@ -13,6 +13,10 @@ beforeEach(resetDb);
 describe("list addresses", () => {
   it("reads only positive whole page numbers", () => {
     expect([undefined, "0", "-2", "1.5", "abc", "3"].map(readPage)).toEqual([1, 1, 1, 1, 1, 3]);
+  });
+
+  it("uses the first value of a parameter given twice", () => {
+    expect(singleValues({ q: ["1", "2"], page: "3" })).toEqual({ q: "1", page: "3" });
   });
 
   it("drops empty values and goes back to page 1 when a filter changes", () => {
@@ -48,9 +52,14 @@ describe("calls list", () => {
     const outbound = await add({ direction: "outbound", fromNumber: line.number.e164, toNumber: "+12025550188", durationSec: 41, billedCents: 10 }, 20);
     const voicemail = await add({ direction: "outbound", fromNumber: line.number.e164, toNumber: "+17035559999", durationSec: 30, billedCents: 10 }, 30);
     const rejected = await add({ fromNumber: "+13125550101", status: "rejected" }, 40 * 24 * 3600);
-    await db.insert(callVoicemail).values({ callId: voicemail.id, action: "hangup" });
+    // Still on the line: voicemail is detected while the call is answered.
+    const liveVoicemail = await add({ direction: "outbound", fromNumber: line.number.e164, toNumber: "+17035558888", status: "answered" }, 5 * 24 * 3600);
+    await db.insert(callVoicemail).values([
+      { callId: voicemail.id, action: "hangup" },
+      { callId: liveVoicemail.id, action: "message" },
+    ]);
     await db.insert(callResults).values({ callId: inbound.id, badge: "urgent", emailStatus: "off" });
-    return { ...line, inbound, outbound, voicemail, rejected };
+    return { ...line, inbound, outbound, voicemail, rejected, liveVoicemail };
   }
   const ids = (rows: { call: Call }[]) => rows.map((r) => r.call.id);
 
@@ -64,26 +73,28 @@ describe("calls list", () => {
     expect((await findUserCalls(s.user.id, { search: "abc" })).total).toBe(0);
   });
 
-  it("lists voicemail calls under voicemail, not completed", async () => {
+  it("lists voicemail calls under voicemail and no other status, live or not", async () => {
     const s = await setup();
-    expect(ids((await findUserCalls(s.user.id, { status: "voicemail" })).rows)).toEqual([s.voicemail.id]);
+    expect(ids((await findUserCalls(s.user.id, { status: "voicemail" })).rows)).toEqual([s.voicemail.id, s.liveVoicemail.id]);
     expect(ids((await findUserCalls(s.user.id, { status: "completed" })).rows)).toEqual([s.inbound.id, s.outbound.id]);
+    expect((await findUserCalls(s.user.id, { status: "answered" })).total).toBe(0);
     expect(ids((await findUserCalls(s.user.id, { status: "rejected" })).rows)).toEqual([s.rejected.id]);
   });
 
   it("filters by direction, mark and time", async () => {
     const s = await setup();
-    expect(ids((await findUserCalls(s.user.id, { direction: "outbound" })).rows)).toEqual([s.outbound.id, s.voicemail.id]);
+    expect(ids((await findUserCalls(s.user.id, { direction: "outbound" })).rows)).toEqual([s.outbound.id, s.voicemail.id, s.liveVoicemail.id]);
     expect(ids((await findUserCalls(s.user.id, { badge: "urgent" })).rows)).toEqual([s.inbound.id]);
     expect((await findUserCalls(s.user.id, { badge: "followup" })).total).toBe(0);
-    expect((await findUserCalls(s.user.id, { period: "30d" })).total).toBe(3);
+    expect((await findUserCalls(s.user.id, { period: "7d" })).total).toBe(4);
+    expect((await findUserCalls(s.user.id, { period: "30d" })).total).toBe(4);
     expect((await findUserCalls(s.user.id, { period: "today", timeZone: "America/New_York" })).total).toBeLessThanOrEqual(3);
   });
 
   it("sorts by length and cost, with calls that have none last", async () => {
     const s = await setup();
-    expect(ids((await findUserCalls(s.user.id, {}, "longest")).rows)).toEqual([s.inbound.id, s.outbound.id, s.voicemail.id, s.rejected.id]);
-    expect(ids((await findUserCalls(s.user.id, {}, "shortest")).rows)).toEqual([s.voicemail.id, s.outbound.id, s.inbound.id, s.rejected.id]);
+    expect(ids((await findUserCalls(s.user.id, {}, "longest")).rows)).toEqual([s.inbound.id, s.outbound.id, s.voicemail.id, s.liveVoicemail.id, s.rejected.id]);
+    expect(ids((await findUserCalls(s.user.id, {}, "shortest")).rows)).toEqual([s.voicemail.id, s.outbound.id, s.inbound.id, s.liveVoicemail.id, s.rejected.id]);
     expect(ids((await findUserCalls(s.user.id, {}, "oldest")).rows)[0]).toBe(s.rejected.id);
     expect(ids((await findUserCalls(s.user.id, {}, "cheapest")).rows).at(-1)).toBe(s.rejected.id);
   });
@@ -146,9 +157,20 @@ describe("conversations list", () => {
   });
 
   it("counts every match and pages through them", async () => {
-    const { user } = await setup();
-    const page2 = await listConversations(user.id, { pageSize: 2, page: 2 });
-    expect([page2.total, page2.page, froms(page2)]).toEqual([3, 2, ["+15715550102"]]);
+    const { user, number } = await makeLine();
+    await db.insert(messages).values(
+      Array.from({ length: 17 }, (_, i) => ({
+        userId: user.id,
+        fromNumber: `+1202555${1000 + i}`,
+        toNumber: number.e164,
+        body: "hi",
+        providerMessageId: `p-${i}`,
+        receivedAt: new Date(Date.now() - i * 1000),
+      })),
+    );
+    const page2 = await listConversations(user.id, { page: 2 });
+    expect([page2.total, page2.page, froms(page2)]).toEqual([17, 2, ["+12025551015", "+12025551016"]]);
+    expect((await listConversations(user.id, { page: 9 })).page).toBe(2);
   });
 });
 

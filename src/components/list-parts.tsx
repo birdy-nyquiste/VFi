@@ -1,3 +1,4 @@
+/** The pieces around a paged, filtered list: its filter summary, sortable headers and page links. */
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { PAGE_SIZE } from "@/lib/list-params";
@@ -57,30 +58,46 @@ export function Pagination({ page, total, href }: { page: number; total: number;
 }
 
 /**
- * A column header that sorts the list by that column: the first click sorts it high to low (or newest
- * first), a click on the sorted column flips it. `current` says how the column is sorted now, if it is.
+ * A column header (the whole <th>) that sorts the list by that column: the first click sorts it high to low
+ * (or newest first), a click on the sorted column flips it. `current` says how the column is sorted now, if it is.
  */
 export function SortHeader({
   label,
   current,
   href,
-  align = "left",
+  className,
 }: {
   label: string;
   current?: "asc" | "desc";
   href: string;
-  align?: "left" | "right";
+  className: string;
 }) {
+  const sort = { asc: { aria: "ascending", arrow: "↑" }, desc: { aria: "descending", arrow: "↓" } } as const;
   return (
-    <Link
-      href={href}
-      scroll={false}
-      className={`inline-flex items-center gap-1 rounded-md hover:text-stone-900 ${current ? "text-stone-900" : ""} ${align === "right" ? "flex-row-reverse" : ""} ${focusRing}`}
-    >
-      {label}
-      <span aria-hidden className={current ? "" : "text-stone-300"}>
-        {current === "asc" ? "↑" : current === "desc" ? "↓" : "↕"}
-      </span>
-    </Link>
+    <th aria-sort={current ? sort[current].aria : "none"} className={className}>
+      <Link
+        href={href}
+        scroll={false}
+        className={`inline-flex flex-row-reverse items-center gap-1 rounded-md hover:text-stone-900 ${current ? "text-stone-900" : ""} ${focusRing}`}
+      >
+        {label}
+        <span aria-hidden className={current ? "" : "text-stone-300"}>
+          {current ? sort[current].arrow : "↕"}
+        </span>
+      </Link>
+    </th>
+  );
+}
+
+/** Under a list's filters, while any is set: how many rows match, and a link back to the whole list. */
+export function FilterSummary({ matching, clearHref }: { matching: string; clearHref: string }) {
+  const t = useTranslations("common");
+  return (
+    <p className="flex flex-wrap items-center gap-2 text-[13px] text-stone-500">
+      {matching}
+      <Link href={clearHref} scroll={false} className={`rounded-md underline hover:text-stone-900 ${focusRing}`}>
+        {t("clearFilters")}
+      </Link>
+    </p>
   );
 }

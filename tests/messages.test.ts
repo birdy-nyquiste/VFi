@@ -202,8 +202,8 @@ describe("conversations", () => {
       ["+12025550001", 1, 1, "a1"],
     ]);
     expect(await countUnreadMessages(user.id)).toBe(11);
-    // The limit is on conversations.
-    expect((await listConversations(user.id, { pageSize: 1 })).conversations.map((c) => c.from)).toEqual(["+12025550002"]);
+    // Paging counts conversations, not texts.
+    expect((await listConversations(user.id)).total).toBe(2);
   });
 
   it("purges text content past retention", async () => {

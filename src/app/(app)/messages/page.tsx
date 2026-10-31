@@ -3,8 +3,8 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Badge, Card, Empty, FilterChips, Notice, PageHeader, compactInputClass } from "@/components/ui";
 import { ListFilters } from "@/components/list-filters";
-import { Pagination } from "@/components/pagination";
-import { listHref, readPage } from "@/lib/list-params";
+import { FilterSummary, Pagination } from "@/components/list-parts";
+import { listHref, readPage, singleValues } from "@/lib/list-params";
 import { config } from "@/lib/config";
 import { formatCents, formatDateTime, formatPhone } from "@/lib/format";
 import { requireUser } from "@/server/auth";
@@ -22,9 +22,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 type ListParams = { q?: string; unread?: string; sort?: string; number?: string; page?: string };
 
-export default async function MessagesPage({ searchParams }: { searchParams: Promise<ListParams> }) {
+export default async function MessagesPage({ searchParams }: { searchParams: Promise<Partial<Record<keyof ListParams, string | string[]>>> }) {
   const user = await requireUser();
-  const params = await searchParams;
+  const params = singleValues(await searchParams);
   const { number } = params;
   const numbers = await listUserNumbers(user.id);
   const activeNumbers = activeNumbersByAge(numbers);
@@ -87,7 +87,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
                   placeholder={t("searchPlaceholder")}
                   className={`${compactInputClass} min-w-0 flex-[1_1_200px]`}
                 />
-                <select name="sort" defaultValue={oldestFirst ? "oldest" : ""} aria-label={tc("sort")} className={`${compactInputClass}`}>
+                <select name="sort" defaultValue={oldestFirst ? "oldest" : ""} aria-label={tc("sort")} className={compactInputClass}>
                   <option value="">{t("sortNewest")}</option>
                   <option value="oldest">{t("sortOldest")}</option>
                 </select>
@@ -104,14 +104,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
               ]}
             />
           )}
-          {filtered && (
-            <p className="flex flex-wrap items-center gap-2 text-[13px] text-stone-500">
-              {t("matching", { count: total })}
-              <Link href={oldestFirst ? "/messages?sort=oldest" : "/messages"} scroll={false} className="underline hover:text-stone-900">
-                {tc("clearFilters")}
-              </Link>
-            </p>
-          )}
+          {filtered && <FilterSummary matching={t("matching", { count: total })} clearHref={listHref("/messages", { sort: shown.sort }, {})} />}
         </div>
       )}
 

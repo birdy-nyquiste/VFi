@@ -119,10 +119,11 @@ export function ButtonLink({ variant = "primary", ...props }: ComponentProps<typ
   return <Link {...props} className={buttonClass(variant)} />;
 }
 
-export const inputClass =
-  "block w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-[15px] outline-none transition-colors placeholder:text-stone-500 focus:border-stone-500 focus:ring-2 focus:ring-emerald-100";
+const inputLook =
+  "rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-[15px] outline-none transition-colors placeholder:text-stone-500 focus:border-stone-500 focus:ring-2 focus:ring-emerald-100";
+export const inputClass = `block w-full ${inputLook}`;
 /** The same look for a box or menu that sizes to its content, like the filters above a list. */
-export const compactInputClass = inputClass.replace("block w-full", "block w-auto");
+export const compactInputClass = `block w-auto ${inputLook}`;
 
 /**
  * Keyboard focus ring for links and buttons drawn without the browser's outline. Signal teal keeps
@@ -218,7 +219,7 @@ export function FilterChips({ label, chips }: { label: string; chips: { href: st
           key={c.href}
           href={c.href}
           scroll={false}
-          aria-current={c.active ? "page" : undefined}
+          aria-current={c.active ? "true" : undefined}
           className={`whitespace-nowrap rounded-full border px-3 py-1 text-[13px] tabular-nums transition-colors ${focusRing} ${c.active ? "border-stone-900 bg-stone-900 text-white" : "border-stone-300 text-stone-600 hover:border-stone-900 hover:text-stone-900"}`}
         >
           {c.label}

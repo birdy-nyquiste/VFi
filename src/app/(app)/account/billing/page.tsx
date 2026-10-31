@@ -10,8 +10,8 @@ import { showStored } from "@/lib/stored-text";
 import { requireUser } from "@/server/auth";
 import { cancelTopup, LEDGER_KINDS, listLedger, listPayments, settleReturnedTopup, type ReturnedTopup } from "@/server/billing/payments";
 import { ListFilters } from "@/components/list-filters";
-import { Pagination } from "@/components/pagination";
-import { listHref, oneOf, readPage } from "@/lib/list-params";
+import { Pagination } from "@/components/list-parts";
+import { listHref, oneOf, readPage, singleValues } from "@/lib/list-params";
 import { listUserNumbers } from "@/server/numbers";
 import { NegativeBalanceNotice } from "../../negative-balance-notice";
 import { devCreditAction, topupAction } from "./actions";
@@ -27,10 +27,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ topup?: string; session_id?: string; payment?: string; type?: string; page?: string }>;
+  searchParams: Promise<Partial<Record<"topup" | "session_id" | "payment" | "type" | "page", string | string[]>>>;
 }) {
   const user = await requireUser();
-  const { topup, session_id: sessionId, payment, ...params } = await searchParams;
+  const { topup, session_id: sessionId, payment, ...params } = singleValues(await searchParams);
   const kind = oneOf(params.type, LEDGER_KINDS);
   let returned: ReturnedTopup | null = null;
   if (topup === "success" && sessionId) {
@@ -44,7 +44,7 @@ export default async function BillingPage({
     listPayments(user.id),
     listUserNumbers(user.id),
   ]);
-  const activityHref = (page: number) => listHref("/account/billing", { type: kind, page: String(page) }, { page: String(page) });
+  const activityHref = (changes: { type?: string; page?: string }) => listHref("/account/billing", { type: kind, page: String(ledger.page) }, changes);
   const p = config.pricing;
   const amounts = PRESETS.filter((a) => a * 100 >= p.minTopupCents && a * 100 <= p.maxTopupCents);
   if (amounts.length === 0) amounts.push(p.minTopupCents / 100);
@@ -124,7 +124,7 @@ export default async function BillingPage({
         <div className="flex flex-wrap items-start justify-between gap-3 px-6 pt-5">
           <CardTitle>{t("activity")}</CardTitle>
           {(ledger.total > 0 || kind) && (
-            <ListFilters key={kind ?? ""} action="/account/billing" label={t("activityFilter")} keep={{}}>
+            <ListFilters key={activityHref({})} action="/account/billing" label={t("activityFilter")} keep={{}}>
               <select name="type" defaultValue={kind ?? ""} aria-label={t("activityType")} className={`${compactInputClass} -mt-1 py-1.5 text-sm`}>
                 <option value="">{t("activityAll")}</option>
                 {LEDGER_KINDS.map((k) => (
@@ -160,7 +160,7 @@ export default async function BillingPage({
             </tbody>
           </table>
         )}
-        {ledger.total > 0 && <Pagination page={ledger.page} total={ledger.total} href={activityHref} />}
+        {ledger.total > 0 && <Pagination page={ledger.page} total={ledger.total} href={(p) => activityHref({ page: String(p) })} />}
       </Card>
 
       {payments.some((x) => x.status !== "succeeded") && (

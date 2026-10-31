@@ -459,11 +459,8 @@
     "searchPlaceholder": "Tìm số hoặc 4 chữ số cuối",
     "anyDirection": "Gọi đến và gọi đi",
     "anyStatus": "Mọi trạng thái",
-    "allAgents": "Tất cả Trợ lý",
+    "allAgents": "Tất cả trợ lý",
     "anyTime": "Mọi lúc",
-    "today": "Hôm nay",
-    "last7Days": "7 ngày qua",
-    "last30Days": "30 ngày qua",
     "sorts": {
       "newest": "Mới nhất trước",
       "oldest": "Cũ nhất trước",
@@ -474,7 +471,13 @@
     },
     "filterByBadge": "Lọc theo nhãn",
     "matching": "{count} cuộc gọi phù hợp",
-    "emptyFiltered": "Không có cuộc gọi nào khớp với bộ lọc."
+    "emptyFiltered": "Không có cuộc gọi nào khớp với bộ lọc.",
+    "periods": {
+      "today": "Hôm nay",
+      "7d": "7 ngày qua",
+      "30d": "30 ngày qua"
+    },
+    "searchDigitsOnly": "Chỉ có thể tìm cuộc gọi theo số. Hãy nhập vài chữ số của số đó."
   },
   "messages": {
     "title": "Tin nhắn",

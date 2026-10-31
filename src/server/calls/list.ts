@@ -1,33 +1,70 @@
 import "server-only";
 import { and, asc, count, desc, eq, isNull, like, not, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
-import { agents, callResults, calls, callVoicemail } from "@/db/schema";
-import type { CallBadge } from "@/lib/call-fields";
-import { clampPage, PAGE_SIZE } from "@/lib/list-params";
-import { callResultsTablesExist } from "@/server/call-results";
-import { voicemailTableExists } from "./voicemail";
+import { agents, callDirection, calls } from "@/db/schema";
+import { CALL_BADGES, type CallBadge } from "@/lib/call-fields";
+import { clampPage, oneOf, PAGE_SIZE, readPage } from "@/lib/list-params";
+import { markedAs } from "@/server/call-results";
+import { reachedVoicemail } from "./voicemail";
 
 /**
  * What the calls list can filter by. "voicemail" is a status of its own because the list shows "Reached
- * voicemail" in place of the status (SPEC §9.3), so those calls aren't listed under "completed".
+ * voicemail" in place of the status (SPEC §9.3), so those calls are listed under no other status.
  */
 export const CALL_STATUS_FILTERS = ["initiated", "answered", "completed", "voicemail", "rejected", "failed"] as const;
 export type CallStatusFilter = (typeof CALL_STATUS_FILTERS)[number];
-export const CALL_PERIODS = ["today", "7d", "30d"] as const;
+export const CALL_DIRECTIONS = callDirection.enumValues;
+/** How far back the list goes; "today" starts at midnight where the viewer is. */
+const PERIOD_INTERVALS = { today: null, "7d": "7 days", "30d": "30 days" } as const;
+export type CallPeriod = keyof typeof PERIOD_INTERVALS;
+export const CALL_PERIODS = Object.keys(PERIOD_INTERVALS) as CallPeriod[];
 export const CALL_SORTS = ["newest", "oldest", "longest", "shortest", "costliest", "cheapest"] as const;
 export type CallSort = (typeof CALL_SORTS)[number];
 
 export interface CallFilters {
   /** Digits anywhere in the other party's number, e.g. its last 4. */
   search?: string;
-  direction?: "inbound" | "outbound";
+  direction?: (typeof CALL_DIRECTIONS)[number];
   status?: CallStatusFilter;
   agentId?: string;
   phoneNumberId?: string;
   badge?: CallBadge;
-  period?: (typeof CALL_PERIODS)[number];
+  period?: CallPeriod;
   /** For "today": where the viewer's day starts. UTC when the browser hasn't said. */
   timeZone?: string | null;
+}
+
+/** The calls list's address: each filter, the sort and the page. */
+export type CallListParams = Partial<Record<"q" | "dir" | "status" | "agent" | "when" | "number" | "badge" | "sort" | "page", string>>;
+const FILTER_PARAMS = ["q", "dir", "status", "agent", "when", "number", "badge"] as const;
+
+/**
+ * The list's filters, sort and page from its address. Values that aren't offered (another user's Assistant, a
+ * stale status) are dropped, and `shown` is the address as the list then shows it, for building its links.
+ */
+export function readCallList(params: CallListParams, ctx: { agentIds: string[]; numberIds: string[]; timeZone: string | null }) {
+  const filters: CallFilters = {
+    search: params.q?.trim() || undefined,
+    direction: oneOf(params.dir, CALL_DIRECTIONS),
+    status: oneOf(params.status, CALL_STATUS_FILTERS),
+    agentId: ctx.agentIds.find((id) => id === params.agent),
+    phoneNumberId: ctx.numberIds.find((id) => id === params.number),
+    badge: oneOf(params.badge, CALL_BADGES),
+    period: oneOf(params.when, CALL_PERIODS),
+    timeZone: ctx.timeZone,
+  };
+  const sort = oneOf(params.sort, CALL_SORTS) ?? "newest";
+  const shown: CallListParams = {
+    q: filters.search,
+    dir: filters.direction,
+    status: filters.status,
+    agent: filters.agentId,
+    when: filters.period,
+    number: filters.phoneNumberId,
+    badge: filters.badge,
+    sort: sort === "newest" ? undefined : sort,
+  };
+  return { filters, sort, page: readPage(params.page), shown, filtered: FILTER_PARAMS.some((k) => shown[k]) };
 }
 
 const ORDER: Record<CallSort, SQL[]> = {
@@ -59,7 +96,7 @@ async function conditions(f: CallFilters): Promise<(SQL | undefined)[]> {
   const out: (SQL | undefined)[] = [];
   if (f.search !== undefined) {
     const digits = f.search.replace(/\D/g, "");
-    // Calls have no names to match, so a search without digits finds nothing.
+    // Calls have no names to match, so a search without digits finds nothing (the page says why).
     out.push(
       digits
         ? or(
@@ -73,26 +110,20 @@ async function conditions(f: CallFilters): Promise<(SQL | undefined)[]> {
   if (f.agentId) out.push(eq(calls.agentId, f.agentId));
   if (f.phoneNumberId) out.push(eq(calls.phoneNumberId, f.phoneNumberId));
   if (f.status) {
-    // Before the voicemail table exists (previews), no call has reached voicemail.
-    const voicemail = (await voicemailTableExists())
-      ? sql`exists (select 1 from ${callVoicemail} where ${callVoicemail.callId} = ${calls.id} and ${callVoicemail.action} is not null)`
-      : undefined;
+    const voicemail = await reachedVoicemail();
     if (f.status === "voicemail") out.push(voicemail ?? sql`false`);
-    else if (f.status === "completed") out.push(and(eq(calls.status, "completed"), voicemail && not(voicemail)));
-    else out.push(eq(calls.status, f.status));
+    // Whatever its status, a call that reached voicemail is listed as such, so no other status includes it.
+    else out.push(and(eq(calls.status, f.status), voicemail ? not(voicemail) : undefined));
   }
-  if (f.badge) {
-    out.push(
-      (await callResultsTablesExist())
-        ? sql`exists (select 1 from ${callResults} where ${callResults.callId} = ${calls.id} and ${callResults.badge} = ${f.badge})`
-        : sql`false`,
-    );
-  }
-  if (f.period === "today") {
+  if (f.badge) out.push((await markedAs(f.badge)) ?? sql`false`);
+  if (f.period) {
+    const interval = PERIOD_INTERVALS[f.period];
     const tz = f.timeZone ?? "UTC";
-    out.push(sql`${calls.createdAt} >= (date_trunc('day', now() at time zone ${tz}) at time zone ${tz})`);
-  } else if (f.period) {
-    out.push(sql`${calls.createdAt} >= now() - ${f.period === "7d" ? "7 days" : "30 days"}::interval`);
+    out.push(
+      interval
+        ? sql`${calls.createdAt} >= now() - ${interval}::interval`
+        : sql`${calls.createdAt} >= (date_trunc('day', now() at time zone ${tz}) at time zone ${tz})`,
+    );
   }
   return out;
 }

@@ -459,11 +459,8 @@
     "searchPlaceholder": "搜索号码或尾号 4 位",
     "anyDirection": "呼入和呼出",
     "anyStatus": "全部状态",
-    "allAgents": "全部助手",
+    "allAgents": "全部助理",
     "anyTime": "全部时间",
-    "today": "今天",
-    "last7Days": "最近 7 天",
-    "last30Days": "最近 30 天",
     "sorts": {
       "newest": "最新在前",
       "oldest": "最早在前",
@@ -474,7 +471,13 @@
     },
     "filterByBadge": "按标记筛选",
     "matching": "{count} 个通话符合",
-    "emptyFiltered": "没有符合筛选条件的通话。"
+    "emptyFiltered": "没有符合筛选条件的通话。",
+    "periods": {
+      "today": "今天",
+      "7d": "最近 7 天",
+      "30d": "最近 30 天"
+    },
+    "searchDigitsOnly": "通话只能按号码搜索，请输入号码中的几位数字。"
   },
   "messages": {
     "title": "短信",

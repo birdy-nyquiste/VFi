@@ -1,6 +1,14 @@
 /** Rows per page on the lists that page: calls, conversations and billing activity. */
 export const PAGE_SIZE = 15;
 
+/**
+ * A page's address parameters with one value each. A parameter given twice (`?q=1&q=2`) arrives as a list;
+ * the first one is used, so a hand-edited address can't break the page.
+ */
+export function singleValues<K extends string>(params: Partial<Record<K, string | string[]>>): Partial<Record<K, string>> {
+  return Object.fromEntries(Object.entries(params).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])) as Partial<Record<K, string>>;
+}
+
 /** The page number in a list's address; anything that isn't a positive whole number is page 1. */
 export function readPage(value: string | undefined): number {
   const n = Number(value);
@@ -13,8 +21,8 @@ export function oneOf<T extends string>(value: string | undefined, options: read
 }
 
 /** The page to show: the requested one, or the last when the list got shorter (or filters changed). */
-export function clampPage(page: number, total: number, pageSize = PAGE_SIZE): number {
-  return Math.min(page, Math.max(1, Math.ceil(total / pageSize)));
+export function clampPage(page: number, total: number): number {
+  return Math.min(page, Math.max(1, Math.ceil(total / PAGE_SIZE)));
 }
 
 /**

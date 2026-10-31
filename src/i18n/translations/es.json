@@ -459,11 +459,8 @@
     "searchPlaceholder": "Busca un número o sus últimos 4 dígitos",
     "anyDirection": "Entrantes y salientes",
     "anyStatus": "Cualquier estado",
-    "allAgents": "Todos los Asistentes",
+    "allAgents": "Todos los asistentes",
     "anyTime": "Cualquier fecha",
-    "today": "Hoy",
-    "last7Days": "Últimos 7 días",
-    "last30Days": "Últimos 30 días",
     "sorts": {
       "newest": "Más recientes primero",
       "oldest": "Más antiguas primero",
@@ -474,7 +471,13 @@
     },
     "filterByBadge": "Filtrar por marca",
     "matching": "{count, plural, one {# llamada coincide} other {# llamadas coinciden}}",
-    "emptyFiltered": "Ninguna llamada coincide con estos filtros."
+    "emptyFiltered": "Ninguna llamada coincide con estos filtros.",
+    "periods": {
+      "today": "Hoy",
+      "7d": "Últimos 7 días",
+      "30d": "Últimos 30 días"
+    },
+    "searchDigitsOnly": "Las llamadas solo se pueden buscar por número. Escribe algunos de sus dígitos."
   },
   "messages": {
     "title": "Mensajes",
