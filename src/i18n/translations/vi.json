@@ -158,7 +158,6 @@
     "notOnNumber": "Chưa gán số điện thoại",
     "all": "Tất cả trợ lý",
     "keyRejectedNotice": "Trợ lý này không thể nhận hoặc gọi: ElevenLabs đã từ chối khóa API của bạn nên giọng nói của nó không thể phát. <link>Thay khóa</link> hoặc chọn giọng khác.",
-    "dangerZone": "Vùng nguy hiểm",
     "deleteConfirm": "Xóa {name}?",
     "deleteConfirmNumber": "Xóa {name}? Số của trợ lý này sẽ không trả lời cuộc gọi nữa.",
     "deleteConfirmKnowledge": "Xóa {name}? Cơ sở kiến thức của trợ lý này cũng sẽ bị xóa vĩnh viễn và không được hoàn tiền.",
@@ -255,7 +254,11 @@
       "continue": "Trợ lý tiếp tục như thể có người nghe máy. Hiếm khi cần."
     },
     "voicemailText": "Lời nhắn để lại",
-    "voicemailTextHint": "Đọc nguyên văn một lần sau tiếng bíp, bằng giọng của trợ lý."
+    "voicemailTextHint": "Đọc nguyên văn một lần sau tiếng bíp, bằng giọng của trợ lý.",
+    "settingsTabs": "Cài đặt trợ lý",
+    "unsavedTab": "Thay đổi chưa lưu",
+    "unsavedOn": "Có thay đổi chưa lưu ở {tabs}",
+    "knowledgeAfterCreate": "Bạn có thể thêm cơ sở kiến thức sau khi tạo trợ lý."
   },
   "agentTemplates": {
     "pick": "Chọn một điểm bắt đầu. Bạn có thể thay đổi mọi thứ trước khi tạo trợ lý.",

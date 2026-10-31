@@ -158,7 +158,6 @@
     "notOnNumber": "未绑定号码",
     "all": "全部助理",
     "keyRejectedNotice": "此助理无法接打电话：ElevenLabs 拒绝了你的 API 密钥，它的声音无法发声。请<link>更换密钥</link>或选择其他声音。",
-    "dangerZone": "危险操作",
     "deleteConfirm": "删除 {name}？",
     "deleteConfirmNumber": "删除 {name}？它的号码将不再接听电话。",
     "deleteConfirmKnowledge": "删除 {name}？它的知识库也会被永久删除，且不退款。",
@@ -255,7 +254,11 @@
       "continue": "助理当作有人接听，继续通话。一般用不到。"
     },
     "voicemailText": "留言内容",
-    "voicemailTextHint": "提示音后用助理的声音逐字说一遍。"
+    "voicemailTextHint": "提示音后用助理的声音逐字说一遍。",
+    "settingsTabs": "助理设置",
+    "unsavedTab": "有未保存的更改",
+    "unsavedOn": "{tabs}有未保存的更改",
+    "knowledgeAfterCreate": "创建助理后即可添加知识库。"
   },
   "agentTemplates": {
     "pick": "选择一个起点。创建前可以修改所有内容。",

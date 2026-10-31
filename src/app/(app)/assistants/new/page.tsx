@@ -1,21 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { Empty, focusRing, PageHeader } from "@/components/ui";
+import { Card, Empty, focusRing, PageHeader } from "@/components/ui";
 import { AGENT_TEMPLATES, offeredTemplates, toTemplateId } from "@/lib/agent-templates";
 import { config } from "@/lib/config";
 import { listModels, listUserAgents } from "@/server/agents";
 import { requireUser } from "@/server/auth";
 import { listStockVoices, listUserVoices } from "@/server/voices";
 import { AgentForm } from "../agent-form";
+import { AgentTabPanel, AgentTabs } from "../agent-tabs";
+import { agentTabLabels } from "../tab-labels";
+import { readAgentTab } from "@/lib/agent-tab-ids";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getTranslations("agents"))("new") };
 }
 
 /** Pick a template first; the form then starts from it (?template=<id>). */
-export default async function NewAgentPage({ searchParams }: { searchParams: Promise<{ template?: string }> }) {
+export default async function NewAgentPage({ searchParams }: { searchParams: Promise<{ template?: string; tab?: string }> }) {
   const user = await requireUser();
+  const { template, tab } = await searchParams;
   const [t, tt, agents] = await Promise.all([getTranslations("agents"), getTranslations("agentTemplates"), listUserAgents(user.id)]);
 
   // Saving would be refused at the limit: say so before the form is filled in.
@@ -30,7 +34,7 @@ export default async function NewAgentPage({ searchParams }: { searchParams: Pro
   }
 
   const offered = offeredTemplates(config.features.knowledgeBase);
-  const requested = toTemplateId((await searchParams).template);
+  const requested = toTemplateId(template);
   const templateId = requested && offered.includes(requested) ? requested : null;
 
   if (!templateId) {
@@ -76,14 +80,22 @@ export default async function NewAgentPage({ searchParams }: { searchParams: Pro
           </Link>
         }
       />
-      <AgentForm
-        template={AGENT_TEMPLATES[templateId]}
-        templateName={templateId === "blank" ? "" : tt(`${templateId}.name`)}
-        stock={stock}
-        clones={clones}
-        models={models}
-        accountEmail={user.email}
-      />
+      <AgentTabs initial={readAgentTab(tab, config.features.knowledgeBase)} knowledge={config.features.knowledgeBase} labels={await agentTabLabels()}>
+        <AgentForm
+          template={AGENT_TEMPLATES[templateId]}
+          templateName={templateId === "blank" ? "" : tt(`${templateId}.name`)}
+          stock={stock}
+          clones={clones}
+          models={models}
+          accountEmail={user.email}
+        />
+        {/* Sources belong to a saved Assistant, so they're added after creating it. */}
+        <AgentTabPanel tab="knowledge">
+          <Card className="mt-6">
+            <p className="text-sm text-stone-600">{t("knowledgeAfterCreate")}</p>
+          </Card>
+        </AgentTabPanel>
+      </AgentTabs>
     </div>
   );
 }

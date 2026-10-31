@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { agentTabQuery, readAgentTab } from "@/lib/agent-tab-ids";
 import type { Agent } from "@/db/schema";
 import { attempt, type ActionState } from "@/lib/action";
 import { createAgent, deleteAgent, updateAgent } from "@/server/agents";
@@ -80,7 +81,9 @@ export async function saveAgentAction(_: ActionState, form: FormData): Promise<A
   // action's state, so the page shows the outcome: "Saved." via the URL, or why the sync failed.
   // A new agent that failed to sync is saved too: going to it makes saving again update it
   // instead of creating a duplicate.
-  if (status) redirect(status === "ready" ? `/assistants/${id}?saved=1` : `/assistants/${id}`);
+  // Reopen the tab the user saved from.
+  const tab = readAgentTab(form.get("tab"));
+  if (status) redirect(`/assistants/${id}${agentTabQuery(tab, status === "ready" ? { saved: "1" } : {})}`);
   return result;
 }
 

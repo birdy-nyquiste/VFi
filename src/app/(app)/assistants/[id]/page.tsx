@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ActionForm, SubmitButton } from "@/components/forms";
-import { Card, CardTitle, Notice, PageHeader, StatusBadge } from "@/components/ui";
+import { Notice, PageHeader, StatusBadge } from "@/components/ui";
 import { showStored } from "@/lib/stored-text";
 import { config } from "@/lib/config";
 import { getUserAgent, listModels, resyncStaleAgentsOnView } from "@/server/agents";
@@ -14,9 +13,11 @@ import { countAgentSources, hasPendingKnowledge, refreshKnowledge } from "@/serv
 import { listUserNumbers } from "@/server/numbers";
 import { isElevenLabsVoice } from "@/server/telnyx/stock-voices";
 import { listStockVoices, listUserVoices } from "@/server/voices";
-import { deleteAgentAction } from "../actions";
 import { AgentForm } from "../agent-form";
 import { KnowledgeSection } from "../knowledge-section";
+import { AgentTabPanel, AgentTabs } from "../agent-tabs";
+import { readAgentTab } from "@/lib/agent-tab-ids";
+import { agentTabLabels } from "../tab-labels";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const [user, { id }] = await Promise.all([requireUser(), params]);
@@ -29,11 +30,11 @@ export default async function AgentPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{ saved?: string; tab?: string }>;
 }) {
   const user = await requireUser();
   const { id } = await params;
-  const { saved } = await searchParams;
+  const { saved, tab } = await searchParams;
   let agent = await getUserAgent(user.id, id);
   if (!agent) notFound();
   if (config.features.knowledgeBase) {
@@ -67,42 +68,40 @@ export default async function AgentPage({
       ? "deleteConfirmKnowledge"
       : "deleteConfirm";
   return (
-    <div className="space-y-6">
-      <PageHeader back={{ href: "/assistants", label: t("all") }} title={agent.name} action={<StatusBadge status={agent.status} />} />
-      {agent.status === "failed" && <Notice tone="red">{showStored(locale, agent.failureReason, agent.failureMsg)}</Notice>}
-      {keyRejected && (
-        <Notice tone="red">
-          {t.rich("keyRejectedNotice", {
-            link: (chunks) => (
-              <Link href="/account/api-keys" className="font-medium underline">
-                {chunks}
-              </Link>
-            ),
-          })}
-        </Notice>
-      )}
-      {/* Keyed on updatedAt: React resets a form to its initial defaults after an action, so
-          without a remount the fields would show pre-save values (and a second save would revert). */}
-      <AgentForm
-        key={agent.updatedAt.toISOString()}
-        agent={agent}
-        saved={Boolean(saved) && agent.status === "ready"}
-        stock={stock}
-        clones={clones}
-        models={models}
-        results={readResultsSettings(resultsRow)}
-        accountEmail={user.email}
-      />
-      {config.features.knowledgeBase && <KnowledgeSection agent={agent} />}
-      <Card>
-        <CardTitle>{t("dangerZone")}</CardTitle>
-        <ActionForm action={deleteAgentAction}>
-          <input type="hidden" name="id" value={agent.id} />
-          <SubmitButton variant="danger" confirm={t(deleteConfirm, { name: agent.name })}>
-            {t("delete")}
-          </SubmitButton>
-        </ActionForm>
-      </Card>
-    </div>
+    <AgentTabs initial={readAgentTab(tab, config.features.knowledgeBase)} knowledge={config.features.knowledgeBase} labels={await agentTabLabels()}>
+      <div className="space-y-6">
+        <PageHeader back={{ href: "/assistants", label: t("all") }} title={agent.name} action={<StatusBadge status={agent.status} />} />
+        {agent.status === "failed" && <Notice tone="red">{showStored(locale, agent.failureReason, agent.failureMsg)}</Notice>}
+        {keyRejected && (
+          <Notice tone="red">
+            {t.rich("keyRejectedNotice", {
+              link: (chunks) => (
+                <Link href="/account/api-keys" className="font-medium underline">
+                  {chunks}
+                </Link>
+              ),
+            })}
+          </Notice>
+        )}
+        {/* Keyed on updatedAt: React resets a form to its initial defaults after an action, so
+            without a remount the fields would show pre-save values (and a second save would revert). */}
+        <AgentForm
+          key={agent.updatedAt.toISOString()}
+          agent={agent}
+          saved={Boolean(saved) && agent.status === "ready"}
+          stock={stock}
+          clones={clones}
+          models={models}
+          results={readResultsSettings(resultsRow)}
+          accountEmail={user.email}
+          deleteConfirm={t(deleteConfirm, { name: agent.name })}
+        />
+        {config.features.knowledgeBase && (
+          <AgentTabPanel tab="knowledge">
+            <KnowledgeSection agent={agent} />
+          </AgentTabPanel>
+        )}
+      </div>
+    </AgentTabs>
   );
 }

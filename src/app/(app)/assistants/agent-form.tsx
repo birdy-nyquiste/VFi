@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
-import { ActionForm, FormMessage, SubmitButton } from "@/components/forms";
+import { ActionButton, ActionForm, SubmitButton } from "@/components/forms";
 import { Card, CardTitle, Field, Notice, inputClass } from "@/components/ui";
 import { MAX_CALL_MINUTES, MAX_KEY_TERMS_LENGTH, readBehavior, readVariables, SILENCE_HANGUP_SECS } from "@/lib/agent-settings";
 import type { AgentTemplate } from "@/lib/agent-templates";
@@ -12,17 +12,20 @@ import { OUTBOUND_GREETING, RECORDING_NOTICE } from "@/server/agents";
 import type { LlmModel, StockVoice } from "@/server/telnyx";
 import { modelName, sttModelName } from "@/server/telnyx/models";
 import { DEFAULT_VOICE_REF, ttsModelName, voiceSpeaks } from "@/server/telnyx/stock-voices";
-import { saveAgentAction } from "./actions";
+import { deleteAgentAction, saveAgentAction } from "./actions";
 import { ModelRow } from "./model-row";
 import { ResultsSection } from "./results-section";
 import { ScriptFields } from "./script-fields";
 import { VoiceFields } from "./voice-fields";
 import { VoicemailFields } from "./voicemail-fields";
+import { AgentEditTracker, AgentTabField, AgentTabList, AgentTabPanel, SaveStatus } from "./agent-tabs";
+import type { AgentTab } from "@/lib/agent-tab-ids";
 import { Counted } from "@/components/counted";
 
 /**
- * The agent's settings, in setup order: who answers and how it sounds, what it says, how it handles
- * the conversation, and when calls end. A new agent starts from a template.
+ * The agent's settings, one tab per card in setup order: who answers and how it sounds, what it says, how
+ * it handles the conversation, when calls end, and what's recorded afterwards. Save (and Delete) sit in a bar
+ * above the tabs. A new agent starts from a template. Render inside AgentTabs.
  */
 export function AgentForm({
   agent,
@@ -34,8 +37,11 @@ export function AgentForm({
   results,
   accountEmail,
   saved = false,
+  deleteConfirm,
 }: {
   agent?: Agent;
+  /** For a saved agent: the question before deleting it, saying what deleting takes with it. */
+  deleteConfirm?: string;
   /** The agent's call-result fields and email settings; a new agent starts with its template's fields. */
   results?: { fields: CallField[]; email: EmailSettings };
   accountEmail: string;
@@ -96,161 +102,181 @@ export function AgentForm({
   return (
     <ActionForm action={saveAgentAction} className="space-y-6" message="custom">
       {agent && <input type="hidden" name="id" value={agent.id} />}
+      <AgentTabField />
 
-      {/* The result goes next to the button: below the last card it would be far out of view. */}
-      <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
-        <FormMessage initialOk={saved ? tc("saved") : undefined} />
-        <SubmitButton pendingText={tc("saving")}>{agent ? t("saveChanges") : t("create")}</SubmitButton>
+      {/* Save and Delete live outside the tabs, the same on every tab. The result goes next to Save. */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-stone-200 bg-white px-6 py-4">
+        {agent && deleteConfirm && (
+          <ActionButton action={deleteAgentAction} data={{ id: agent.id }} variant="danger" confirm={deleteConfirm}>
+            {t("delete")}
+          </ActionButton>
+        )}
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
+          <SaveStatus saved={saved ? tc("saved") : undefined} />
+          <SubmitButton pendingText={tc("saving")}>{agent ? t("saveChanges") : t("create")}</SubmitButton>
+        </div>
       </div>
 
-      <Section title={t("sectionIdentity")} description={t("sectionIdentityHint")}>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={tc("name")}>
-            <Counted><input name="name" required maxLength={80} defaultValue={agent?.name ?? templateName} placeholder={t("namePlaceholder")} className={inputClass} /></Counted>
-          </Field>
-          <Field label={t("language")} hint={t("languageHint")}>
-            <select name="language" defaultValue={initial?.language ?? "en"} className={inputClass}>
-              <option value="en">{tl("en")}</option>
-              <option value="zh">{tl("zhNative")}</option>
-            </select>
-          </Field>
-        </div>
-        {!catalog && <Notice>{t("voicesUnavailable")}</Notice>}
-        <VoiceFields
-          defaultVoice={voiceGone ? "" : currentVoice}
-          voiceGone={voiceGone}
-          ttsByVoice={ttsByVoice}
-          behavior={behavior}
-          voiceOptions={
-            <>
-              <option value="" disabled>{t("chooseVoice")}</option>
-              {readyClones.length > 0 && (
-                <optgroup label={t("yourClones")}>
-                  {readyClones.map((v) => (
-                    <option key={v.id} value={`clone:${v.id}`}>
-                      {v.name}{v.provider === "elevenlabs" ? " (ElevenLabs)" : ""}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              <optgroup label={tl("bilingual")}>
-                {bilingual.map((v) => (
-                  <option key={v.ref} value={`stock:${v.ref}`}>
-                    {v.gender ? t("voiceWithGender", { name: v.name, gender: gender(v.gender) }) : v.name}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label={tl("englishOnly")}>
-                {englishOnly.map((v) => (
-                  <option key={v.ref} value={`stock:${v.ref}`}>
-                    {v.gender ? t("voiceWithGender", { name: v.name, gender: gender(v.gender) }) : v.name}
-                  </option>
-                ))}
-              </optgroup>
-            </>
-          }
-        />
-      </Section>
+      <div className="space-y-6">
+        <AgentTabList />
 
-      <Section title={t("sectionInstructions")} description={t("sectionInstructionsHint")}>
-        <ScriptFields
-          greeting={initial?.greeting ?? ""}
-          instructions={initial?.instructions ?? ""}
-          variables={variables}
-          timeZone={behavior.timeZone}
-          guessTimeZone={!agent}
-          greetingHint={t("greetingHint", {
-            noticeEn: RECORDING_NOTICE.en,
-            noticeZh: RECORDING_NOTICE.zh,
-            outboundEn: OUTBOUND_GREETING.en,
-            outboundZh: OUTBOUND_GREETING.zh,
-          })}
-        />
-        <Field label={t("llm")} hint={t("llmHint")}>
-          <select name="model" defaultValue={agent?.model ?? ""} className={inputClass}>
-            <option value="">{t("defaultModel", { name: modelName(defaultModel) })}</option>
-            {otherModels.map((m) => (
-              <option key={m.id} value={m.id}>{m.name}</option>
-            ))}
-          </select>
-        </Field>
-      </Section>
-
-      <Section title={t("sectionConversation")} description={t("sectionConversationHint")}>
-        <Field label={t("responseTiming")}>
-          <select name="responseTiming" defaultValue={behavior.responseTiming} className={inputClass}>
-            <option value="quick">{t("timingQuick")}</option>
-            <option value="balanced">{t("timingBalanced")}</option>
-            <option value="patient">{t("timingPatient")}</option>
-          </select>
-        </Field>
-        <div className="space-y-2">
-          <Toggle name="allowInterruptions" defaultChecked={behavior.allowInterruptions} label={t("allowInterruptions")} />
-          <Toggle
-            name="greetingInterruptible"
-            defaultChecked={behavior.greetingInterruptible}
-            label={t("greetingInterruptible")}
-            hint={t("greetingInterruptibleHint")}
-          />
-        </div>
-        <ModelRow label={t("stt")}>
-          <span className="font-medium">{sttModelName(config.telnyx.sttModel)}</span>
-        </ModelRow>
-        <Field label={t("keyTerms")} hint={t("keyTermsHint")}>
-          <Counted>
-            <input
-              name="keyTerms"
-              maxLength={MAX_KEY_TERMS_LENGTH}
-              defaultValue={behavior.keyTerms}
-              placeholder={t("keyTermsPlaceholder")}
-              className={inputClass}
+        <AgentEditTracker>
+          <Section tab="identity" title={t("sectionIdentity")} description={t("sectionIdentityHint")}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label={tc("name")}>
+                <Counted><input name="name" required maxLength={80} defaultValue={agent?.name ?? templateName} placeholder={t("namePlaceholder")} className={inputClass} /></Counted>
+              </Field>
+              <Field label={t("language")} hint={t("languageHint")}>
+                <select name="language" defaultValue={initial?.language ?? "en"} className={inputClass}>
+                  <option value="en">{tl("en")}</option>
+                  <option value="zh">{tl("zhNative")}</option>
+                </select>
+              </Field>
+            </div>
+            {!catalog && <Notice>{t("voicesUnavailable")}</Notice>}
+            <VoiceFields
+              defaultVoice={voiceGone ? "" : currentVoice}
+              voiceGone={voiceGone}
+              ttsByVoice={ttsByVoice}
+              behavior={behavior}
+              voiceOptions={
+                <>
+                  <option value="" disabled>{t("chooseVoice")}</option>
+                  {readyClones.length > 0 && (
+                    <optgroup label={t("yourClones")}>
+                      {readyClones.map((v) => (
+                        <option key={v.id} value={`clone:${v.id}`}>
+                          {v.name}{v.provider === "elevenlabs" ? " (ElevenLabs)" : ""}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  <optgroup label={tl("bilingual")}>
+                    {bilingual.map((v) => (
+                      <option key={v.ref} value={`stock:${v.ref}`}>
+                        {v.gender ? t("voiceWithGender", { name: v.name, gender: gender(v.gender) }) : v.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label={tl("englishOnly")}>
+                    {englishOnly.map((v) => (
+                      <option key={v.ref} value={`stock:${v.ref}`}>
+                        {v.gender ? t("voiceWithGender", { name: v.name, gender: gender(v.gender) }) : v.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                </>
+              }
             />
-          </Counted>
-        </Field>
-      </Section>
+          </Section>
 
-      <Section title={t("sectionEnding")} description={t("sectionEndingHint")}>
-        <Toggle name="endCallWhenDone" defaultChecked={behavior.endCallWhenDone} label={t("endCallWhenDone")} hint={t("endCallWhenDoneHint")} />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={t("maxCallLength")}>
-            <select name="maxCallMinutes" defaultValue={behavior.maxCallMinutes} className={inputClass}>
-              {MAX_CALL_MINUTES.map((m) => (
-                <option key={m} value={m}>{t("minutes", { count: m })}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label={t("silenceHangup")} hint={t("silenceHangupHint")}>
-            <select name="silenceHangupSecs" defaultValue={behavior.silenceHangupSecs} className={inputClass}>
-              {SILENCE_HANGUP_SECS.map((secs) => (
-                <option key={secs} value={secs}>{secs ? t("afterSeconds", { count: secs }) : t("never")}</option>
-              ))}
-            </select>
-          </Field>
-        </div>
-        <VoicemailFields action={behavior.voicemailAction} message={behavior.voicemailMessage} />
-      </Section>
+          <Section tab="instructions" title={t("sectionInstructions")} description={t("sectionInstructionsHint")}>
+            <ScriptFields
+              greeting={initial?.greeting ?? ""}
+              instructions={initial?.instructions ?? ""}
+              variables={variables}
+              timeZone={behavior.timeZone}
+              guessTimeZone={!agent}
+              greetingHint={t("greetingHint", {
+                noticeEn: RECORDING_NOTICE.en,
+                noticeZh: RECORDING_NOTICE.zh,
+                outboundEn: OUTBOUND_GREETING.en,
+                outboundZh: OUTBOUND_GREETING.zh,
+              })}
+            />
+            <Field label={t("llm")} hint={t("llmHint")}>
+              <select name="model" defaultValue={agent?.model ?? ""} className={inputClass}>
+                <option value="">{t("defaultModel", { name: modelName(defaultModel) })}</option>
+                {otherModels.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+            </Field>
+          </Section>
 
-      <ResultsSection
-        agentId={agent?.id}
-        language={initial?.language ?? "en"}
-        assistantName={agent?.name ?? templateName}
-        accountEmail={accountEmail}
-        initial={results ?? { fields: template?.fields ?? [], email: DEFAULT_EMAIL_SETTINGS }}
-      />
+          <Section tab="conversation" title={t("sectionConversation")} description={t("sectionConversationHint")}>
+            <Field label={t("responseTiming")}>
+              <select name="responseTiming" defaultValue={behavior.responseTiming} className={inputClass}>
+                <option value="quick">{t("timingQuick")}</option>
+                <option value="balanced">{t("timingBalanced")}</option>
+                <option value="patient">{t("timingPatient")}</option>
+              </select>
+            </Field>
+            <div className="space-y-2">
+              <Toggle name="allowInterruptions" defaultChecked={behavior.allowInterruptions} label={t("allowInterruptions")} />
+              <Toggle
+                name="greetingInterruptible"
+                defaultChecked={behavior.greetingInterruptible}
+                label={t("greetingInterruptible")}
+                hint={t("greetingInterruptibleHint")}
+              />
+            </div>
+            <ModelRow label={t("stt")}>
+              <span className="font-medium">{sttModelName(config.telnyx.sttModel)}</span>
+            </ModelRow>
+            <Field label={t("keyTerms")} hint={t("keyTermsHint")}>
+              <Counted>
+                <input
+                  name="keyTerms"
+                  maxLength={MAX_KEY_TERMS_LENGTH}
+                  defaultValue={behavior.keyTerms}
+                  placeholder={t("keyTermsPlaceholder")}
+                  className={inputClass}
+                />
+              </Counted>
+            </Field>
+          </Section>
+
+          <Section tab="ending" title={t("sectionEnding")} description={t("sectionEndingHint")}>
+            <Toggle name="endCallWhenDone" defaultChecked={behavior.endCallWhenDone} label={t("endCallWhenDone")} hint={t("endCallWhenDoneHint")} />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label={t("maxCallLength")}>
+                <select name="maxCallMinutes" defaultValue={behavior.maxCallMinutes} className={inputClass}>
+                  {MAX_CALL_MINUTES.map((m) => (
+                    <option key={m} value={m}>{t("minutes", { count: m })}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label={t("silenceHangup")} hint={t("silenceHangupHint")}>
+                <select name="silenceHangupSecs" defaultValue={behavior.silenceHangupSecs} className={inputClass}>
+                  {SILENCE_HANGUP_SECS.map((secs) => (
+                    <option key={secs} value={secs}>{secs ? t("afterSeconds", { count: secs }) : t("never")}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+            <VoicemailFields action={behavior.voicemailAction} message={behavior.voicemailMessage} />
+          </Section>
+
+          <AgentTabPanel tab="results">
+            <div className="space-y-6">
+              <ResultsSection
+                agentId={agent?.id}
+                language={initial?.language ?? "en"}
+                assistantName={agent?.name ?? templateName}
+                accountEmail={accountEmail}
+                initial={results ?? { fields: template?.fields ?? [], email: DEFAULT_EMAIL_SETTINGS }}
+              />
+            </div>
+          </AgentTabPanel>
+        </AgentEditTracker>
+      </div>
     </ActionForm>
   );
 }
 
-/** One card of the form, styled like the page's other cards (knowledge base, danger zone). */
-function Section({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+/** One tab of the form: a card styled like the page's other cards (call results, knowledge base). */
+function Section({ tab, title, description, children }: { tab: AgentTab; title: string; description: string; children: ReactNode }) {
   return (
-    <Card>
-      <CardTitle>{title}</CardTitle>
-      <div className="space-y-4">
-        <p className="text-sm text-stone-600">{description}</p>
-        {children}
-      </div>
-    </Card>
+    <AgentTabPanel tab={tab}>
+      <Card>
+        <CardTitle>{title}</CardTitle>
+        <div className="space-y-4">
+          <p className="text-sm text-stone-600">{description}</p>
+          {children}
+        </div>
+      </Card>
+    </AgentTabPanel>
   );
 }
 

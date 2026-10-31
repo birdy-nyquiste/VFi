@@ -263,17 +263,25 @@ Fixed retail prices, configurable. Telnyx's cost is recorded separately and neve
 
 ### 5.1 Settings
 
-The Assistant page has four parts, in the order a user sets things up. Everything except name, voice, greeting and
+The Assistant page is in tabs, one per part, in the order a user sets things up: Identity, Instructions,
+Conversation, Ending calls, Call results (§9.2) and Knowledge Base (§8). Everything except name, voice, greeting and
 instructions has a default.
 
 | Part | Settings |
 | --- | --- |
-| Basics | Name, main language, voice (with a preview and the speech model it uses), speaking rate (0.8–1.2×), background sound (none / office) |
+| Identity | Name, main language, voice (with a preview and the speech model it uses), speaking rate (0.8–1.2×), background sound (none / office) |
 | Instructions | Greeting, instructions (both can use variables), variables, time zone, language model |
 | Conversation | Response timing (fast / medium / patient = wait 0.4 / 0.8 / 1.2 s), whether the caller can interrupt, whether the greeting can be interrupted, key terms (with the speech-recognition model shown) |
-| Ending the call | Hang up when the conversation is over (on by default; Telnyx `hangup` tool), maximum call length (5 / 10 / 15 / 30 min, default 30), hang up after silence (never / 30 / 60 s, default 60) |
+| Ending calls | Hang up when the conversation is over (on by default; Telnyx `hangup` tool), maximum call length (5 / 10 / 15 / 30 min, default 30), hang up after silence (never / 30 / 60 s, default 60), what to do when a placed call reaches voicemail (§9.3) |
 
-Below these: the knowledge base (§8) and deleting the Assistant.
+- **Save and Delete** sit in a bar between the page title and the tabs, the same on every tab. All the settings
+  tabs are one form: Save saves every tab, switching tabs keeps edits, and a dot on a tab (and "Unsaved changes on
+  …" beside Save, in place of "Saved.") marks unsaved edits. If a required field on a hidden tab is missing, or
+  the save is refused because of a field on another tab, that tab opens. Delete shows its progress and any error
+  beside itself.
+- The Knowledge Base tab saves as before (sources as they're added, the mode with its own Save); Save doesn't
+  cover it. On a new Assistant it says sources can be added once it's created.
+- The open tab is in the address (`?tab=instructions`) and the page reopens on it after saving.
 
 ### 5.2 Templates
 
@@ -774,7 +782,7 @@ Before this, an Assistant that called someone and reached voicemail talked to th
 
 **What it does**
 
-- One setting per Assistant, in the "Ending calls" card: **If a call it places reaches voicemail**
+- One setting per Assistant, in the "Ending calls" tab: **If a call it places reaches voicemail**
   - **Hang up:** hangs up without saying anything.
   - **Leave a message, then hang up:** waits for the beep, says the user's message word for word in the
     Assistant's voice, and hangs up.
@@ -835,6 +843,7 @@ Newest first. Each line points to where the rule now lives.
 
 | Date | Decision | Section |
 | --- | --- | --- |
+| 2026-10-31 | Assistant page in tabs, one per card; Save and Delete in a bar outside the tabs | §5.1 |
 | 2026-10-31 | Calls, Messages and Billing activity get search, filters, sorting and 15-row pages; the status filter lists every status a call shows, voicemail included | §3.2, §6.4, §7 |
 | 2026-10-31 | Number search by the last 1–4 digits, widening to the whole US when the area code has none | §4 |
 | 2026-10-31 | Voicemail on calls the Assistant places: hang up (default), leave a fixed message, or keep talking; billed as usual; no results email except for Keep talking | §9.3 |

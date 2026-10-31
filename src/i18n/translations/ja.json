@@ -158,7 +158,6 @@
     "notOnNumber": "電話番号未設定",
     "all": "すべてのアシスタント",
     "keyRejectedNotice": "このアシスタントは通話を受発信できません。ElevenLabs が API キーを拒否したため、音声で話すことができません。<link>キーを差し替える</link>か、別の音声を選択してください。",
-    "dangerZone": "危険な操作",
     "deleteConfirm": "{name} を削除しますか？",
     "deleteConfirmNumber": "{name} を削除しますか？その電話番号は通話に応答しなくなります。",
     "deleteConfirmKnowledge": "{name} を削除しますか？ナレッジベースも完全に削除され、返金はありません。",
@@ -255,7 +254,11 @@
       "continue": "人が出たときと同じように続けます。使う場面はほとんどありません。"
     },
     "voicemailText": "残すメッセージ",
-    "voicemailTextHint": "発信音のあと、アシスタントの声でそのまま一度読み上げます。"
+    "voicemailTextHint": "発信音のあと、アシスタントの声でそのまま一度読み上げます。",
+    "settingsTabs": "アシスタントの設定",
+    "unsavedTab": "未保存の変更",
+    "unsavedOn": "{tabs}に未保存の変更があります",
+    "knowledgeAfterCreate": "ナレッジベースはアシスタントを作成した後に追加できます。"
   },
   "agentTemplates": {
     "pick": "出発点を選んでください。作成前にすべて変更できます。",

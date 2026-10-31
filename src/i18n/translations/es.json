@@ -158,7 +158,6 @@
     "notOnNumber": "Sin número asignado",
     "all": "Todos los asistentes",
     "keyRejectedNotice": "Este asistente no puede recibir ni hacer llamadas: ElevenLabs rechazó tu clave de API, así que su voz no puede hablar. <link>Reemplaza la clave</link> o elige otra voz.",
-    "dangerZone": "Zona de peligro",
     "deleteConfirm": "¿Eliminar a {name}?",
     "deleteConfirmNumber": "¿Eliminar a {name}? Su número dejará de contestar llamadas.",
     "deleteConfirmKnowledge": "¿Eliminar a {name}? Su base de conocimiento también se borra para siempre y no se reembolsa.",
@@ -255,7 +254,11 @@
       "continue": "El asistente sigue como si hubiera contestado una persona. Rara vez es útil."
     },
     "voicemailText": "Mensaje que dejará",
-    "voicemailTextHint": "Se dice una vez después del tono, palabra por palabra, con la voz del asistente."
+    "voicemailTextHint": "Se dice una vez después del tono, palabra por palabra, con la voz del asistente.",
+    "settingsTabs": "Ajustes del asistente",
+    "unsavedTab": "Cambios sin guardar",
+    "unsavedOn": "Cambios sin guardar en {tabs}",
+    "knowledgeAfterCreate": "Podrás añadir una base de conocimiento cuando el asistente esté creado."
   },
   "agentTemplates": {
     "pick": "Elige un punto de partida. Puedes cambiarlo todo antes de crear el asistente.",
