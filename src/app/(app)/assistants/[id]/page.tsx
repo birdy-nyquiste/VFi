@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ActionForm } from "@/components/forms";
 import { Notice, PageHeader, StatusBadge } from "@/components/ui";
 import { showStored } from "@/lib/stored-text";
 import { config } from "@/lib/config";
@@ -14,11 +13,10 @@ import { countAgentSources, hasPendingKnowledge, refreshKnowledge } from "@/serv
 import { listUserNumbers } from "@/server/numbers";
 import { isElevenLabsVoice } from "@/server/telnyx/stock-voices";
 import { listStockVoices, listUserVoices } from "@/server/voices";
-import { deleteAgentAction } from "../actions";
 import { AgentForm } from "../agent-form";
 import { KnowledgeSection } from "../knowledge-section";
 import { AgentTabPanel, AgentTabs } from "../agent-tabs";
-import { readAgentTab } from "@/lib/agent-tabs";
+import { readAgentTab } from "@/lib/agent-tab-ids";
 import { agentTabLabels } from "../tab-labels";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -70,7 +68,7 @@ export default async function AgentPage({
       ? "deleteConfirmKnowledge"
       : "deleteConfirm";
   return (
-    <AgentTabs initial={readAgentTab(tab)} knowledge={config.features.knowledgeBase}>
+    <AgentTabs initial={readAgentTab(tab, config.features.knowledgeBase)} knowledge={config.features.knowledgeBase} labels={await agentTabLabels()}>
       <div className="space-y-6">
         <PageHeader back={{ href: "/assistants", label: t("all") }} title={agent.name} action={<StatusBadge status={agent.status} />} />
         {agent.status === "failed" && <Notice tone="red">{showStored(locale, agent.failureReason, agent.failureMsg)}</Notice>}
@@ -96,7 +94,6 @@ export default async function AgentPage({
           models={models}
           results={readResultsSettings(resultsRow)}
           accountEmail={user.email}
-          tabLabels={await agentTabLabels()}
           deleteConfirm={t(deleteConfirm, { name: agent.name })}
         />
         {config.features.knowledgeBase && (
@@ -104,10 +101,6 @@ export default async function AgentPage({
             <KnowledgeSection agent={agent} />
           </AgentTabPanel>
         )}
-        {/* Submitted by Delete in the bar above the tabs; only an error shows here. */}
-        <ActionForm id="delete-agent" action={deleteAgentAction}>
-          <input type="hidden" name="id" value={agent.id} />
-        </ActionForm>
       </div>
     </AgentTabs>
   );

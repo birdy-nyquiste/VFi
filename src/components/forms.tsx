@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, startTransition, useActionState, useContext, useEffect, useRef, type ReactNode } from "react";
+import { createContext, startTransition, useActionState, useContext, useEffect, useRef, useState, useTransition, type MouseEvent, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
 import type { ActionState } from "@/lib/action";
@@ -30,17 +30,76 @@ export function SubmitButton({
       type="submit"
       disabled={pending || disabled}
       className={buttonClass(variant, size)}
-      onClick={(e) => {
-        if (confirm && !window.confirm(confirm)) e.preventDefault();
-      }}
+      onClick={(e) => confirmFirst(e, confirm)}
     >
       {pending ? (pendingText ?? t("working")) : children}
     </button>
   );
 }
 
+/** Stops the click unless the user confirms `message` (when there is one). */
+function confirmFirst(e: MouseEvent, message?: string): boolean {
+  if (message && !window.confirm(message)) {
+    e.preventDefault();
+    return false;
+  }
+  return true;
+}
+
+/**
+ * A button that runs a server action with fixed `data` where there's no form to put it in (e.g. inside another
+ * form): it confirms, shows its pending state, and shows the action's error beside itself.
+ */
+export function ActionButton({
+  action,
+  data,
+  children,
+  pendingText,
+  variant = "primary",
+  confirm,
+}: {
+  action: (state: ActionState, data: FormData) => Promise<ActionState>;
+  data: Record<string, string>;
+  children: ReactNode;
+  pendingText?: string;
+  variant?: "primary" | "secondary" | "danger";
+  confirm?: string;
+}) {
+  const t = useTranslations("common");
+  const te = useTranslations("errors");
+  const [pending, start] = useTransition();
+  const [state, setState] = useState<ActionState>();
+  return (
+    <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
+      <button
+        type="button"
+        disabled={pending}
+        className={buttonClass(variant)}
+        onClick={(e) => {
+          if (!confirmFirst(e, confirm)) return;
+          const form = new FormData();
+          for (const [k, v] of Object.entries(data)) form.set(k, v);
+          start(async () => setState(await safeAction(action, te("network"))(undefined, form)));
+        }}
+      >
+        {pending ? (pendingText ?? t("working")) : children}
+      </button>
+      {state?.error && (
+        <span role="alert" className="text-sm text-red-600">
+          {state.error}
+        </span>
+      )}
+    </span>
+  );
+}
+
 const ActionPendingContext = createContext<boolean | null>(null);
 const ActionStateContext = createContext<{ state: ActionState; pending: boolean } | null>(null);
+
+/** The latest result of the ActionForm this is inside, if any. */
+export function useActionResult(): ActionState {
+  return useContext(ActionStateContext)?.state;
+}
 
 /**
  * The form's latest error or success message, announced to screen readers. ActionForm shows it after
@@ -67,11 +126,8 @@ export function ActionForm({
   className,
   message = "end",
   resetOnSuccess = false,
-  id,
 }: {
   action: (state: ActionState, data: FormData) => Promise<ActionState>;
-  /** For a submit button elsewhere on the page that names this form (`form="…"`). */
-  id?: string;
   children: ReactNode;
   className?: string;
   /** Where the result message goes: after the fields, or wherever the form puts <FormMessage />. */
@@ -92,7 +148,6 @@ export function ActionForm({
   return (
     <form
       ref={formRef}
-      id={id}
       className={className}
       onSubmit={(e) => {
         e.preventDefault();

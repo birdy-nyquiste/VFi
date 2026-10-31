@@ -249,10 +249,10 @@
     },
     "voicemailText": "留言内容",
     "voicemailTextHint": "提示音后用助理的声音逐字说一遍。",
-    "settingsTabs": "助手设置",
+    "settingsTabs": "助理设置",
     "unsavedTab": "有未保存的更改",
     "unsavedOn": "{tabs}有未保存的更改",
-    "knowledgeAfterCreate": "创建助手后即可添加知识库。"
+    "knowledgeAfterCreate": "创建助理后即可添加知识库。"
   },
   "agentTemplates": {
     "pick": "选择一个起点。创建前可以修改所有内容。",

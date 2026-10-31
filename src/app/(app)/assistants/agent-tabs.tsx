@@ -1,10 +1,11 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { createContext, useContext, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { flushSync } from "react-dom";
-import { buttonClass, focusRing } from "@/components/ui";
-import { AGENT_TABS, type AgentTab } from "@/lib/agent-tabs";
+import { FormMessage, useActionResult } from "@/components/forms";
+import { focusRing } from "@/components/ui";
+import { AGENT_TABS, agentTabForError, type AgentTab } from "@/lib/agent-tab-ids";
 
 /**
  * The Assistant page in tabs (SPEC §5.1). Every settings tab stays rendered inside the one form, only hidden,
@@ -14,6 +15,7 @@ import { AGENT_TABS, type AgentTab } from "@/lib/agent-tabs";
 const TabsContext = createContext<{
   tab: AgentTab;
   tabs: readonly AgentTab[];
+  labels: Record<AgentTab, string>;
   select: (tab: AgentTab) => void;
   unsaved: ReadonlySet<AgentTab>;
   setUnsaved: (tabs: ReadonlySet<AgentTab>) => void;
@@ -25,31 +27,45 @@ function useTabs() {
   return ctx;
 }
 
-export function AgentTabs({ initial, knowledge, children }: { initial: AgentTab; knowledge: boolean; children: ReactNode }) {
+/** `initial` comes from the address (readAgentTab); `labels` are the tabs' names. */
+export function AgentTabs({
+  initial,
+  knowledge,
+  labels,
+  children,
+}: {
+  initial: AgentTab;
+  knowledge: boolean;
+  labels: Record<AgentTab, string>;
+  children: ReactNode;
+}) {
   const tabs: readonly AgentTab[] = knowledge ? AGENT_TABS : AGENT_TABS.filter((t) => t !== "knowledge");
-  const [tab, setTab] = useState(tabs.includes(initial) ? initial : "identity");
+  const [tab, setTab] = useState(initial);
   const [unsaved, setUnsaved] = useState<ReadonlySet<AgentTab>>(new Set());
-  const select = (next: AgentTab) => {
+  const select = useCallback((next: AgentTab) => {
     setTab(next);
-    // Keep the open tab in the address for reloads and links, without loading the page again.
+    // Keep the open tab in the address for reloads and links, without loading the page again. "Saved."
+    // belongs to the save, not to the address.
     const url = new URL(window.location.href);
     if (next === "identity") url.searchParams.delete("tab");
     else url.searchParams.set("tab", next);
+    url.searchParams.delete("saved");
     window.history.replaceState(window.history.state, "", url);
-  };
-  return <TabsContext.Provider value={{ tab, tabs, select, unsaved, setUnsaved }}>{children}</TabsContext.Provider>;
+  }, []);
+  return <TabsContext.Provider value={{ tab, tabs, labels, select, unsaved, setUnsaved }}>{children}</TabsContext.Provider>;
 }
 
-export function AgentTabList({ labels }: { labels: Record<AgentTab, string> }) {
+export function AgentTabList() {
   const t = useTranslations("agents");
-  const { tab, tabs, select, unsaved } = useTabs();
+  const { tab, tabs, labels, select, unsaved } = useTabs();
   const refs = useRef(new Map<AgentTab, HTMLButtonElement>());
-  // Arrow keys move between tabs, as in any tab list.
+  // Arrow keys move between tabs, Home and End to the first and last, as in any tab list.
   const onKeyDown = (e: KeyboardEvent) => {
-    const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
-    if (!step) return;
+    const at = tabs.indexOf(tab);
+    const target = ({ ArrowRight: at + 1, ArrowLeft: at - 1, Home: 0, End: tabs.length - 1 } as Record<string, number>)[e.key];
+    if (target === undefined) return;
     e.preventDefault();
-    const next = tabs[(tabs.indexOf(tab) + step + tabs.length) % tabs.length];
+    const next = tabs[(target + tabs.length) % tabs.length];
     select(next);
     refs.current.get(next)?.focus();
   };
@@ -85,40 +101,55 @@ export function AgentTabList({ labels }: { labels: Record<AgentTab, string> }) {
 export function AgentTabPanel({ tab: id, children }: { tab: AgentTab; children: ReactNode }) {
   const { tab } = useTabs();
   return (
-    <div role="tabpanel" id={`agent-panel-${id}`} aria-labelledby={`agent-tab-${id}`} data-agent-tab={id} hidden={tab !== id}>
+    <div
+      role="tabpanel"
+      id={`agent-panel-${id}`}
+      aria-labelledby={`agent-tab-${id}`}
+      tabIndex={0}
+      data-agent-tab={id}
+      hidden={tab !== id}
+      className={`rounded-[20px] ${focusRing}`}
+    >
       {children}
     </div>
   );
 }
 
-/** Tells the save which tab was open, so the page reopens on it. */
+/** Tells the save which tab was open, so the page reopens on it; and opens the tab a save error is about. */
 export function AgentTabField() {
-  return <input type="hidden" name="tab" value={useTabs().tab} />;
+  const { tab, select } = useTabs();
+  const result = useActionResult();
+  useEffect(() => {
+    const errorTab = agentTabForError(result?.errorKey);
+    if (errorTab) select(errorTab);
+  }, [result, select]);
+  return <input type="hidden" name="tab" value={tab} />;
 }
 
 /**
  * Around the settings panels: notes which tabs have unsaved edits (by comparing each tab's fields with how they
  * loaded, so undoing an edit clears it), and when the browser refuses to save because a field on a hidden tab
- * is empty or invalid, opens that tab so the browser can point at the field.
+ * is empty or invalid, opens that tab so the browser can point at the field. A save remounts the form, and
+ * with it this, so the marks clear.
  */
 export function AgentEditTracker({ children }: { children: ReactNode }) {
   const { tab, select, setUnsaved } = useTabs();
   const ref = useRef<HTMLDivElement>(null);
-  const loaded = useRef<Map<AgentTab, string> | null>(null);
   const current = useRef({ tab, select, setUnsaved });
   current.current = { tab, select, setUnsaved };
 
   useEffect(() => {
     const root = ref.current;
     if (!root) return;
-    loaded.current = snapshot(root);
+    const loaded = snapshot(root);
+    current.current.setUnsaved(new Set());
     let timer: ReturnType<typeof setTimeout> | undefined;
     // After the event, so fields that keep their value in React state (call-result fields) have updated.
     const check = () => {
       clearTimeout(timer);
       timer = setTimeout(() => {
         const now = snapshot(root);
-        current.current.setUnsaved(new Set([...now].filter(([id, v]) => loaded.current?.get(id) !== v).map(([id]) => id)));
+        current.current.setUnsaved(new Set([...now].filter(([id, v]) => loaded.get(id) !== v).map(([id]) => id)));
       });
     };
     let switched = false;
@@ -154,33 +185,21 @@ function snapshot(root: HTMLElement): Map<AgentTab, string> {
   return new Map([...out].map(([id, v]) => [id, v.join("\n")]));
 }
 
-/** "Unsaved changes on Instructions and Ending calls", beside Save. */
-export function UnsavedNote({ labels }: { labels: Record<AgentTab, string> }) {
+/**
+ * Beside Save: "Unsaved changes on Instructions and Ending calls" while there are any, otherwise the save's
+ * result ("Saved." after saving, or why it failed).
+ */
+export function SaveStatus({ saved }: { saved?: string }) {
   const t = useTranslations("agents");
   const locale = useLocale();
-  const { tabs, unsaved } = useTabs();
-  if (unsaved.size === 0) return null;
+  const { tabs, labels, unsaved } = useTabs();
+  const result = useActionResult();
+  if (unsaved.size === 0 || result?.error) return <FormMessage initialOk={saved} />;
   const names = new Intl.ListFormat(locale, { type: "conjunction" }).format(tabs.filter((id) => unsaved.has(id)).map((id) => labels[id]));
   return (
     <p className="flex items-center gap-1.5 text-sm text-stone-600">
       <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-600" />
       {t("unsavedOn", { tabs: names })}
     </p>
-  );
-}
-
-/** Delete, in the bar beside Save but submitting its own form (`formId`), which sits outside the settings form. */
-export function DeleteAgentButton({ formId, confirm, children }: { formId: string; confirm: string; children: ReactNode }) {
-  return (
-    <button
-      type="submit"
-      form={formId}
-      className={buttonClass("danger")}
-      onClick={(e) => {
-        if (!window.confirm(confirm)) e.preventDefault();
-      }}
-    >
-      {children}
-    </button>
   );
 }

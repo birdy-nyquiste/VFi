@@ -249,10 +249,10 @@
     },
     "voicemailText": "Mensaje que dejará",
     "voicemailTextHint": "Se dice una vez después del tono, palabra por palabra, con la voz del asistente.",
-    "settingsTabs": "Ajustes del Asistente",
+    "settingsTabs": "Ajustes del asistente",
     "unsavedTab": "Cambios sin guardar",
     "unsavedOn": "Cambios sin guardar en {tabs}",
-    "knowledgeAfterCreate": "Podrás añadir una base de conocimiento cuando el Asistente esté creado."
+    "knowledgeAfterCreate": "Podrás añadir una base de conocimiento cuando el asistente esté creado."
   },
   "agentTemplates": {
     "pick": "Elige un punto de partida. Puedes cambiarlo todo antes de crear el asistente.",

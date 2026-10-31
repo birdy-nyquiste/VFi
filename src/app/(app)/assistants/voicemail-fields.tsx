@@ -23,7 +23,7 @@ export function VoicemailFields({ action: initialAction, message }: { action: Vo
       <div hidden={action !== "message"}>
         <Field label={t("voicemailText")} hint={t("voicemailTextHint")}>
           <Counted>
-            <textarea name="voicemailMessage" maxLength={MAX_VOICEMAIL_MESSAGE_LENGTH} defaultValue={message} rows={3} className={inputClass} />
+            <textarea name="voicemailMessage" required={action === "message"} maxLength={MAX_VOICEMAIL_MESSAGE_LENGTH} defaultValue={message} rows={3} className={inputClass} />
           </Counted>
         </Field>
       </div>

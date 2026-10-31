@@ -263,14 +263,16 @@ instructions has a default.
 
 | Part | Settings |
 | --- | --- |
-| Basics | Name, main language, voice (with a preview and the speech model it uses), speaking rate (0.8–1.2×), background sound (none / office) |
+| Identity | Name, main language, voice (with a preview and the speech model it uses), speaking rate (0.8–1.2×), background sound (none / office) |
 | Instructions | Greeting, instructions (both can use variables), variables, time zone, language model |
 | Conversation | Response timing (fast / medium / patient = wait 0.4 / 0.8 / 1.2 s), whether the caller can interrupt, whether the greeting can be interrupted, key terms (with the speech-recognition model shown) |
-| Ending the call | Hang up when the conversation is over (on by default; Telnyx `hangup` tool), maximum call length (5 / 10 / 15 / 30 min, default 30), hang up after silence (never / 30 / 60 s, default 60) |
+| Ending calls | Hang up when the conversation is over (on by default; Telnyx `hangup` tool), maximum call length (5 / 10 / 15 / 30 min, default 30), hang up after silence (never / 30 / 60 s, default 60), what to do when a placed call reaches voicemail (§9.3) |
 
 - **Save and Delete** sit in a bar between the page title and the tabs, the same on every tab. All the settings
   tabs are one form: Save saves every tab, switching tabs keeps edits, and a dot on a tab (and "Unsaved changes on
-  …" beside Save) marks unsaved edits. If a required field on a hidden tab is missing, saving opens that tab.
+  …" beside Save, in place of "Saved.") marks unsaved edits. If a required field on a hidden tab is missing, or
+  the save is refused because of a field on another tab, that tab opens. Delete shows its progress and any error
+  beside itself.
 - The Knowledge Base tab saves as before (sources as they're added, the mode with its own Save); Save doesn't
   cover it. On a new Assistant it says sources can be added once it's created.
 - The open tab is in the address (`?tab=instructions`) and the page reopens on it after saving.

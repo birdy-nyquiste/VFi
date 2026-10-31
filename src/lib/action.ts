@@ -1,7 +1,8 @@
 import { getLocale } from "next-intl/server";
-import { userMessage } from "./errors";
+import { UserError, userMessage, type ErrorKey } from "./errors";
 
-export type ActionState = { error?: string; ok?: string } | undefined;
+/** `errorKey` names the UserError, so a form can point at the field it's about. */
+export type ActionState = { error?: string; errorKey?: ErrorKey; ok?: string } | undefined;
 
 /**
  * Run a server action body, turning thrown UserErrors into form state in the user's language.
@@ -17,6 +18,6 @@ export async function attempt(fn: () => Promise<string | void>): Promise<ActionS
       throw err;
     }
     if (!(err instanceof Error && err.name === "UserError")) console.error(err);
-    return { error: userMessage(err, await getLocale()) };
+    return { error: userMessage(err, await getLocale()), errorKey: err instanceof UserError ? err.key : undefined };
   }
 }

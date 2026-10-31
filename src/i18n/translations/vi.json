@@ -249,10 +249,10 @@
     },
     "voicemailText": "Lời nhắn để lại",
     "voicemailTextHint": "Đọc nguyên văn một lần sau tiếng bíp, bằng giọng của trợ lý.",
-    "settingsTabs": "Cài đặt Trợ lý",
+    "settingsTabs": "Cài đặt trợ lý",
     "unsavedTab": "Thay đổi chưa lưu",
     "unsavedOn": "Có thay đổi chưa lưu ở {tabs}",
-    "knowledgeAfterCreate": "Bạn có thể thêm cơ sở kiến thức sau khi tạo Trợ lý."
+    "knowledgeAfterCreate": "Bạn có thể thêm cơ sở kiến thức sau khi tạo trợ lý."
   },
   "agentTemplates": {
     "pick": "Chọn một điểm bắt đầu. Bạn có thể thay đổi mọi thứ trước khi tạo trợ lý.",

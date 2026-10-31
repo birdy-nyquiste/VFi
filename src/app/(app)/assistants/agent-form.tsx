@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
-import { ActionForm, FormMessage, SubmitButton } from "@/components/forms";
+import { ActionButton, ActionForm, SubmitButton } from "@/components/forms";
 import { Card, CardTitle, Field, Notice, inputClass } from "@/components/ui";
 import { MAX_CALL_MINUTES, MAX_KEY_TERMS_LENGTH, readBehavior, readVariables, SILENCE_HANGUP_SECS } from "@/lib/agent-settings";
 import type { AgentTemplate } from "@/lib/agent-templates";
@@ -12,14 +12,14 @@ import { OUTBOUND_GREETING, RECORDING_NOTICE } from "@/server/agents";
 import type { LlmModel, StockVoice } from "@/server/telnyx";
 import { modelName, sttModelName } from "@/server/telnyx/models";
 import { DEFAULT_VOICE_REF, ttsModelName, voiceSpeaks } from "@/server/telnyx/stock-voices";
-import { saveAgentAction } from "./actions";
+import { deleteAgentAction, saveAgentAction } from "./actions";
 import { ModelRow } from "./model-row";
 import { ResultsSection } from "./results-section";
 import { ScriptFields } from "./script-fields";
 import { VoiceFields } from "./voice-fields";
 import { VoicemailFields } from "./voicemail-fields";
-import { AgentEditTracker, AgentTabField, AgentTabList, AgentTabPanel, DeleteAgentButton, UnsavedNote } from "./agent-tabs";
-import type { AgentTab } from "@/lib/agent-tabs";
+import { AgentEditTracker, AgentTabField, AgentTabList, AgentTabPanel, SaveStatus } from "./agent-tabs";
+import type { AgentTab } from "@/lib/agent-tab-ids";
 import { Counted } from "@/components/counted";
 
 /**
@@ -37,13 +37,10 @@ export function AgentForm({
   results,
   accountEmail,
   saved = false,
-  tabLabels,
   deleteConfirm,
 }: {
   agent?: Agent;
-  /** Every tab's name, for the tab list and the unsaved-changes note. */
-  tabLabels: Record<AgentTab, string>;
-  /** For a saved agent: what deleting it takes with it. The delete form is the page's, with id "delete-agent". */
+  /** For a saved agent: the question before deleting it, saying what deleting takes with it. */
   deleteConfirm?: string;
   /** The agent's call-result fields and email settings; a new agent starts with its template's fields. */
   results?: { fields: CallField[]; email: EmailSettings };
@@ -108,21 +105,20 @@ export function AgentForm({
       <AgentTabField />
 
       {/* Save and Delete live outside the tabs, the same on every tab. The result goes next to Save. */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-stone-200 bg-white px-4 py-3">
-        {agent && deleteConfirm ? (
-          <DeleteAgentButton formId="delete-agent" confirm={deleteConfirm}>{t("delete")}</DeleteAgentButton>
-        ) : (
-          <span />
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-stone-200 bg-white px-6 py-4">
+        {agent && deleteConfirm && (
+          <ActionButton action={deleteAgentAction} data={{ id: agent.id }} variant="danger" confirm={deleteConfirm}>
+            {t("delete")}
+          </ActionButton>
         )}
         <div className="ml-auto flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
-          {agent && <UnsavedNote labels={tabLabels} />}
-          <FormMessage initialOk={saved ? tc("saved") : undefined} />
+          <SaveStatus saved={saved ? tc("saved") : undefined} />
           <SubmitButton pendingText={tc("saving")}>{agent ? t("saveChanges") : t("create")}</SubmitButton>
         </div>
       </div>
 
       <div className="space-y-6">
-        <AgentTabList labels={tabLabels} />
+        <AgentTabList />
 
         <AgentEditTracker>
           <Section tab="identity" title={t("sectionIdentity")} description={t("sectionIdentityHint")}>

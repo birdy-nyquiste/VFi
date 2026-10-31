@@ -1,6 +1,6 @@
 import "server-only";
 import { getTranslations } from "next-intl/server";
-import type { AgentTab } from "@/lib/agent-tabs";
+import type { AgentTab } from "@/lib/agent-tab-ids";
 
 /** Each Assistant tab's name: the card it holds. */
 export async function agentTabLabels(): Promise<Record<AgentTab, string>> {

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { agentTabQuery, readAgentTab } from "@/lib/agent-tabs";
+import { agentTabQuery, readAgentTab } from "@/lib/agent-tab-ids";
 import type { Agent } from "@/db/schema";
 import { attempt, type ActionState } from "@/lib/action";
 import { createAgent, deleteAgent, updateAgent } from "@/server/agents";
