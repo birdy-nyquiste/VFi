@@ -17,7 +17,13 @@
     "language": "Language",
     "sentenceGap": " ",
     "allNumbers": "All numbers",
-    "filterByNumber": "Filter by number"
+    "filterByNumber": "Filter by number",
+    "sort": "Sort",
+    "clearFilters": "Clear filters",
+    "listRange": "{from}–{to} of {total}",
+    "pages": "Pages",
+    "previousPage": "Previous page",
+    "nextPage": "Next page"
   },
   "languages": {
     "en": "English",
@@ -436,7 +442,6 @@
     "seekRecording": "Recording position",
     "callFrom": "Call from",
     "colYourNumber": "Your number",
-    "emptyForNumber": "No calls on this number yet.",
     "yourNumber": "Your number {number}",
     "voicemailBadge": "Reached voicemail",
     "voicemailResult": {
@@ -448,7 +453,28 @@
       "hangup": "Reached voicemail. The Assistant hung up.",
       "message": "Reached voicemail. The Assistant left your message and hung up.",
       "continue": "Reached voicemail. The Assistant kept talking."
-    }
+    },
+    "filtersLabel": "Filter calls",
+    "searchLabel": "Search calls",
+    "searchPlaceholder": "Search number or last 4 digits",
+    "anyDirection": "Inbound and outbound",
+    "anyStatus": "Any status",
+    "allAgents": "All Assistants",
+    "anyTime": "Any time",
+    "today": "Today",
+    "last7Days": "Last 7 days",
+    "last30Days": "Last 30 days",
+    "sorts": {
+      "newest": "Newest first",
+      "oldest": "Oldest first",
+      "longest": "Longest first",
+      "shortest": "Shortest first",
+      "costliest": "Highest cost first",
+      "cheapest": "Lowest cost first"
+    },
+    "filterByBadge": "Filter by mark",
+    "matching": "{count, plural, one {# call matches} other {# calls match}}",
+    "emptyFiltered": "No calls match these filters."
   },
   "messages": {
     "title": "Messages",
@@ -472,8 +498,16 @@
     "nameSaved": "Name saved.",
     "nameRemoved": "Name removed.",
     "toNumber": "To {number}",
-    "emptyForNumber": "No texts to this number yet.",
-    "descriptionMany": "Texts sent to your numbers, {price} per segment. Receive only: replies aren't supported."
+    "descriptionMany": "Texts sent to your numbers, {price} per segment. Receive only: replies aren't supported.",
+    "filtersLabel": "Filter texts",
+    "searchLabel": "Search texts",
+    "searchPlaceholder": "Search name or number",
+    "sortNewest": "Newest first",
+    "sortOldest": "Oldest first",
+    "unreadLabel": "Filter by read",
+    "unreadOnly": "Unread only",
+    "matching": "{count, plural, one {# conversation matches} other {# conversations match}}",
+    "emptyFiltered": "No conversations match these filters."
   },
   "account": {
     "title": "Account",
@@ -533,10 +567,23 @@
     "columnDate": "Date",
     "columnDescription": "Description",
     "columnAmount": "Amount",
-    "activityLimited": "Showing the latest {count} entries.",
     "payments": "Payments",
     "checkoutItem": "VFi credit",
-    "knowledgeSource": "Knowledge source"
+    "knowledgeSource": "Knowledge source",
+    "activityFilter": "Filter activity",
+    "activityType": "Type",
+    "activityAll": "All activity",
+    "activityKinds": {
+      "topup": "Top-ups",
+      "call": "Calls",
+      "number_monthly": "Numbers",
+      "voice_clone": "Voice clones",
+      "sms": "Texts",
+      "knowledge_source": "Knowledge Base",
+      "refund": "Refunds",
+      "adjustment": "Adjustments"
+    },
+    "noActivityOfType": "Nothing of this type yet."
   },
   "stored": {
     "ledgerTopup": "Top-up {amount, number, ::currency/USD}",

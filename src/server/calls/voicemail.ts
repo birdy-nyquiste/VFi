@@ -9,7 +9,7 @@ import type { VoicemailAction } from "@/lib/agent-settings";
  * until it's seen the calls pages show no voicemail and detection is ignored. Once seen it stays seen.
  */
 let tableSeen = false;
-async function voicemailTableExists(q: Queryable = db): Promise<boolean> {
+export async function voicemailTableExists(q: Queryable = db): Promise<boolean> {
   return (tableSeen ||= await tableExists(q, "call_voicemail"));
 }
 

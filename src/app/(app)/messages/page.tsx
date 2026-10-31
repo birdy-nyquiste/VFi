@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { Badge, Card, Empty, FilterChips, Notice, PageHeader } from "@/components/ui";
+import { Badge, Card, Empty, FilterChips, Notice, PageHeader, compactInputClass } from "@/components/ui";
+import { ListFilters } from "@/components/list-filters";
+import { Pagination } from "@/components/pagination";
+import { listHref, readPage } from "@/lib/list-params";
 import { config } from "@/lib/config";
 import { formatCents, formatDateTime, formatPhone } from "@/lib/format";
 import { requireUser } from "@/server/auth";
@@ -17,16 +20,31 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getTranslations("messages"))("title") };
 }
 
-export default async function MessagesPage({ searchParams }: { searchParams: Promise<{ number?: string }> }) {
+type ListParams = { q?: string; unread?: string; sort?: string; number?: string; page?: string };
+
+export default async function MessagesPage({ searchParams }: { searchParams: Promise<ListParams> }) {
   const user = await requireUser();
-  const { number } = await searchParams;
+  const params = await searchParams;
+  const { number } = params;
   const numbers = await listUserNumbers(user.id);
   const activeNumbers = activeNumbersByAge(numbers);
   const active = activeNumbers[0];
   // Conversations say which of the user's numbers they were sent to, and can be filtered by it, once there's more than one.
   const showNumbers = activeNumbers.length > 1;
   const filter = showNumbers && number && isUuid(number) ? activeNumbers.find((n) => n.id === number) : undefined;
-  const conversations = await listConversations(user.id, 500, filter?.e164);
+  const search = params.q?.trim() || undefined;
+  const unreadOnly = params.unread === "1";
+  const oldestFirst = params.sort === "oldest";
+  const { conversations, total, page } = await listConversations(user.id, {
+    to: filter?.e164,
+    search,
+    unreadOnly,
+    oldestFirst,
+    page: readPage(params.page),
+  });
+  const filtered = Boolean(filter || search || unreadOnly);
+  const shown: ListParams = { q: search, unread: unreadOnly ? "1" : undefined, sort: oldestFirst ? "oldest" : undefined, number: filter?.id, page: String(page) };
+  const href = (changes: Partial<ListParams>) => listHref("/messages", shown, changes);
   const [t, tc, locale] = await Promise.all([getTranslations("messages"), getTranslations("common"), getLocale()]);
   const tz = await viewerTimeZone();
 
@@ -56,18 +74,49 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
           .map((n) => <Notice key={n.id}>{t("smsSettingUp", { number: formatPhone(n.e164) })}</Notice>)
       )}
 
-      {showNumbers && (
-        <FilterChips
-          label={tc("filterByNumber")}
-          chips={[
-            { href: "/messages", label: tc("allNumbers"), active: !filter },
-            ...activeNumbers.map((n) => ({ href: `/messages?number=${n.id}`, label: formatPhone(n.e164), active: filter?.id === n.id })),
-          ]}
-        />
+      {(total > 0 || filtered) && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="min-w-0 flex-[1_1_320px]">
+              <ListFilters key={href({})} action="/messages" label={t("filtersLabel")} keep={{ unread: shown.unread, number: shown.number }}>
+                <input
+                  name="q"
+                  type="search"
+                  defaultValue={search}
+                  aria-label={t("searchLabel")}
+                  placeholder={t("searchPlaceholder")}
+                  className={`${compactInputClass} min-w-0 flex-[1_1_200px]`}
+                />
+                <select name="sort" defaultValue={oldestFirst ? "oldest" : ""} aria-label={tc("sort")} className={`${compactInputClass}`}>
+                  <option value="">{t("sortNewest")}</option>
+                  <option value="oldest">{t("sortOldest")}</option>
+                </select>
+              </ListFilters>
+            </div>
+            <FilterChips label={t("unreadLabel")} chips={[{ href: href({ unread: unreadOnly ? undefined : "1" }), label: t("unreadOnly"), active: unreadOnly }]} />
+          </div>
+          {showNumbers && (
+            <FilterChips
+              label={tc("filterByNumber")}
+              chips={[
+                { href: href({ number: undefined }), label: tc("allNumbers"), active: !filter },
+                ...activeNumbers.map((n) => ({ href: href({ number: n.id }), label: formatPhone(n.e164), active: filter?.id === n.id })),
+              ]}
+            />
+          )}
+          {filtered && (
+            <p className="flex flex-wrap items-center gap-2 text-[13px] text-stone-500">
+              {t("matching", { count: total })}
+              <Link href={oldestFirst ? "/messages?sort=oldest" : "/messages"} scroll={false} className="underline hover:text-stone-900">
+                {tc("clearFilters")}
+              </Link>
+            </p>
+          )}
+        </div>
       )}
 
       {conversations.length === 0 ? (
-        <Empty>{filter ? t("emptyForNumber") : t("empty")}</Empty>
+        <Empty>{filtered ? t("emptyFiltered") : t("empty")}</Empty>
       ) : (
         <Card className="p-0">
           <ul className="divide-y divide-stone-100">
@@ -90,6 +139,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
               </li>
             ))}
           </ul>
+          <Pagination page={page} total={total} href={(p) => href({ page: String(p) })} />
         </Card>
       )}
     </div>

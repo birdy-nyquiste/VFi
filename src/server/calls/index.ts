@@ -18,13 +18,13 @@ import { callRef, failedCallFields, hasOtherActiveCall, isCallLive, STALE_CALL_M
 import { fetchCallResults } from "./results";
 import { purgeCallResults } from "@/server/call-results";
 
-/** The user's latest calls; only those on one of their numbers when `phoneNumberId` is given. */
-export async function listUserCalls(userId: string, limit = 50, phoneNumberId?: string) {
+/** The user's latest calls, for the dashboard. The calls list pages and filters with `findUserCalls`. */
+export async function listUserCalls(userId: string, limit = 50) {
   return db
     .select({ call: calls, agentName: agents.name })
     .from(calls)
     .leftJoin(agents, eq(calls.agentId, agents.id))
-    .where(and(eq(calls.userId, userId), isNull(calls.deletedAt), phoneNumberId ? eq(calls.phoneNumberId, phoneNumberId) : undefined))
+    .where(and(eq(calls.userId, userId), isNull(calls.deletedAt)))
     .orderBy(desc(calls.createdAt))
     .limit(limit);
 }

@@ -121,6 +121,8 @@ export function ButtonLink({ variant = "primary", ...props }: ComponentProps<typ
 
 export const inputClass =
   "block w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-[15px] outline-none transition-colors placeholder:text-stone-500 focus:border-stone-500 focus:ring-2 focus:ring-emerald-100";
+/** The same look for a box or menu that sizes to its content, like the filters above a list. */
+export const compactInputClass = inputClass.replace("block w-full", "block w-auto");
 
 /**
  * Keyboard focus ring for links and buttons drawn without the browser's outline. Signal teal keeps
