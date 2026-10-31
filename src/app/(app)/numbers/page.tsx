@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { ActionForm, SubmitButton } from "@/components/forms";
-import { Badge, Card, CardTitle, Empty, Notice, PageHeader, StatusBadge, buttonClass, inputClass } from "@/components/ui";
+import { Badge, Card, CardTitle, Empty, Field, Notice, PageHeader, StatusBadge, buttonClass, inputClass } from "@/components/ui";
 import { config } from "@/lib/config";
 import { UserError, userMessage } from "@/lib/errors";
 import { formatCents, formatDate, formatPhone } from "@/lib/format";
@@ -23,6 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function NumbersPage({ searchParams }: { searchParams: Promise<{ area?: string; ends?: string }> }) {
   const user = await requireUser();
   const { area, ends } = await searchParams;
+  const areaCode = area?.trim() ?? "";
   const ending = ends?.trim() ?? "";
   const [t, tc, ts, locale] = await Promise.all([getTranslations("numbers"), getTranslations("common"), getTranslations("status"), getLocale()]);
   const tz = await viewerTimeZone();
@@ -48,7 +49,7 @@ export default async function NumbersPage({ searchParams }: { searchParams: Prom
   let searchError: string | undefined;
   if (canBuy && searched) {
     try {
-      ({ numbers: results, widened } = await searchAvailableNumbers(area?.trim() ?? "", ending));
+      ({ numbers: results, widened } = await searchAvailableNumbers(areaCode, ending));
     } catch (err) {
       console.error("Number search failed", { area, ends }, err);
       searchError = err instanceof UserError ? userMessage(err, locale) : t("searchFailed");
@@ -186,27 +187,29 @@ export default async function NumbersPage({ searchParams }: { searchParams: Prom
               </Notice>
             </div>
           )}
-          <form className="flex flex-wrap items-end gap-2" action="/numbers" role="search">
-            <label className="flex flex-col gap-1.5 text-[13px] text-stone-600">
-              {t("areaCode")}
-              <input name="area" defaultValue={area} placeholder={t("areaPlaceholder")} inputMode="numeric" maxLength={3} className={`${inputClass} w-44`} />
-            </label>
-            <label className="flex flex-col gap-1.5 text-[13px] text-stone-600">
-              {t("endsWith")}
-              <input name="ends" defaultValue={ends} placeholder={t("endsWithPlaceholder")} inputMode="numeric" maxLength={4} className={`${inputClass} w-44`} />
-            </label>
-            <button className={buttonClass("primary")}>{t("search")}</button>
+          <form className="flex flex-wrap items-start gap-x-3 gap-y-2" action="/numbers" role="search">
+            <div className="w-44">
+              <Field label={t("areaCode")} hint={t("optional")}>
+                <input name="area" defaultValue={area} placeholder={t("areaPlaceholder")} inputMode="numeric" maxLength={3} className={inputClass} />
+              </Field>
+            </div>
+            <div className="w-44">
+              <Field label={t("endsWith")} hint={t("endsWithHint")}>
+                <input name="ends" defaultValue={ends} placeholder={t("endsWithPlaceholder")} inputMode="numeric" maxLength={4} className={inputClass} />
+              </Field>
+            </div>
+            {/* Level with the boxes, below their labels. */}
+            <button className={`${buttonClass("primary")} mt-[26px]`}>{t("search")}</button>
           </form>
-          <p className="mt-2 text-xs text-stone-500">{t("searchHint")}</p>
           {searchError && <p className="mt-3 text-sm text-red-600">{searchError}</p>}
-          {widened && <p className="mt-3 text-sm text-stone-500">{t("widened", { area: area?.trim() ?? "", ending })}</p>}
+          {widened && results.length > 0 && <p className="mt-3 text-sm text-stone-500">{t("widened", { area: areaCode, ending })}</p>}
           {!widened && results.length > 0 && results.every((r) => r.nearby) && (
             <p className="mt-3 text-sm text-stone-500">
-              {ending ? t("nearbyOnlyEnding", { area: area?.trim() ?? "", ending }) : t("nearbyOnly", { area: area ?? "" })}
+              {ending ? t("nearbyOnlyEnding", { area: areaCode, ending }) : t("nearbyOnly", { area: areaCode })}
             </p>
           )}
           {searched && !searchError && results.length === 0 && (
-            <p className="mt-3 text-sm text-stone-500">{ending ? t("noResultsEnding", { ending }) : t("noResults")}</p>
+            <p className="mt-3 text-sm text-stone-500">{ending ? t("noResultsEnding", { ending }) : areaCode ? t("noResults") : t("noResultsAny")}</p>
           )}
           {results.length > 0 && (
             <ul className="mt-5 grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-3">

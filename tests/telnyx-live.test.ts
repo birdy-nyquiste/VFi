@@ -119,6 +119,11 @@ describe("number search", () => {
     expect(features(String(vi.mocked(fetch).mock.calls[0][0]))).toEqual(["voice"]);
   });
 
+  it("says a trial account can't search by ending digits", async () => {
+    respond(403, { errors: [{ code: "10039", title: "Feature limited" }] });
+    await expect(provider.searchNumbers({ endsWith: "2026" })).rejects.toMatchObject({ key: "endingSearchUnavailable" });
+  });
+
   it("asks for the ending and drops results that don't have it", async () => {
     respond(200, {
       data: [

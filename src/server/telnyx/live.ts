@@ -1,6 +1,7 @@
 import { createPublicKey, verify } from "node:crypto";
 import { RESPONSE_TIMING, type VoicemailAction } from "@/lib/agent-settings";
 import { config } from "@/lib/config";
+import { UserError } from "@/lib/errors";
 import { stored } from "@/lib/stored-text";
 import { encodeClientState, parseTelnyxEnvelope } from "./events";
 import { toOfferedModels, type CatalogModel } from "./models";
@@ -270,6 +271,8 @@ export function createTelnyxProvider(cfg: TelnyxConfig): VoiceProvider {
         res = await api("GET", `/available_phone_numbers?${q}`);
       } catch (err) {
         if (err instanceof TelnyxApiError && err.status === 400 && err.body.includes("10031")) return [];
+        // Trial accounts can't search by digits (SPEC §4); trying again wouldn't help, so say what to do instead.
+        if (endsWith && err instanceof TelnyxApiError && err.status === 403 && err.body.includes("10039")) throw new UserError("endingSearchUnavailable");
         throw err;
       }
       return res.data

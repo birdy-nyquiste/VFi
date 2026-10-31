@@ -370,8 +370,7 @@
     "areaCode": "市外局番",
     "areaPlaceholder": "例：415",
     "endsWith": "末尾の数字",
-    "endsWithPlaceholder": "4 桁まで",
-    "searchHint": "どちらも省略できます。",
+    "endsWithPlaceholder": "例：2026",
     "search": "検索",
     "searchFailed": "電話番号の検索に失敗しました。もう一度お試しください。",
     "nearbyOnly": "{area} には空き番号がないため、近隣の市外局番の番号を表示しています。",
@@ -389,7 +388,10 @@
     "agentDisconnected": "アシスタントの接続を解除しました。",
     "simulatedCall": "シミュレーション通話を発信しました。数秒後に「通話」を確認してください。",
     "simulatedText": "シミュレーション SMS を受信しました。「メッセージ」をご覧ください。",
-    "atLimit": "電話番号は {max} 件あり、1 アカウントの上限に達しています。別の番号を取得するには、いずれかを解約してください。"
+    "atLimit": "電話番号は {max} 件あり、1 アカウントの上限に達しています。別の番号を取得するには、いずれかを解約してください。",
+    "optional": "省略可。",
+    "endsWithHint": "省略可。4 桁まで。",
+    "noResultsAny": "現在利用できる番号はありません。しばらくしてからお試しください。"
   },
   "calls": {
     "title": "通話",
@@ -615,6 +617,7 @@
     "notAvailable": "利用できません。",
     "areaCodeDigits": "市外局番は 3 桁で入力してください。",
     "endingDigits": "末尾の数字は 1〜4 桁で入力してください。",
+    "endingSearchUnavailable": "このアカウントではまだ末尾の数字で検索できません。市外局番で検索してください。",
     "invalidUsNumber": "無効な米国の電話番号です。",
     "numberUnavailable": "その番号は利用できません。別の番号を選んでください。",
     "numberLimit": "電話番号は最大 {max, plural, one {# 件} other {# 件}}までです。",

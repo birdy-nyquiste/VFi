@@ -370,8 +370,7 @@
     "areaCode": "Código de área",
     "areaPlaceholder": "p. ej. 415",
     "endsWith": "Termina en",
-    "endsWithPlaceholder": "Hasta 4 dígitos",
-    "searchHint": "Ambos son opcionales.",
+    "endsWithPlaceholder": "p. ej. 2026",
     "search": "Buscar",
     "searchFailed": "No se pudo buscar números. Inténtalo de nuevo.",
     "nearbyOnly": "No quedan números en el {area}; estos son de códigos de área cercanos.",
@@ -389,7 +388,10 @@
     "agentDisconnected": "Asistente desconectado.",
     "simulatedCall": "Llamada simulada realizada: revisa Llamadas en unos segundos.",
     "simulatedText": "Mensaje simulado recibido: míralo en Mensajes.",
-    "atLimit": "Tienes {max} números, el máximo por cuenta. Libera uno para obtener un número diferente."
+    "atLimit": "Tienes {max} números, el máximo por cuenta. Libera uno para obtener un número diferente.",
+    "optional": "Opcional.",
+    "endsWithHint": "Opcional. Hasta 4 dígitos.",
+    "noResultsAny": "Ahora mismo no hay números disponibles. Inténtalo más tarde."
   },
   "calls": {
     "title": "Llamadas",
@@ -615,6 +617,7 @@
     "notAvailable": "No disponible.",
     "areaCodeDigits": "El código de área debe tener 3 dígitos.",
     "endingDigits": "La terminación debe tener de 1 a 4 dígitos.",
+    "endingSearchUnavailable": "La búsqueda por terminación aún no está disponible en esta cuenta. Busca por código de área.",
     "invalidUsNumber": "Número de EE. UU. no válido.",
     "numberUnavailable": "Ese número no está disponible. Elige otro.",
     "numberLimit": "Puedes tener hasta {max, plural, one {# número} other {# números}}.",

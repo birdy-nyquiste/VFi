@@ -370,8 +370,7 @@
     "areaCode": "Mã vùng",
     "areaPlaceholder": "ví dụ 415",
     "endsWith": "Kết thúc bằng",
-    "endsWithPlaceholder": "Tối đa 4 chữ số",
-    "searchHint": "Cả hai đều không bắt buộc.",
+    "endsWithPlaceholder": "ví dụ 2026",
     "search": "Tìm kiếm",
     "searchFailed": "Tìm số thất bại. Hãy thử lại.",
     "nearbyOnly": "Đã hết số ở mã vùng {area}; đây là các số thuộc mã vùng lân cận.",
@@ -389,7 +388,10 @@
     "agentDisconnected": "Đã ngắt kết nối trợ lý.",
     "simulatedCall": "Đã thực hiện cuộc gọi mô phỏng — xem mục Cuộc gọi sau vài giây.",
     "simulatedText": "Đã nhận tin nhắn mô phỏng — xem mục Tin nhắn.",
-    "atLimit": "Bạn đã có {max} số, mức tối đa cho một tài khoản. Hãy trả lại một số để lấy số khác."
+    "atLimit": "Bạn đã có {max} số, mức tối đa cho một tài khoản. Hãy trả lại một số để lấy số khác.",
+    "optional": "Không bắt buộc.",
+    "endsWithHint": "Không bắt buộc. Tối đa 4 chữ số.",
+    "noResultsAny": "Hiện không có số nào. Hãy thử lại sau."
   },
   "calls": {
     "title": "Cuộc gọi",
@@ -615,6 +617,7 @@
     "notAvailable": "Không khả dụng.",
     "areaCodeDigits": "Mã vùng phải có 3 chữ số.",
     "endingDigits": "Phần đuôi phải có từ 1 đến 4 chữ số.",
+    "endingSearchUnavailable": "Tài khoản này chưa thể tìm theo các chữ số cuối. Hãy tìm theo mã vùng.",
     "invalidUsNumber": "Số Hoa Kỳ không hợp lệ.",
     "numberUnavailable": "Số này không khả dụng. Hãy chọn số khác.",
     "numberLimit": "Bạn có thể có tối đa {max, plural, other {# số điện thoại}}.",

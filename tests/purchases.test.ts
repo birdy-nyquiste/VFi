@@ -314,6 +314,13 @@ describe("number search", () => {
     await expect(searchAvailableNumbers("415", "")).resolves.toEqual({ numbers: [], widened: false });
   });
 
+  it("widens in demo mode when the area code has no numbers", async () => {
+    const res = await searchAvailableNumbers("998", "26");
+    expect(res.widened).toBe(true);
+    expect(res.numbers.length).toBeGreaterThan(0);
+    expect((await searchAvailableNumbers("999", "26")).numbers.every((n) => n.nearby)).toBe(true);
+  });
+
   it("offers distinct demo numbers with the ending", async () => {
     const { numbers } = await searchAvailableNumbers("415", "26");
     expect(new Set(numbers.map((n) => n.e164)).size).toBe(numbers.length);

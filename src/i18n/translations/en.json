@@ -370,8 +370,7 @@
     "areaCode": "Area code",
     "areaPlaceholder": "e.g. 415",
     "endsWith": "Ends with",
-    "endsWithPlaceholder": "Up to 4 digits",
-    "searchHint": "Both are optional.",
+    "endsWithPlaceholder": "e.g. 2026",
     "search": "Search",
     "searchFailed": "Number search failed. Try again.",
     "nearbyOnly": "No numbers left in {area}; these are from nearby area codes.",
@@ -389,7 +388,10 @@
     "agentDisconnected": "Assistant disconnected.",
     "simulatedCall": "Simulated call placed — check Calls in a few seconds.",
     "simulatedText": "Simulated text received — see Messages.",
-    "atLimit": "You have {max} numbers, the most an account can have. Release one to get a different number."
+    "atLimit": "You have {max} numbers, the most an account can have. Release one to get a different number.",
+    "optional": "Optional.",
+    "endsWithHint": "Optional. Up to 4 digits.",
+    "noResultsAny": "No numbers are available right now. Try again later."
   },
   "calls": {
     "title": "Calls",
@@ -615,6 +617,7 @@
     "notAvailable": "Not available.",
     "areaCodeDigits": "Area code must be 3 digits.",
     "endingDigits": "Ending digits must be 1 to 4 digits.",
+    "endingSearchUnavailable": "Searching by ending digits isn't available on this account yet. Search by area code instead.",
     "invalidUsNumber": "Invalid US number.",
     "numberUnavailable": "That number isn't available. Pick another one.",
     "numberLimit": "You can have up to {max, plural, one {# number} other {# numbers}}.",
