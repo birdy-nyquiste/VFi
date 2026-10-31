@@ -12,7 +12,7 @@ import { config } from "@/lib/config";
 import { formatCallerNumber, formatCents, formatDateTime, formatDuration, formatPhone } from "@/lib/format";
 import { listUserAgents, MAX_CALL_GOAL_LENGTH } from "@/server/agents";
 import { requireUser } from "@/server/auth";
-import { CALL_DIRECTIONS, CALL_PERIODS, CALL_SORTS, CALL_STATUS_FILTERS, findUserCalls, readCallList, type CallListParams, type CallSort } from "@/server/calls/list";
+import { CALL_DIRECTIONS, CALL_PERIODS, CALL_SORTS, CALL_STATUS_FILTERS, callFilterOptions, findUserCalls, readCallList, type CallListParams, type CallSort } from "@/server/calls/list";
 import { isCallLive } from "@/server/calls/state";
 import { callVoicemails } from "@/server/calls/voicemail";
 import { listUserNumbers } from "@/server/numbers";
@@ -41,17 +41,24 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
   const user = await requireUser();
   // "Call them back" on a call page opens this form with the number filled in.
   const { to, ...params } = singleValues(await searchParams);
-  const [agents, numbers, tz, marked] = await Promise.all([listUserAgents(user.id), listUserNumbers(user.id), viewerTimeZone(), hasMarkedCalls(user.id)]);
-  // Once the user has more than one number, calls can go from any of them and the list shows and filters by them.
+  const [agents, numbers, tz, marked, options] = await Promise.all([
+    listUserAgents(user.id),
+    listUserNumbers(user.id),
+    viewerTimeZone(),
+    hasMarkedCalls(user.id),
+    callFilterOptions(user.id),
+  ]);
+  // Once the user has more than one number, calls can go from any of them.
   const activeNumbers = activeNumbersByAge(numbers);
-  const showNumbers = activeNumbers.length > 1;
+  // Once calls are on more than one number (active or released), the list shows and filters by it.
+  const showNumbers = options.numbers.length > 1;
   const list = readCallList(params as CallListParams, {
-    agentIds: agents.map((a) => a.id),
-    numberIds: showNumbers ? activeNumbers.map((n) => n.id) : [],
+    agentIds: options.agents.map((a) => a.id),
+    numberIds: showNumbers ? options.numbers.map((n) => n.id) : [],
     timeZone: tz,
   });
   const { filters, sort, filtered } = list;
-  const filter = activeNumbers.find((n) => n.id === filters.phoneNumberId);
+  const filter = options.numbers.find((n) => n.id === filters.phoneNumberId);
   const { rows, total, page } = await findUserCalls(user.id, filters, sort, list.page);
   const shown: CallListParams = { ...list.shown, page: String(page) };
   const href = (changes: CallListParams) => listHref("/calls", shown, changes);
@@ -163,11 +170,11 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
                 <option key={s} value={s}>{s === "voicemail" ? t("voicemailBadge") : ts(s)}</option>
               ))}
             </select>
-            {agents.length > 1 && (
+            {options.agents.length > 1 && (
               <select name="agent" defaultValue={filters.agentId ?? ""} aria-label={tc("agent")} className={compactInputClass}>
                 <option value="">{t("allAgents")}</option>
-                {agents.map((a) => (
-                  <option key={a.id} value={a.id}>{a.name}</option>
+                {options.agents.map((a) => (
+                  <option key={a.id} value={a.id}>{a.gone ? t("agentDeleted", { name: a.label }) : a.label}</option>
                 ))}
               </select>
             )}
@@ -190,7 +197,11 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
                 label={tc("filterByNumber")}
                 chips={[
                   { href: href({ number: undefined }), label: tc("allNumbers"), active: !filter },
-                  ...activeNumbers.map((n) => ({ href: href({ number: n.id }), label: formatPhone(n.e164), active: filter?.id === n.id })),
+                  ...options.numbers.map((n) => ({
+                    href: href({ number: n.id }),
+                    label: n.gone ? tc("numberReleased", { number: formatPhone(n.label) }) : formatPhone(n.label),
+                    active: filter?.id === n.id,
+                  })),
                 ]}
               />
             ) : (
