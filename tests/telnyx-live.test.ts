@@ -118,6 +118,18 @@ describe("number search", () => {
     await createTelnyxProvider({ ...telnyxConfig, messagingProfileId: "" }).searchNumbers({ areaCode: "415" });
     expect(features(String(vi.mocked(fetch).mock.calls[0][0]))).toEqual(["voice"]);
   });
+
+  it("asks for the ending and drops results that don't have it", async () => {
+    respond(200, {
+      data: [
+        { phone_number: "+14155552026", best_effort: false },
+        { phone_number: "+16285559999", best_effort: true },
+      ],
+    });
+    const res = await provider.searchNumbers({ areaCode: "415", endsWith: "2026" });
+    expect(res.map((n) => n.e164)).toEqual(["+14155552026"]);
+    expect(new URL(String(vi.mocked(fetch).mock.calls[0][0])).searchParams.get("filter[phone_number][ends_with]")).toBe("2026");
+  });
 });
 
 describe("catalogs", () => {

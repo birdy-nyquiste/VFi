@@ -245,7 +245,8 @@ export interface CallRef {
 export interface VoiceProvider {
   readonly name: string;
 
-  searchNumbers(q: { areaCode?: string; limit?: number }): Promise<AvailableNumber[]>;
+  /** `endsWith`: only numbers whose last digits are these (1–4 digits). */
+  searchNumbers(q: { areaCode?: string; endsWith?: string; limit?: number }): Promise<AvailableNumber[]>;
   orderNumber(e164: string): Promise<NumberOrderResult>;
   getNumberOrder(orderId: string): Promise<NumberOrderResult>;
   /** The provider's id for a number on our account, or null if we don't have it. */

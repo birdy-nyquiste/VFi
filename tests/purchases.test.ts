@@ -14,6 +14,7 @@ import {
   purchaseNumber,
   refreshPendingNumbers,
   releaseNumber,
+  searchAvailableNumbers,
 } from "@/server/numbers";
 import { mockProvider } from "@/server/telnyx/mock";
 import { ProviderHttpError } from "@/server/telnyx/types";
@@ -290,5 +291,32 @@ describe("failed payments", () => {
     await failPayment("cs_abandoned", stored("checkoutExpired"));
     await failPayment("cs_declined", stored("paymentFailed"));
     expect((await listPayments(u.id)).map((p) => p.providerRef).sort()).toEqual(["cs_declined", "cs_open"]);
+  });
+});
+
+describe("number search", () => {
+  it("rejects endings that aren't 1 to 4 digits", async () => {
+    await expect(searchAvailableNumbers("", "12345")).rejects.toMatchObject({ key: "endingDigits" });
+    await expect(searchAvailableNumbers("", "12a")).rejects.toMatchObject({ key: "endingDigits" });
+  });
+
+  it("searches the whole US when the area code has no number with the ending", async () => {
+    const search = vi.spyOn(mockProvider, "searchNumbers").mockResolvedValueOnce([]);
+    const res = await searchAvailableNumbers("415", "2026");
+    expect(res.widened).toBe(true);
+    expect(res.numbers.length).toBeGreaterThan(0);
+    expect(res.numbers.every((n) => n.e164.endsWith("2026"))).toBe(true);
+    expect(search.mock.calls.map(([q]) => q.areaCode)).toEqual(["415", undefined]);
+  });
+
+  it("doesn't widen a search by area code alone", async () => {
+    vi.spyOn(mockProvider, "searchNumbers").mockResolvedValueOnce([]);
+    await expect(searchAvailableNumbers("415", "")).resolves.toEqual({ numbers: [], widened: false });
+  });
+
+  it("offers distinct demo numbers with the ending", async () => {
+    const { numbers } = await searchAvailableNumbers("415", "26");
+    expect(new Set(numbers.map((n) => n.e164)).size).toBe(numbers.length);
+    expect(numbers.every((n) => n.e164.startsWith("+1415") && n.e164.endsWith("26"))).toBe(true);
   });
 });

@@ -251,7 +251,7 @@ export function createTelnyxProvider(cfg: TelnyxConfig): VoiceProvider {
   return {
     name: "telnyx",
 
-    async searchNumbers({ areaCode, limit = 10 }) {
+    async searchNumbers({ areaCode, endsWith, limit = 10 }) {
       const q = new URLSearchParams({
         "filter[country_code]": "US",
         "filter[phone_number_type]": "local",
@@ -264,6 +264,7 @@ export function createTelnyxProvider(cfg: TelnyxConfig): VoiceProvider {
       // New numbers receive texts (SPEC §7), which a voice-only number never could.
       if (cfg.messagingProfileId) q.append("filter[features][]", "sms");
       if (areaCode) q.set("filter[national_destination_code]", areaCode);
+      if (endsWith) q.set("filter[phone_number][ends_with]", endsWith);
       let res: { data: { phone_number: string; best_effort?: boolean; region_information?: { region_type: string; region_name: string }[] }[] };
       try {
         res = await api("GET", `/available_phone_numbers?${q}`);
@@ -272,6 +273,8 @@ export function createTelnyxProvider(cfg: TelnyxConfig): VoiceProvider {
         throw err;
       }
       return res.data
+        // Best-effort top-ups aren't documented to keep the ending, so drop any that don't.
+        .filter((n) => !endsWith || n.phone_number.endsWith(endsWith))
         .map((n) => ({
           e164: n.phone_number,
           locality: n.region_information?.find((r) => r.region_type === "rate_center")?.region_name,
