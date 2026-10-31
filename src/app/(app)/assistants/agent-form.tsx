@@ -17,6 +17,7 @@ import { ModelRow } from "./model-row";
 import { ResultsSection } from "./results-section";
 import { ScriptFields } from "./script-fields";
 import { VoiceFields } from "./voice-fields";
+import { VoicemailFields } from "./voicemail-fields";
 import { Counted } from "@/components/counted";
 
 /**
@@ -226,6 +227,7 @@ export function AgentForm({
             </select>
           </Field>
         </div>
+        <VoicemailFields action={behavior.voicemailAction} message={behavior.voicemailMessage} />
       </Section>
 
       <ResultsSection

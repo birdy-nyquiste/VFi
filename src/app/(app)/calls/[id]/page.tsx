@@ -15,6 +15,7 @@ import { EMAIL_SEND_TIMEOUT_MS, getCallResultRow } from "@/server/call-results";
 import { readFields, type FieldValue } from "@/lib/call-fields";
 import { activeNumbersByAge, ourNumber } from "@/lib/phone-numbers";
 import { isAwaitingResults, isCallLive } from "@/server/calls/state";
+import { getCallVoicemail } from "@/server/calls/voicemail";
 import { deleteCallAction, hangupAction } from "../actions";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { viewerTimeZone } from "@/server/time-zone";
@@ -50,7 +51,12 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const call = await loadCall(id); // signs the viewer in, or redirects
   if (!call) notFound();
-  const [agentName, numbers, results] = await Promise.all([callAgentName(call), listUserNumbers(call.userId), getCallResultRow(call.id)]);
+  const [agentName, numbers, results, voicemail] = await Promise.all([
+    callAgentName(call),
+    listUserNumbers(call.userId),
+    getCallResultRow(call.id),
+    getCallVoicemail(call.id),
+  ]);
   const resultFields = readFields(results?.fields);
   // A send cut off midway (the server stopped) never finishes: after a while, say it didn't go.
   const emailStatus =
@@ -98,6 +104,7 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
           <p className="whitespace-pre-wrap text-sm text-stone-700">{call.goal}</p>
         </Card>
       )}
+      {voicemail && <Notice tone="amber">{t(`voicemailNotice.${voicemail}`)}</Notice>}
       {call.outcome && (
         <Notice tone={call.outcomeMsg && ROUTINE_OUTCOMES.has(call.outcomeMsg.key) ? "amber" : "red"}>
           {showStored(locale, call.outcome, call.outcomeMsg)}

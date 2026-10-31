@@ -39,6 +39,7 @@ import {
 import { config } from "@/lib/config";
 import { UserError, type ErrorKey } from "@/lib/errors";
 import { formatCallerNumber, formatDuration, formatPhone } from "@/lib/format";
+import { getCallVoicemail } from "./calls/voicemail";
 import { sendEmail } from "./email";
 import { voiceProvider, type CallResults } from "./telnyx";
 
@@ -179,6 +180,10 @@ export async function insightIdsFor(call: Pick<Call, "agentId">): Promise<{ summ
  */
 export async function deliverCallResults(call: Call, results: CallResults | null): Promise<void> {
   if (call.status !== "completed" || !call.agentId || !(await callResultsTablesExist())) return;
+  // A call that reached voicemail and was hung up or left a message had no conversation to report on.
+  // "Keep talking" calls are reported as usual: the agent may have reached a person after all (SPEC §9.3).
+  const voicemail = await getCallVoicemail(call.id);
+  if (voicemail === "hangup" || voicemail === "message") return;
   const [agent] = await db.select().from(agents).where(eq(agents.id, call.agentId));
   if (!agent) return;
   const settingsRow = await getAgentResultsRow(agent.id);

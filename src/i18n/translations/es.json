@@ -236,7 +236,20 @@
     "undefinedVariables": "El asistente leerá {names} tal cual, porque ninguna variable lo completa. Añádela en Variables o corrige la ortografía.",
     "stt": "Reconocimiento de voz",
     "tts": "Texto a voz",
-    "setByVoice": " · definido por la voz"
+    "setByVoice": " · definido por la voz",
+    "voicemailAction": "Si una llamada que hace llega al buzón de voz",
+    "voicemailOptions": {
+      "hangup": "Colgar",
+      "message": "Dejar un mensaje y colgar",
+      "continue": "Seguir hablando"
+    },
+    "voicemailHints": {
+      "hangup": "El asistente cuelga sin decir nada.",
+      "message": "El asistente espera el tono, deja tu mensaje y cuelga.",
+      "continue": "El asistente sigue como si hubiera contestado una persona. Rara vez es útil."
+    },
+    "voicemailText": "Mensaje que dejará",
+    "voicemailTextHint": "Se dice una vez después del tono, palabra por palabra, con la voz del asistente."
   },
   "agentTemplates": {
     "pick": "Elige un punto de partida. Puedes cambiarlo todo antes de crear el asistente.",
@@ -424,7 +437,18 @@
     "callFrom": "Llamar desde",
     "colYourNumber": "Tu número",
     "emptyForNumber": "Aún no hay llamadas en este número.",
-    "yourNumber": "Tu número {number}"
+    "yourNumber": "Tu número {number}",
+    "voicemailBadge": "Buzón de voz",
+    "voicemailResult": {
+      "hangup": "Colgó",
+      "message": "Dejó un mensaje",
+      "continue": "Siguió hablando"
+    },
+    "voicemailNotice": {
+      "hangup": "Llegó al buzón de voz. El asistente colgó.",
+      "message": "Llegó al buzón de voz. El asistente dejó tu mensaje y colgó.",
+      "continue": "Llegó al buzón de voz. El asistente siguió hablando."
+    }
   },
   "messages": {
     "title": "Mensajes",
@@ -684,7 +708,9 @@
     "tooManyFields": "Un asistente puede registrar hasta {max} resultados de llamada.",
     "fieldNameDuplicate": "Hay dos resultados llamados \"{name}\". Dale a cada uno un nombre distinto.",
     "fieldNeedsOptions": "\"{name}\" es \"Una de\": dale al menos 2 opciones.",
-    "tagTooLong": "La etiqueta debe tener menos de {max} caracteres."
+    "tagTooLong": "La etiqueta debe tener menos de {max} caracteres.",
+    "voicemailMessageRequired": "Escribe el mensaje para el buzón de voz o elige otra opción.",
+    "voicemailMessageTooLong": "El mensaje para el buzón de voz es demasiado largo. Usa 500 caracteres como máximo."
   },
   "comingSoon": {
     "title": "Próximamente",

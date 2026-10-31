@@ -155,6 +155,8 @@ export type CallEventType =
   | "call.conversation.created"
   | "call.conversation.start_failed"
   | "call.cost"
+  | "call.conversation.ended"
+  | "call.machine.premium.detection.ended"
   | "other";
 
 export interface CallEvent {
@@ -177,6 +179,8 @@ export interface CallEvent {
   failureReason?: string;
   /** call.cost: provider's total cost in USD, as sent (decimal string). */
   totalCostUsd?: string;
+  /** call.machine.premium.detection.ended: an answering machine picked up (not a person, silence or a fax). */
+  reachedMachine?: boolean;
 }
 
 /** A text that arrived at one of our numbers (message.received). We never send texts. */

@@ -236,7 +236,20 @@
     "undefinedVariables": "{names} を埋める変数がないため、アシスタントにはそのまま渡されます。「変数」に追加するか、つづりを直してください。",
     "stt": "音声認識",
     "tts": "音声合成",
-    "setByVoice": " · 音声により決定"
+    "setByVoice": " · 音声により決定",
+    "voicemailAction": "発信した通話が留守番電話になったとき",
+    "voicemailOptions": {
+      "hangup": "切る",
+      "message": "メッセージを残して切る",
+      "continue": "話し続ける"
+    },
+    "voicemailHints": {
+      "hangup": "アシスタントは何も言わずに切ります。",
+      "message": "アシスタントは発信音を待ってメッセージを残し、切ります。",
+      "continue": "人が出たときと同じように続けます。使う場面はほとんどありません。"
+    },
+    "voicemailText": "残すメッセージ",
+    "voicemailTextHint": "発信音のあと、アシスタントの声でそのまま一度読み上げます。"
   },
   "agentTemplates": {
     "pick": "出発点を選んでください。作成前にすべて変更できます。",
@@ -424,7 +437,18 @@
     "callFrom": "発信元の番号",
     "colYourNumber": "自分の番号",
     "emptyForNumber": "この番号の通話はまだありません。",
-    "yourNumber": "自分の番号 {number}"
+    "yourNumber": "自分の番号 {number}",
+    "voicemailBadge": "留守番電話",
+    "voicemailResult": {
+      "hangup": "切りました",
+      "message": "メッセージを残しました",
+      "continue": "話し続けました"
+    },
+    "voicemailNotice": {
+      "hangup": "留守番電話につながりました。アシスタントは切りました。",
+      "message": "留守番電話につながりました。アシスタントはメッセージを残して切りました。",
+      "continue": "留守番電話につながりました。アシスタントは話し続けました。"
+    }
   },
   "messages": {
     "title": "メッセージ",
@@ -684,7 +708,9 @@
     "tooManyFields": "1 つのアシスタントで記録できる通話結果は {max} 件までです。",
     "fieldNameDuplicate": "「{name}」という通話結果が 2 つあります。別々の名前を付けてください。",
     "fieldNeedsOptions": "「{name}」は「いずれか 1 つ」です。選択肢を 2 つ以上入力してください。",
-    "tagTooLong": "タグは {max} 文字未満にしてください。"
+    "tagTooLong": "タグは {max} 文字未満にしてください。",
+    "voicemailMessageRequired": "留守番電話に残すメッセージを入力するか、ほかの選択肢を選んでください。",
+    "voicemailMessageTooLong": "留守番電話のメッセージが長すぎます。500 文字以内にしてください。"
   },
   "comingSoon": {
     "title": "近日公開",

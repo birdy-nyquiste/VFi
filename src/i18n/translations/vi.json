@@ -236,7 +236,20 @@
     "undefinedVariables": "Trợ lý sẽ đọc nguyên văn {names}, vì không có biến nào điền vào đó. Hãy thêm nó trong mục Biến hoặc sửa lỗi chính tả.",
     "stt": "Nhận dạng giọng nói",
     "tts": "Chuyển văn bản thành giọng nói",
-    "setByVoice": " · do giọng nói quyết định"
+    "setByVoice": " · do giọng nói quyết định",
+    "voicemailAction": "Khi cuộc gọi đi gặp hộp thư thoại",
+    "voicemailOptions": {
+      "hangup": "Gác máy",
+      "message": "Để lại lời nhắn rồi gác máy",
+      "continue": "Tiếp tục nói"
+    },
+    "voicemailHints": {
+      "hangup": "Trợ lý gác máy mà không nói gì.",
+      "message": "Trợ lý đợi tiếng bíp, để lại lời nhắn của bạn rồi gác máy.",
+      "continue": "Trợ lý tiếp tục như thể có người nghe máy. Hiếm khi cần."
+    },
+    "voicemailText": "Lời nhắn để lại",
+    "voicemailTextHint": "Đọc nguyên văn một lần sau tiếng bíp, bằng giọng của trợ lý."
   },
   "agentTemplates": {
     "pick": "Chọn một điểm bắt đầu. Bạn có thể thay đổi mọi thứ trước khi tạo trợ lý.",
@@ -424,7 +437,18 @@
     "callFrom": "Gọi từ số",
     "colYourNumber": "Số của bạn",
     "emptyForNumber": "Số này chưa có cuộc gọi nào.",
-    "yourNumber": "Số của bạn {number}"
+    "yourNumber": "Số của bạn {number}",
+    "voicemailBadge": "Hộp thư thoại",
+    "voicemailResult": {
+      "hangup": "Đã gác máy",
+      "message": "Đã để lại lời nhắn",
+      "continue": "Tiếp tục nói"
+    },
+    "voicemailNotice": {
+      "hangup": "Gặp hộp thư thoại. Trợ lý đã gác máy.",
+      "message": "Gặp hộp thư thoại. Trợ lý đã để lại lời nhắn của bạn rồi gác máy.",
+      "continue": "Gặp hộp thư thoại. Trợ lý tiếp tục nói."
+    }
   },
   "messages": {
     "title": "Tin nhắn",
@@ -684,7 +708,9 @@
     "tooManyFields": "Mỗi trợ lý ghi lại được tối đa {max} kết quả cuộc gọi.",
     "fieldNameDuplicate": "Có hai kết quả cùng tên \"{name}\". Hãy đặt tên khác nhau.",
     "fieldNeedsOptions": "\"{name}\" là \"Một trong\": hãy thêm ít nhất 2 lựa chọn.",
-    "tagTooLong": "Nhãn phải ít hơn {max} ký tự."
+    "tagTooLong": "Nhãn phải ít hơn {max} ký tự.",
+    "voicemailMessageRequired": "Hãy viết lời nhắn để lại trong hộp thư thoại, hoặc chọn tùy chọn khác.",
+    "voicemailMessageTooLong": "Lời nhắn hộp thư thoại quá dài. Tối đa 500 ký tự."
   },
   "comingSoon": {
     "title": "Sắp ra mắt",

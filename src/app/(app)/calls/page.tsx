@@ -10,6 +10,7 @@ import { listUserAgents, MAX_CALL_GOAL_LENGTH } from "@/server/agents";
 import { requireUser } from "@/server/auth";
 import { listUserCalls } from "@/server/calls";
 import { isCallLive } from "@/server/calls/state";
+import { callVoicemails } from "@/server/calls/voicemail";
 import { listUserNumbers } from "@/server/numbers";
 import { startCallAction } from "./actions";
 import { AutoRefresh } from "@/components/auto-refresh";
@@ -40,7 +41,7 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
   const showNumbers = activeNumbers.length > 1;
   const filter = showNumbers && number && isUuid(number) ? activeNumbers.find((n) => n.id === number) : undefined;
   const rows = await listUserCalls(user.id, 50, filter?.id);
-  const badges = await callBadges(rows.map(({ call }) => call.id));
+  const [badges, voicemails] = await Promise.all([callBadges(rows.map(({ call }) => call.id)), callVoicemails(rows.map(({ call }) => call.id))]);
   const readyAgents = agents.filter((a) => a.status === "ready");
   const activeNumber = activeNumbers[0];
   const agentNames = new Map(agents.map((a) => [a.id, a.name]));
@@ -161,10 +162,11 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
                   <td className="hidden px-3 py-3.5 text-stone-600 sm:table-cell">{agentName ?? "—"}</td>
                   <td className="px-3 py-3.5">
                     <span className="flex flex-wrap items-center gap-1.5">
-                      <StatusBadge status={call.status} />
+                      {voicemails.has(call.id) ? <Badge tone="amber">{t("voicemailBadge")}</Badge> : <StatusBadge status={call.status} />}
                       {badges.get(call.id) === "urgent" && <Badge tone="red">{tr("badgeUrgent")}</Badge>}
                       {badges.get(call.id) === "followup" && <Badge tone="amber">{tr("badgeFollowup")}</Badge>}
                     </span>
+                    {voicemails.has(call.id) && <div className="mt-0.5 text-xs text-stone-500">{t(`voicemailResult.${voicemails.get(call.id)!}`)}</div>}
                   </td>
                   <td className="hidden px-3 py-3.5 text-right tabular-nums sm:table-cell">{formatDuration(call.durationSec)}</td>
                   <td className="hidden px-3 py-3.5 text-right tabular-nums sm:table-cell">{call.billedCents != null ? formatCents(call.billedCents, locale) : "—"}</td>

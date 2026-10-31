@@ -86,7 +86,7 @@ connect, a payment that fails.
 | Our own speech, LLM or Assistant engine | Principle 1. | 2026-10-07 |
 | More than one voice-agent platform | Principle 1. | 2026-10-07 |
 | Sending texts (Assistant replies, user replies, scheduled texts) | US A2P texting from local numbers needs 10DLC registration, which we can't do now (§7). | 2026-10-16 |
-| Bulk outbound calls, CRM, calendar, long-term memory, number porting, transfer to a person, IVR navigation | Not needed yet. Transfer, outbound voicemail detection, noise suppression (its cost is unknown) and "improve my instructions" (`/instructions/enhance`) may be revisited. | 2026-10-07, 2026-10-21 |
+| Bulk outbound calls, CRM, calendar, long-term memory, number porting, transfer to a person, IVR navigation | Not needed yet. Transfer, noise suppression (its cost is unknown) and "improve my instructions" (`/instructions/enhance`) may be revisited. Outbound voicemail detection was built in §9.3. | 2026-10-07, 2026-10-21 |
 | Tool calls other than knowledge retrieval and hang-up | Not needed yet. | 2026-10-20 |
 | Telnyx console sections Avatar, Workflow, Integrations (MCP, A2A), Messaging, Widget, Observability, Advanced; Calling's recording, TeXML and outbound settings | Pick, don't copy (principle 3). | 2026-10-21 |
 | Testing an Assistant without a phone call: text test chat, saved tests, browser voice calls | Dropped by the product owner. Telnyx findings kept in the API notes §15. | 2026-10-27 |
@@ -742,6 +742,55 @@ today. All text in five languages.
 - **Checked on a real call (2026-10-27):** the insight webhook arrived and the email went out under a minute after
   hang-up, with no page open.
 
+### 9.3 Voicemail on calls the Assistant places
+
+**Status:** Built 2026-10-31; mock approved 2026-10-31 (https://claude.ai/artifact/5PVHF1Fd5w47QpqUFPBmZN). Not yet
+checked on a real call (see How it works).
+
+Before this, an Assistant that called someone and reached voicemail talked to the recording until the call ended.
+
+**What it does**
+
+- One setting per Assistant, in the "Ending calls" card: **If a call it places reaches voicemail**
+  - **Hang up:** hangs up without saying anything.
+  - **Leave a message, then hang up:** waits for the beep, says the user's message word for word in the
+    Assistant's voice, and hangs up.
+  - **Keep talking:** carries on as if a person answered; only recorded as reaching voicemail.
+- **Calls pages:** in the list, "Reached voicemail" takes the place of the status, with what the Assistant did
+  under it (Hung up, Message left, Kept talking). The call page says the same in a sentence.
+
+**Rules**
+
+- Hang up is the default, for new Assistants and for Assistants saved before the setting existed.
+- The message is fixed text, required for Leave a message, at most `MAX_VOICEMAIL_MESSAGE_LENGTH` (500)
+  characters (`src/lib/agent-settings.ts`).
+- Only calls the Assistant places. Inbound calls are not affected; the "Place a call" form doesn't change.
+- **Billing:** a voicemail call is billed like any connected call, for the seconds connected. Telnyx charges
+  $0.0065 per placed call for detection (Premium AMD); VFi absorbs it.
+- **Results:** calls that hung up or left a message get no call-result fields and no email (§9.2): there was no
+  conversation. Keep talking calls are reported as usual, since detection can mistake a person for a machine.
+
+**How it works**
+
+- Every outbound dial asks for `answering_machine_detection: "premium"`. The Assistant's
+  `telephony_settings.voicemail_detection.on_voicemail_detected` is set from the choice: `stop_assistant`,
+  `leave_message_and_stop_assistant` with `voicemail_message {type: "message", message}`, or `continue_assistant`.
+  `ASSISTANT_BODY_VERSION` 7 re-syncs existing Assistants so they carry it.
+- Stopping the Assistant doesn't end the call, so VFi hangs up itself: on `call.machine.premium.detection.ended`
+  with `result: "machine"` for Hang up, and once the Assistant has finished (`call.conversation.ended`) for Leave
+  a message.
+- Both webhooks may arrive in either order, so each fills in its half of one row in its own table,
+  `call_voicemail` (§2.6): `action` (the Assistant's setting when voicemail was detected) and
+  `assistant_ended_at`. Whichever completes the pair for Leave a message hangs up. A row without an action is a
+  call that didn't reach voicemail.
+- If detection is processed before the answer, the Assistant isn't started on a call being hung up.
+- **Unconfirmed:** Telnyx documents `voicemail_detection` for dial plus assistant; VFi starts the Assistant with
+  `ai_assistant_start` after the answer (§5.4). Whether Telnyx applies the setting that way, and whether
+  `call.conversation.ended` arrives after the message is fully played, needs a real call to voicemail. If it
+  doesn't apply, Hang up still works (VFi hangs up on detection); Leave a message would need VFi to stop the
+  Assistant and speak the message itself.
+- Mock mode: numbers ending in 1111 reach voicemail.
+
 ---
 
 ## 10. Open questions
@@ -753,6 +802,7 @@ Grouped here so nothing gets lost; details are in the linked sections.
 | Telnyx support questions on knowledge bases (retention, vector deletion, empty buckets, crawl billing) | Turning the knowledge base and website sources on in production | §8.7 |
 | Telnyx support questions on receiving texts (STOP/HELP auto-replies, cost) | Nothing; texting is live | §7 |
 | Is AI inference included in the `call.cost` webhook's cost parts? | Reconciliation accuracy | API notes §6 |
+| Does Telnyx's voicemail setting apply when the Assistant starts after the answer? | Trusting "Leave a message" | §9.3 |
 
 ---
 
@@ -762,6 +812,7 @@ Newest first. Each line points to where the rule now lives.
 
 | Date | Decision | Section |
 | --- | --- | --- |
+| 2026-10-31 | Voicemail on calls the Assistant places: hang up (default), leave a fixed message, or keep talking; billed as usual; no results email except for Keep talking | §9.3 |
 | 2026-10-27 | Emails for calls the Assistant placed say "call to" and "Number called"; insight webhook confirmed on a real call | §9.2 |
 | 2026-10-27 | Kept from the A build: Outreach's "needs follow-up" field, a badge setting per yes/no field, no retry for failed emails, deleting an Assistant deletes its insight group; recipients may be any address | §9.2 |
 | 2026-10-27 | A built: call-result fields, badges and the email after each call, from a mock approved the same day | §9.2 |

@@ -11,7 +11,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import type { Locale } from "@/i18n/locales";
-import type { AgentBehavior, AgentVariable } from "@/lib/agent-settings";
+import type { AgentBehavior, AgentVariable, VoicemailAction } from "@/lib/agent-settings";
 import type { CallBadge } from "@/lib/call-fields";
 import type { Language } from "@/lib/language";
 import type { StoredMessage } from "@/lib/stored-text";
@@ -431,6 +431,18 @@ export const callResults = pgTable("call_results", {
   emailStatus: text("email_status").$type<EmailStatus>().notNull(),
   emailedTo: jsonb("emailed_to").$type<string[]>(),
   emailedAt: ts("emailed_at"),
+  createdAt: createdAt(),
+});
+
+/**
+ * Voicemail on a call the agent placed (SPEC §9.3). Either webhook may arrive first, so each fills in its
+ * half: `action` when voicemail was detected (the agent's setting at the time), `assistantEndedAt` when the
+ * assistant finished. A row without an action is a call that hasn't reached voicemail (so far).
+ */
+export const callVoicemail = pgTable("call_voicemail", {
+  callId: uuid("call_id").primaryKey().references(() => calls.id),
+  action: text("action").$type<VoicemailAction>(),
+  assistantEndedAt: ts("assistant_ended_at"),
   createdAt: createdAt(),
 });
 

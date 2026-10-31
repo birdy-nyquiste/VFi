@@ -330,6 +330,13 @@ describe("assistant config", () => {
     expect(sentBodies(fetchMock).map((b) => b.tools)).toEqual([[hangup, retrieval], [hangup], []]);
   });
 
+  it("dials with answering machine detection, so the assistant can act on voicemail", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ data: { call_control_id: "cc-1", call_session_id: "s-1" } }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await provider.dial({ from: "+12025550100", to: "+14155550100", clientState: callId });
+    expect(sentBodies(fetchMock)[0]).toMatchObject({ to: "+14155550100", answering_machine_detection: "premium" });
+  });
+
   it("maps the agent's behavior and variables to assistant settings", async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({ id: "assistant-1" }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
@@ -343,6 +350,8 @@ describe("assistant config", () => {
       keyTerms: "Nyquiste, Okafor",
       maxCallMinutes: 10,
       silenceHangupSecs: 0,
+      voicemailAction: "message",
+      voicemailMessage: "Please call us back.",
     } as const;
     await provider.createAssistant({ ...spec, behavior, variables: { owner_name: "Alex" } });
     await provider.updateAssistant("assistant-1", spec);
@@ -350,12 +359,24 @@ describe("assistant config", () => {
     expect(custom.voice_settings).toMatchObject({ voice_speed: 1.15, background_audio: { value: "office" } });
     expect(custom.transcription.settings).toEqual({ keyterm: "Nyquiste, Okafor" });
     expect(custom.interruption_settings).toEqual({ enable: false, disable_greeting_interruption: true, start_speaking_plan: { wait_seconds: 1.2 } });
-    expect(custom.telephony_settings).toEqual({ time_limit_secs: 600, user_idle_timeout_secs: null, recording_settings: { enabled: false } });
+    expect(custom.telephony_settings).toEqual({
+      time_limit_secs: 600,
+      user_idle_timeout_secs: null,
+      recording_settings: { enabled: false },
+      voicemail_detection: {
+        on_voicemail_detected: { action: "leave_message_and_stop_assistant", voicemail_message: { type: "message", message: "Please call us back." } },
+      },
+    });
     expect(custom.dynamic_variables.owner_name).toBe("Alex");
     // Defaults: Telnyx's own turn-taking, 30-minute limit, hang up after a minute of silence, no key terms.
     expect(defaults.transcription.settings).toEqual({ keyterm: null });
     expect(defaults.interruption_settings).toEqual({ enable: true, disable_greeting_interruption: false, start_speaking_plan: { wait_seconds: 0.4 } });
-    expect(defaults.telephony_settings).toEqual({ time_limit_secs: 1800, user_idle_timeout_secs: 60, recording_settings: { enabled: false } });
+    expect(defaults.telephony_settings).toEqual({
+      time_limit_secs: 1800,
+      user_idle_timeout_secs: 60,
+      recording_settings: { enabled: false },
+      voicemail_detection: { on_voicemail_detected: { action: "stop_assistant" } },
+    });
   });
 
   it("stores integration secrets as bearer tokens", async () => {

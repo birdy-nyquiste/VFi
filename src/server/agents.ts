@@ -7,6 +7,7 @@ import { agentKnowledge, agents, elevenLabsKeys, knowledgeSources, phoneNumbers,
 import {
   agentVariable,
   MAX_KEY_TERMS_LENGTH,
+  MAX_VOICEMAIL_MESSAGE_LENGTH,
   MAX_VARIABLE_VALUE_LENGTH,
   MAX_VARIABLES,
   readBehavior,
@@ -49,6 +50,8 @@ const INPUT_ERRORS = {
   greetingRequired: 1,
   voiceRequired: 1,
   keyTermsTooLong: 1,
+  voicemailMessageRequired: 1,
+  voicemailMessageTooLong: 1,
   tooManyVariables: 1,
 } satisfies Partial<Record<ErrorKey, 1>>;
 
@@ -66,9 +69,13 @@ export const agentInput = z.object({
   model: z.string().trim().optional().transform((m) => m || null),
   /** Anything missing or out of range falls back to its default (see agentBehavior). */
   behavior: z
-    .looseObject({ keyTerms: z.string().trim().max(MAX_KEY_TERMS_LENGTH, "keyTermsTooLong").optional() })
+    .looseObject({
+      keyTerms: z.string().trim().max(MAX_KEY_TERMS_LENGTH, "keyTermsTooLong").optional(),
+      voicemailMessage: z.string().trim().max(MAX_VOICEMAIL_MESSAGE_LENGTH, "voicemailMessageTooLong").optional(),
+    })
     .default({})
-    .transform(readBehavior),
+    .transform(readBehavior)
+    .refine((b) => b.voicemailAction !== "message" || b.voicemailMessage, "voicemailMessageRequired"),
   variables: z.array(agentVariable).max(MAX_VARIABLES, "tooManyVariables").default([]),
 });
 export type AgentInput = z.infer<typeof agentInput>;
