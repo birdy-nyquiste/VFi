@@ -17,7 +17,13 @@
     "language": "Ngôn ngữ",
     "sentenceGap": " ",
     "allNumbers": "Tất cả các số",
-    "filterByNumber": "Lọc theo số"
+    "filterByNumber": "Lọc theo số",
+    "sort": "Sắp xếp",
+    "clearFilters": "Xóa bộ lọc",
+    "listRange": "{from}–{to} trên {total}",
+    "pages": "Trang",
+    "previousPage": "Trang trước",
+    "nextPage": "Trang sau"
   },
   "languages": {
     "en": "Tiếng Anh",
@@ -447,7 +453,6 @@
     "seekRecording": "Vị trí bản ghi âm",
     "callFrom": "Gọi từ số",
     "colYourNumber": "Số của bạn",
-    "emptyForNumber": "Số này chưa có cuộc gọi nào.",
     "yourNumber": "Số của bạn {number}",
     "voicemailBadge": "Hộp thư thoại",
     "voicemailResult": {
@@ -459,7 +464,31 @@
       "hangup": "Gặp hộp thư thoại. Trợ lý đã gác máy.",
       "message": "Gặp hộp thư thoại. Trợ lý đã để lại lời nhắn của bạn rồi gác máy.",
       "continue": "Gặp hộp thư thoại. Trợ lý tiếp tục nói."
-    }
+    },
+    "filtersLabel": "Lọc cuộc gọi",
+    "searchLabel": "Tìm cuộc gọi",
+    "searchPlaceholder": "Tìm số hoặc 4 chữ số cuối",
+    "anyDirection": "Gọi đến và gọi đi",
+    "anyStatus": "Mọi trạng thái",
+    "allAgents": "Tất cả trợ lý",
+    "anyTime": "Mọi lúc",
+    "sorts": {
+      "newest": "Mới nhất trước",
+      "oldest": "Cũ nhất trước",
+      "longest": "Dài nhất trước",
+      "shortest": "Ngắn nhất trước",
+      "costliest": "Chi phí cao nhất trước",
+      "cheapest": "Chi phí thấp nhất trước"
+    },
+    "filterByBadge": "Lọc theo nhãn",
+    "matching": "{count} cuộc gọi phù hợp",
+    "emptyFiltered": "Không có cuộc gọi nào khớp với bộ lọc.",
+    "periods": {
+      "today": "Hôm nay",
+      "7d": "7 ngày qua",
+      "30d": "30 ngày qua"
+    },
+    "searchDigitsOnly": "Chỉ có thể tìm cuộc gọi theo số. Hãy nhập vài chữ số của số đó."
   },
   "messages": {
     "title": "Tin nhắn",
@@ -483,8 +512,16 @@
     "nameSaved": "Đã lưu tên.",
     "nameRemoved": "Đã gỡ tên.",
     "toNumber": "Gửi đến {number}",
-    "emptyForNumber": "Số này chưa nhận được tin nhắn nào.",
-    "descriptionMany": "Tin nhắn gửi đến các số của bạn, {price} mỗi phân đoạn. Chỉ nhận: không hỗ trợ trả lời."
+    "descriptionMany": "Tin nhắn gửi đến các số của bạn, {price} mỗi phân đoạn. Chỉ nhận: không hỗ trợ trả lời.",
+    "filtersLabel": "Lọc tin nhắn",
+    "searchLabel": "Tìm tin nhắn",
+    "searchPlaceholder": "Tìm tên hoặc số",
+    "sortNewest": "Mới nhất trước",
+    "sortOldest": "Cũ nhất trước",
+    "unreadLabel": "Lọc theo đã đọc",
+    "unreadOnly": "Chỉ chưa đọc",
+    "matching": "{count} cuộc trò chuyện phù hợp",
+    "emptyFiltered": "Không có cuộc trò chuyện nào khớp với bộ lọc."
   },
   "account": {
     "title": "Tài khoản",
@@ -544,10 +581,23 @@
     "columnDate": "Ngày",
     "columnDescription": "Mô tả",
     "columnAmount": "Số tiền",
-    "activityLimited": "Đang hiển thị {count} mục gần nhất.",
     "payments": "Thanh toán",
     "checkoutItem": "Nạp tiền VFi",
-    "knowledgeSource": "Nguồn kiến thức"
+    "knowledgeSource": "Nguồn kiến thức",
+    "activityFilter": "Lọc hoạt động",
+    "activityType": "Loại",
+    "activityAll": "Mọi hoạt động",
+    "activityKinds": {
+      "topup": "Nạp tiền",
+      "call": "Cuộc gọi",
+      "number_monthly": "Số điện thoại",
+      "voice_clone": "Giọng nhân bản",
+      "sms": "Tin nhắn",
+      "knowledge_source": "Cơ sở kiến thức",
+      "refund": "Hoàn tiền",
+      "adjustment": "Điều chỉnh"
+    },
+    "noActivityOfType": "Chưa có hoạt động nào thuộc loại này."
   },
   "stored": {
     "ledgerTopup": "Nạp tiền {amount, number, ::currency/USD}",

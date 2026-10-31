@@ -201,6 +201,9 @@ Email one-time codes and Google sign-in. No passwords.
   recorded as an adjustment rather than a payment and disabled in production builds.
 - Amounts are integer cents. Every change is an entry in an append-only ledger (`src/server/billing/ledger.ts`), the
   only way the balance changes; entries are idempotent.
+- The Billing page's Activity list shows the ledger newest first, 15 entries per page (`PAGE_SIZE`,
+  `src/lib/list-params.ts`), with a filter by kind (top-ups, calls, numbers, texts, voice clones, Knowledge Base,
+  refunds, adjustments).
 
 ### 3.3 Prices
 
@@ -386,6 +389,19 @@ When platform model settings change, existing Assistants are re-synced automatic
 - Recordings, transcripts, summaries and the Telnyx conversation are deleted 30 days after the call
   (`RETENTION_DAYS`) by the daily job. Users can delete a call record themselves sooner.
 
+### 6.4 Calls list
+
+- 15 calls per page (`PAGE_SIZE`), newest first. Sort by when, duration or cost from the column headers; on phones,
+  where those columns are hidden, from a Sort menu. Calls without a duration or cost sort last.
+- **Search:** digits anywhere in the other party's number (so the last 4 digits work). Our own number isn't
+  searched; it's on every call.
+- **Filters:** direction; status (Initiated, Answered, Completed, Reached voicemail, Rejected, Failed: every status
+  the list shows; a voicemail call is stored as completed but listed only under Reached voicemail, §9.3); Assistant
+  (with more than one); time (today in the viewer's time zone, last 7 or 30 days); the user's number (with more
+  than one, §9.1); the Urgent and Follow-up marks (§9.2).
+- Search, filters, sort and page are in the address, so Back, reload and auto-refresh keep the view. Changing a
+  filter goes back to page 1; a page past the end shows the last page.
+
 ---
 
 ## 7. Texts (receive only)
@@ -396,6 +412,10 @@ When platform model settings change, existing Assistants are re-synced automatic
 
 People can text a user's number. VFi stores the texts, groups them by sender, marks unread ones and shows them on the
 Messages page. Typical uses: verification codes, a message from someone who couldn't get through.
+
+The Messages list shows 15 conversations per page, by their latest text, newest or oldest first. It can be
+searched by the name the user gave a sender or by digits in the sender's number, and filtered to unread ones and
+(with several numbers) by the number texted.
 
 ### Rules
 
@@ -824,6 +844,7 @@ Newest first. Each line points to where the rule now lives.
 | Date | Decision | Section |
 | --- | --- | --- |
 | 2026-10-31 | Assistant page in tabs, one per card; Save and Delete in a bar outside the tabs | §5.1 |
+| 2026-10-31 | Calls, Messages and Billing activity get search, filters, sorting and 15-row pages; the status filter lists every status a call shows, voicemail included | §3.2, §6.4, §7 |
 | 2026-10-31 | Number search by the last 1–4 digits, widening to the whole US when the area code has none | §4 |
 | 2026-10-31 | Voicemail on calls the Assistant places: hang up (default), leave a fixed message, or keep talking; billed as usual; no results email except for Keep talking | §9.3 |
 | 2026-10-27 | Emails for calls the Assistant placed say "call to" and "Number called"; insight webhook confirmed on a real call | §9.2 |

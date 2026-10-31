@@ -17,7 +17,13 @@
     "language": "语言",
     "sentenceGap": "",
     "allNumbers": "全部号码",
-    "filterByNumber": "按号码筛选"
+    "filterByNumber": "按号码筛选",
+    "sort": "排序",
+    "clearFilters": "清除筛选",
+    "listRange": "第 {from}–{to} 条，共 {total} 条",
+    "pages": "分页",
+    "previousPage": "上一页",
+    "nextPage": "下一页"
   },
   "languages": {
     "en": "英语",
@@ -447,7 +453,6 @@
     "seekRecording": "录音进度",
     "callFrom": "拨出号码",
     "colYourNumber": "我方号码",
-    "emptyForNumber": "这个号码还没有通话。",
     "yourNumber": "我方号码 {number}",
     "voicemailBadge": "转入语音信箱",
     "voicemailResult": {
@@ -459,7 +464,31 @@
       "hangup": "转入语音信箱，助理已挂断。",
       "message": "转入语音信箱，助理已留下你的留言并挂断。",
       "continue": "转入语音信箱，助理继续说话。"
-    }
+    },
+    "filtersLabel": "筛选通话",
+    "searchLabel": "搜索通话",
+    "searchPlaceholder": "搜索号码或尾号 4 位",
+    "anyDirection": "呼入和呼出",
+    "anyStatus": "全部状态",
+    "allAgents": "全部助理",
+    "anyTime": "全部时间",
+    "sorts": {
+      "newest": "最新在前",
+      "oldest": "最早在前",
+      "longest": "最长在前",
+      "shortest": "最短在前",
+      "costliest": "费用最高在前",
+      "cheapest": "费用最低在前"
+    },
+    "filterByBadge": "按标记筛选",
+    "matching": "{count} 个通话符合",
+    "emptyFiltered": "没有符合筛选条件的通话。",
+    "periods": {
+      "today": "今天",
+      "7d": "最近 7 天",
+      "30d": "最近 30 天"
+    },
+    "searchDigitsOnly": "通话只能按号码搜索，请输入号码中的几位数字。"
   },
   "messages": {
     "title": "短信",
@@ -483,8 +512,16 @@
     "nameSaved": "名称已保存。",
     "nameRemoved": "名称已移除。",
     "toNumber": "发至 {number}",
-    "emptyForNumber": "这个号码还没有收到短信。",
-    "descriptionMany": "发送到你各个号码的短信，每段 {price}。仅支持接收，不支持回复。"
+    "descriptionMany": "发送到你各个号码的短信，每段 {price}。仅支持接收，不支持回复。",
+    "filtersLabel": "筛选短信",
+    "searchLabel": "搜索短信",
+    "searchPlaceholder": "搜索名称或号码",
+    "sortNewest": "最新在前",
+    "sortOldest": "最早在前",
+    "unreadLabel": "按已读筛选",
+    "unreadOnly": "仅未读",
+    "matching": "{count} 个会话符合",
+    "emptyFiltered": "没有符合筛选条件的会话。"
   },
   "account": {
     "title": "账户",
@@ -544,10 +581,23 @@
     "columnDate": "日期",
     "columnDescription": "说明",
     "columnAmount": "金额",
-    "activityLimited": "仅显示最近 {count} 条记录。",
     "payments": "付款",
     "checkoutItem": "VFi 余额",
-    "knowledgeSource": "知识库资料"
+    "knowledgeSource": "知识库资料",
+    "activityFilter": "筛选账户记录",
+    "activityType": "类型",
+    "activityAll": "全部记录",
+    "activityKinds": {
+      "topup": "充值",
+      "call": "通话",
+      "number_monthly": "电话号码",
+      "voice_clone": "声音克隆",
+      "sms": "短信",
+      "knowledge_source": "知识库",
+      "refund": "退款",
+      "adjustment": "调整"
+    },
+    "noActivityOfType": "还没有这类记录。"
   },
   "stored": {
     "ledgerTopup": "充值 {amount, number, ::currency/USD}",

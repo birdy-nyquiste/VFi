@@ -1,8 +1,9 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, isNull, lt, lte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, inArray, isNull, like, lt, lte, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { contacts, messages, phoneNumbers, type Message, type PhoneNumber } from "@/db/schema";
 import { config } from "@/lib/config";
+import { clampPage, escapeLike, PAGE_SIZE } from "@/lib/list-params";
 import { UserError } from "@/lib/errors";
 import { stored } from "@/lib/stored-text";
 import { applyLedger } from "./billing/ledger";
@@ -100,26 +101,43 @@ export interface Conversation {
   unread: number;
 }
 
+export interface ConversationQuery {
+  /** Only texts sent to this number of the user's. */
+  to?: string;
+  /** The name the user gave a sender, or digits anywhere in the sender's number. */
+  search?: string;
+  unreadOnly?: boolean;
+  oldestFirst?: boolean;
+  page?: number;
+}
+
 /**
- * Conversations (one per sender and receiving number), newest first, at most `limit` of them; only
- * those sent to `to` when it's given. Counts are over every text in the conversation, so they match
- * the unread badge.
+ * One page of conversations (one per sender and receiving number), by their latest text, newest first
+ * unless `oldestFirst`, and how many match in all. Counts are over every text in the conversation, so
+ * they match the unread badge.
  */
-export async function listConversations(userId: string, limit = 500, to?: string): Promise<Conversation[]> {
+export async function listConversations(
+  userId: string,
+  { to, search, unreadOnly, oldestFirst, page = 1 }: ConversationQuery = {},
+): Promise<{ conversations: Conversation[]; total: number; page: number }> {
   const visible = and(eq(messages.userId, userId), isNull(messages.deletedAt), to ? eq(messages.toNumber, to) : undefined);
-  const groups = await db
-    .select({
-      from: messages.fromNumber,
-      to: messages.toNumber,
-      count: sql<number>`count(*)::int`,
-      unread: sql<number>`(count(*) filter (where ${messages.readAt} is null))::int`,
-    })
-    .from(messages)
-    .where(visible)
-    .groupBy(messages.fromNumber, messages.toNumber)
-    .orderBy(desc(sql`max(${messages.receivedAt})`), asc(messages.fromNumber), asc(messages.toNumber))
-    .limit(limit);
-  if (groups.length === 0) return [];
+  const unread = sql<number>`(count(*) filter (where ${messages.readAt} is null))::int`;
+  const matches = search === undefined ? undefined : await senderMatches(userId, search);
+  const grouped = () =>
+    db
+      .select({ from: messages.fromNumber, to: messages.toNumber, count: sql<number>`count(*)::int`.as("count"), unread: unread.as("unread") })
+      .from(messages)
+      .where(and(visible, matches))
+      .groupBy(messages.fromNumber, messages.toNumber)
+      .having(unreadOnly ? sql`${unread} > 0` : undefined);
+  const [{ total }] = await db.select({ total: count() }).from(grouped().as("g"));
+  const shown = clampPage(page, total);
+  const latestAt = sql`max(${messages.receivedAt})`;
+  const groups = await grouped()
+    .orderBy(oldestFirst ? asc(latestAt) : desc(latestAt), asc(messages.fromNumber), asc(messages.toNumber))
+    .limit(PAGE_SIZE)
+    .offset((shown - 1) * PAGE_SIZE);
+  if (groups.length === 0) return { conversations: [], total, page: shown };
   const [latest, names] = await Promise.all([
     db
       .selectDistinctOn([messages.fromNumber, messages.toNumber])
@@ -130,11 +148,27 @@ export async function listConversations(userId: string, limit = 500, to?: string
   ]);
   const key = (from: string, to: string) => `${from} ${to}`;
   const lastByKey = new Map(latest.map((m) => [key(m.fromNumber, m.toNumber), m]));
-  return groups.flatMap((g) => {
+  const conversations = groups.flatMap((g) => {
     const last = lastByKey.get(key(g.from, g.to));
     // Missing only if the conversation was deleted between the two queries.
     return last ? [{ ...g, name: names.get(g.from), last }] : [];
   });
+  return { conversations, total, page: shown };
+}
+
+/** Texts from senders whose name contains `search`, or whose number contains its digits. */
+async function senderMatches(userId: string, search: string): Promise<SQL> {
+  const digits = search.replace(/\D/g, "");
+  const named = await db
+    .select({ number: contacts.number })
+    .from(contacts)
+    .where(and(eq(contacts.userId, userId), ilike(contacts.name, `%${escapeLike(search.trim())}%`)));
+  return (
+    or(
+      digits ? like(messages.fromNumber, `%${digits}%`) : undefined,
+      named.length ? inArray(messages.fromNumber, named.map((c) => c.number)) : undefined,
+    ) ?? sql`false`
+  );
 }
 
 export async function countUnreadMessages(userId: string): Promise<number> {

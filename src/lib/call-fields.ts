@@ -20,6 +20,7 @@ export const FIELD_BADGES = ["none", "urgent", "followup"] as const;
 export type FieldBadge = (typeof FIELD_BADGES)[number];
 /** The mark a call gets in the calls list. */
 export type CallBadge = Exclude<FieldBadge, "none">;
+export const CALL_BADGES = FIELD_BADGES.filter((b): b is CallBadge => b !== "none");
 
 export const callField = z.object({
   /** Stable id, so renaming a field keeps its results and the email's urgent tag pointing at it. */
