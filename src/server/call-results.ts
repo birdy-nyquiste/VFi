@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { db, tableExists, type Queryable } from "@/db";
 import { agentCallResults, agents, callResults, calls, users, type Agent, type AgentCallResults, type Call, type CallResultRow } from "@/db/schema";
@@ -55,6 +55,24 @@ import { voiceProvider, type CallResults } from "./telnyx";
 let tablesSeen = false;
 export async function callResultsTablesExist(q: Queryable = db): Promise<boolean> {
   return (tablesSeen ||= await tableExists(q, "call_results"));
+}
+
+/** SQL that's true for a call marked `badge` on the calls list; null before the tables exist, when none is. */
+export async function markedAs(badge: CallBadge): Promise<SQL | null> {
+  if (!(await callResultsTablesExist())) return null;
+  return sql`exists (select 1 from ${callResults} where ${callResults.callId} = ${calls.id} and ${callResults.badge} = ${badge})`;
+}
+
+/** Whether any of the user's calls has a mark, so the calls list only offers to filter by marks once one can match. */
+export async function hasMarkedCalls(userId: string): Promise<boolean> {
+  if (!(await callResultsTablesExist())) return false;
+  const [row] = await db
+    .select({ id: calls.id })
+    .from(calls)
+    .innerJoin(callResults, eq(callResults.callId, calls.id))
+    .where(and(eq(calls.userId, userId), isNull(calls.deletedAt), sql`${callResults.badge} is not null`))
+    .limit(1);
+  return Boolean(row);
 }
 
 /** An agent's fields and email settings, as stored (defaults when it has none). */

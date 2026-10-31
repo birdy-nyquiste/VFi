@@ -3,10 +3,11 @@ import "server-only";
 import { and, desc, eq, sql } from "drizzle-orm";
 import Stripe from "stripe";
 import { db } from "@/db";
-import { ledgerEntries, payments, type User } from "@/db/schema";
+import { ledgerEntries, ledgerKind, payments, type User } from "@/db/schema";
 import type { Locale } from "@/i18n/locales";
 import { translator } from "@/i18n/messages";
 import { config } from "@/lib/config";
+import { clampPage, PAGE_SIZE } from "@/lib/list-params";
 import { UserError } from "@/lib/errors";
 import { failureColumns, stored, type StoredText } from "@/lib/stored-text";
 import { withWebhookDedupe } from "@/server/webhooks";
@@ -175,13 +176,22 @@ export async function handleStripeWebhook(rawBody: string, signature: string | n
   });
 }
 
-export async function listLedger(userId: string, limit = 100) {
-  return db
+export const LEDGER_KINDS = ledgerKind.enumValues;
+export type LedgerKind = (typeof LEDGER_KINDS)[number];
+
+/** One page of the user's balance changes, newest first; only those of one kind when `kind` is given. */
+export async function listLedger(userId: string, { kind, page = 1 }: { kind?: LedgerKind; page?: number } = {}) {
+  const where = and(eq(ledgerEntries.userId, userId), kind ? eq(ledgerEntries.kind, kind) : undefined);
+  const total = await db.$count(ledgerEntries, where);
+  const shown = clampPage(page, total);
+  const entries = await db
     .select()
     .from(ledgerEntries)
-    .where(eq(ledgerEntries.userId, userId))
-    .orderBy(desc(ledgerEntries.createdAt))
-    .limit(limit);
+    .where(where)
+    .orderBy(desc(ledgerEntries.createdAt), desc(ledgerEntries.id))
+    .limit(PAGE_SIZE)
+    .offset((shown - 1) * PAGE_SIZE);
+  return { entries, total, page: shown };
 }
 
 /** Payments made or attempted. Checkouts left without paying aren't listed: nothing was charged. */

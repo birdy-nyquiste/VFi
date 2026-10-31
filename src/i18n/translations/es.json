@@ -17,7 +17,13 @@
     "language": "Idioma",
     "sentenceGap": " ",
     "allNumbers": "Todos los números",
-    "filterByNumber": "Filtrar por número"
+    "filterByNumber": "Filtrar por número",
+    "sort": "Ordenar",
+    "clearFilters": "Quitar filtros",
+    "listRange": "{from}–{to} de {total}",
+    "pages": "Páginas",
+    "previousPage": "Página anterior",
+    "nextPage": "Página siguiente"
   },
   "languages": {
     "en": "Inglés",
@@ -444,7 +450,6 @@
     "seekRecording": "Posición de la grabación",
     "callFrom": "Llamar desde",
     "colYourNumber": "Tu número",
-    "emptyForNumber": "Aún no hay llamadas en este número.",
     "yourNumber": "Tu número {number}",
     "voicemailBadge": "Buzón de voz",
     "voicemailResult": {
@@ -456,7 +461,31 @@
       "hangup": "Llegó al buzón de voz. El asistente colgó.",
       "message": "Llegó al buzón de voz. El asistente dejó tu mensaje y colgó.",
       "continue": "Llegó al buzón de voz. El asistente siguió hablando."
-    }
+    },
+    "filtersLabel": "Filtrar llamadas",
+    "searchLabel": "Buscar llamadas",
+    "searchPlaceholder": "Busca un número o sus últimos 4 dígitos",
+    "anyDirection": "Entrantes y salientes",
+    "anyStatus": "Cualquier estado",
+    "allAgents": "Todos los asistentes",
+    "anyTime": "Cualquier fecha",
+    "sorts": {
+      "newest": "Más recientes primero",
+      "oldest": "Más antiguas primero",
+      "longest": "Más largas primero",
+      "shortest": "Más cortas primero",
+      "costliest": "Mayor costo primero",
+      "cheapest": "Menor costo primero"
+    },
+    "filterByBadge": "Filtrar por marca",
+    "matching": "{count, plural, one {# llamada coincide} other {# llamadas coinciden}}",
+    "emptyFiltered": "Ninguna llamada coincide con estos filtros.",
+    "periods": {
+      "today": "Hoy",
+      "7d": "Últimos 7 días",
+      "30d": "Últimos 30 días"
+    },
+    "searchDigitsOnly": "Las llamadas solo se pueden buscar por número. Escribe algunos de sus dígitos."
   },
   "messages": {
     "title": "Mensajes",
@@ -480,8 +509,16 @@
     "nameSaved": "Nombre guardado.",
     "nameRemoved": "Nombre quitado.",
     "toNumber": "Para {number}",
-    "emptyForNumber": "Aún no hay mensajes para este número.",
-    "descriptionMany": "Mensajes de texto enviados a tus números, {price} por segmento. Solo recepción: no se pueden enviar respuestas."
+    "descriptionMany": "Mensajes de texto enviados a tus números, {price} por segmento. Solo recepción: no se pueden enviar respuestas.",
+    "filtersLabel": "Filtrar mensajes",
+    "searchLabel": "Buscar mensajes",
+    "searchPlaceholder": "Busca un nombre o un número",
+    "sortNewest": "Más recientes primero",
+    "sortOldest": "Más antiguas primero",
+    "unreadLabel": "Filtrar por leídos",
+    "unreadOnly": "Solo sin leer",
+    "matching": "{count, plural, one {# conversación coincide} other {# conversaciones coinciden}}",
+    "emptyFiltered": "Ninguna conversación coincide con estos filtros."
   },
   "account": {
     "title": "Cuenta",
@@ -541,10 +578,23 @@
     "columnDate": "Fecha",
     "columnDescription": "Descripción",
     "columnAmount": "Monto",
-    "activityLimited": "Se muestran los últimos {count} movimientos.",
     "payments": "Pagos",
     "checkoutItem": "Crédito de VFi",
-    "knowledgeSource": "Fuente de conocimiento"
+    "knowledgeSource": "Fuente de conocimiento",
+    "activityFilter": "Filtrar actividad",
+    "activityType": "Tipo",
+    "activityAll": "Toda la actividad",
+    "activityKinds": {
+      "topup": "Recargas",
+      "call": "Llamadas",
+      "number_monthly": "Números",
+      "voice_clone": "Clones de voz",
+      "sms": "Mensajes de texto",
+      "knowledge_source": "Base de conocimiento",
+      "refund": "Reembolsos",
+      "adjustment": "Ajustes"
+    },
+    "noActivityOfType": "Todavía no hay nada de este tipo."
   },
   "stored": {
     "ledgerTopup": "Recarga de {amount, number, ::currency/USD}",

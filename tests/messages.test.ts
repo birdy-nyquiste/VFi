@@ -128,7 +128,7 @@ describe("conversations", () => {
     await handleInboundMessage(text(number.e164, { from: "+12025550002", text: "b1", occurredAt: new Date(t0 + 1000) }));
     await handleInboundMessage(text(number.e164, { from: "+12025550001", text: "a2", occurredAt: new Date(t0 + 2000) }));
 
-    const list = await listConversations(user.id);
+    const { conversations: list } = await listConversations(user.id);
     expect(list.map((c) => [c.from, c.count, c.unread, c.last.body])).toEqual([
       ["+12025550001", 2, 2, "a2"],
       ["+12025550002", 1, 1, "b1"],
@@ -150,7 +150,7 @@ describe("conversations", () => {
     await expect(deleteConversation(other.id, { from: "+12025550001" })).rejects.toThrow("not found");
 
     await deleteConversation(user.id, { from: "+12025550001" });
-    expect((await listConversations(user.id)).map((c) => c.from)).toEqual(["+12025550002"]);
+    expect((await listConversations(user.id)).conversations.map((c) => c.from)).toEqual(["+12025550002"]);
     const deleted = await db.select().from(messages).where(eq(messages.fromNumber, "+12025550001"));
     expect(deleted.every((m) => m.body === null && m.deletedAt)).toBe(true);
     // Billing stays.
@@ -164,11 +164,11 @@ describe("conversations", () => {
     await handleInboundMessage(text(number.e164, { from: "+12025550001", text: "to first", occurredAt: new Date(t0) }));
     await handleInboundMessage(text(second.e164, { from: "+12025550001", text: "to second", occurredAt: new Date(t0 + 1000) }));
 
-    expect((await listConversations(user.id)).map((c) => [c.to, c.last.body])).toEqual([
+    expect((await listConversations(user.id)).conversations.map((c) => [c.to, c.last.body])).toEqual([
       [second.e164, "to second"],
       [number.e164, "to first"],
     ]);
-    expect((await listConversations(user.id, 500, number.e164)).map((c) => c.last.body)).toEqual(["to first"]);
+    expect((await listConversations(user.id, { to: number.e164 })).conversations.map((c) => c.last.body)).toEqual(["to first"]);
     expect((await getConversation(user.id, { from: "+12025550001", to: second.e164 })).map((m) => m.body)).toEqual(["to second"]);
     // A link without the receiving number shows all of the sender's texts.
     expect(await getConversation(user.id, { from: "+12025550001" })).toHaveLength(2);
@@ -176,7 +176,7 @@ describe("conversations", () => {
     expect(await markConversationRead(user.id, { from: "+12025550001", to: number.e164 }, new Date(t0 + 5000))).toBe(1);
     expect(await countUnreadMessages(user.id)).toBe(1);
     await deleteConversation(user.id, { from: "+12025550001", to: number.e164 });
-    expect((await listConversations(user.id)).map((c) => c.to)).toEqual([second.e164]);
+    expect((await listConversations(user.id)).conversations.map((c) => c.to)).toEqual([second.e164]);
   });
 
   it("lists every sender with full counts, however many texts a busier sender has", async () => {
@@ -196,14 +196,14 @@ describe("conversations", () => {
       })),
     );
 
-    const list = await listConversations(user.id);
+    const { conversations: list } = await listConversations(user.id);
     expect(list.map((c) => [c.from, c.count, c.unread, c.last.body])).toEqual([
       ["+12025550002", 600, 10, "b599"],
       ["+12025550001", 1, 1, "a1"],
     ]);
     expect(await countUnreadMessages(user.id)).toBe(11);
-    // The limit is on conversations.
-    expect((await listConversations(user.id, 1)).map((c) => c.from)).toEqual(["+12025550002"]);
+    // Paging counts conversations, not texts.
+    expect((await listConversations(user.id)).total).toBe(2);
   });
 
   it("purges text content past retention", async () => {
@@ -240,7 +240,7 @@ describe("contact names", () => {
     await handleInboundMessage(text(number.e164, { from: "+12025550001" }));
 
     await setContactName(user.id, "+12025550001", "  Dr.   Lee's office ");
-    expect((await listConversations(user.id))[0].name).toBe("Dr. Lee's office");
+    expect((await listConversations(user.id)).conversations[0].name).toBe("Dr. Lee's office");
     expect(await getContactName(other.id, "+12025550001")).toBeUndefined();
 
     await setContactName(user.id, "+12025550001", "Dentist");
@@ -248,7 +248,7 @@ describe("contact names", () => {
 
     await setContactName(user.id, "+12025550001", "   ");
     expect(await getContactName(user.id, "+12025550001")).toBeUndefined();
-    expect((await listConversations(user.id))[0].name).toBeUndefined();
+    expect((await listConversations(user.id)).conversations[0].name).toBeUndefined();
   });
 
   it("rejects overly long names", async () => {

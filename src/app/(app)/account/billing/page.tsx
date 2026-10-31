@@ -3,12 +3,15 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { ActionForm, SubmitButton } from "@/components/forms";
-import { Card, CardTitle, Notice, StatusBadge } from "@/components/ui";
+import { Card, CardTitle, Notice, StatusBadge, compactInputClass } from "@/components/ui";
 import { config } from "@/lib/config";
 import { formatCents, formatDateTime } from "@/lib/format";
 import { showStored } from "@/lib/stored-text";
 import { requireUser } from "@/server/auth";
-import { cancelTopup, listLedger, listPayments, settleReturnedTopup, type ReturnedTopup } from "@/server/billing/payments";
+import { cancelTopup, LEDGER_KINDS, listLedger, listPayments, settleReturnedTopup, type ReturnedTopup } from "@/server/billing/payments";
+import { ListFilters } from "@/components/list-filters";
+import { Pagination } from "@/components/list-parts";
+import { listHref, oneOf, readPage, singleValues } from "@/lib/list-params";
 import { listUserNumbers } from "@/server/numbers";
 import { NegativeBalanceNotice } from "../../negative-balance-notice";
 import { devCreditAction, topupAction } from "./actions";
@@ -16,8 +19,6 @@ import { viewerTimeZone } from "@/server/time-zone";
 
 /** Top-up presets in dollars; the ones outside the configured limits aren't offered. */
 const PRESETS = [10, 25, 50, 100];
-/** Activity rows shown. */
-const LEDGER_LIMIT = 100;
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getTranslations("account"))("billing") };
@@ -26,10 +27,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ topup?: string; session_id?: string; payment?: string }>;
+  searchParams: Promise<Partial<Record<"topup" | "session_id" | "payment" | "type" | "page", string | string[]>>>;
 }) {
   const user = await requireUser();
-  const { topup, session_id: sessionId, payment } = await searchParams;
+  const { topup, session_id: sessionId, payment, ...params } = singleValues(await searchParams);
+  const kind = oneOf(params.type, LEDGER_KINDS);
   let returned: ReturnedTopup | null = null;
   if (topup === "success" && sessionId) {
     returned = await settleReturnedTopup(user.id, sessionId);
@@ -37,7 +39,12 @@ export default async function BillingPage({
     if (returned === "credited") redirect(`/account/billing?topup=success&session_id=${encodeURIComponent(sessionId)}`);
   }
   if (topup === "cancelled" && payment) await cancelTopup(user.id, payment);
-  const [ledger, payments, numbers] = await Promise.all([listLedger(user.id, LEDGER_LIMIT), listPayments(user.id), listUserNumbers(user.id)]);
+  const [ledger, payments, numbers] = await Promise.all([
+    listLedger(user.id, { kind, page: readPage(params.page) }),
+    listPayments(user.id),
+    listUserNumbers(user.id),
+  ]);
+  const activityHref = (changes: { type?: string; page?: string }) => listHref("/account/billing", { type: kind, page: String(ledger.page) }, changes);
   const p = config.pricing;
   const amounts = PRESETS.filter((a) => a * 100 >= p.minTopupCents && a * 100 <= p.maxTopupCents);
   if (amounts.length === 0) amounts.push(p.minTopupCents / 100);
@@ -114,9 +121,21 @@ export default async function BillingPage({
       </div>
 
       <Card className="overflow-x-auto p-0">
-        <div className="px-6 pt-5"><CardTitle>{t("activity")}</CardTitle></div>
-        {ledger.length === 0 ? (
-          <p className="px-6 pb-6 text-[15px] text-stone-500">{t("noActivity")}</p>
+        <div className="flex flex-wrap items-start justify-between gap-3 px-6 pt-5">
+          <CardTitle>{t("activity")}</CardTitle>
+          {(ledger.total > 0 || kind) && (
+            <ListFilters key={activityHref({})} action="/account/billing" label={t("activityFilter")} keep={{}}>
+              <select name="type" defaultValue={kind ?? ""} aria-label={t("activityType")} className={`${compactInputClass} -mt-1 py-1.5 text-sm`}>
+                <option value="">{t("activityAll")}</option>
+                {LEDGER_KINDS.map((k) => (
+                  <option key={k} value={k}>{t(`activityKinds.${k}`)}</option>
+                ))}
+              </select>
+            </ListFilters>
+          )}
+        </div>
+        {ledger.entries.length === 0 ? (
+          <p className="px-6 pb-6 text-[15px] text-stone-500">{kind ? t("noActivityOfType") : t("noActivity")}</p>
         ) : (
           <table className="w-full min-w-[560px] text-sm">
             <thead className="border-b border-stone-100 text-left text-[13px] text-stone-500">
@@ -128,7 +147,7 @@ export default async function BillingPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {ledger.map((e) => (
+              {ledger.entries.map((e) => (
                 <tr key={e.id}>
                   <td className="px-6 py-3.5 text-stone-500">{formatDateTime(e.createdAt, locale, tz)}</td>
                   <td className="px-3 py-3.5">{showStored(locale, e.description, e.descriptionMsg)}</td>
@@ -141,7 +160,7 @@ export default async function BillingPage({
             </tbody>
           </table>
         )}
-        {ledger.length === LEDGER_LIMIT && <p className="px-5 py-3 text-xs text-stone-500">{t("activityLimited", { count: LEDGER_LIMIT })}</p>}
+        {ledger.total > 0 && <Pagination page={ledger.page} total={ledger.total} href={(p) => activityHref({ page: String(p) })} />}
       </Card>
 
       {payments.some((x) => x.status !== "succeeded") && (

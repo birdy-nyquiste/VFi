@@ -17,7 +17,13 @@
     "language": "言語",
     "sentenceGap": "",
     "allNumbers": "すべての番号",
-    "filterByNumber": "番号で絞り込む"
+    "filterByNumber": "番号で絞り込む",
+    "sort": "並べ替え",
+    "clearFilters": "絞り込みを解除",
+    "listRange": "{total} 件中 {from}–{to} 件",
+    "pages": "ページ",
+    "previousPage": "前のページ",
+    "nextPage": "次のページ"
   },
   "languages": {
     "en": "英語",
@@ -444,7 +450,6 @@
     "seekRecording": "録音の再生位置",
     "callFrom": "発信元の番号",
     "colYourNumber": "自分の番号",
-    "emptyForNumber": "この番号の通話はまだありません。",
     "yourNumber": "自分の番号 {number}",
     "voicemailBadge": "留守番電話",
     "voicemailResult": {
@@ -456,7 +461,31 @@
       "hangup": "留守番電話につながりました。アシスタントは切りました。",
       "message": "留守番電話につながりました。アシスタントはメッセージを残して切りました。",
       "continue": "留守番電話につながりました。アシスタントは話し続けました。"
-    }
+    },
+    "filtersLabel": "通話を絞り込む",
+    "searchLabel": "通話を検索",
+    "searchPlaceholder": "番号または末尾 4 桁で検索",
+    "anyDirection": "着信と発信",
+    "anyStatus": "すべての状態",
+    "allAgents": "すべてのアシスタント",
+    "anyTime": "すべての期間",
+    "sorts": {
+      "newest": "新しい順",
+      "oldest": "古い順",
+      "longest": "長い順",
+      "shortest": "短い順",
+      "costliest": "料金の高い順",
+      "cheapest": "料金の安い順"
+    },
+    "filterByBadge": "マークで絞り込む",
+    "matching": "{count} 件の通話が該当",
+    "emptyFiltered": "条件に合う通話はありません。",
+    "periods": {
+      "today": "今日",
+      "7d": "過去 7 日間",
+      "30d": "過去 30 日間"
+    },
+    "searchDigitsOnly": "通話は番号でのみ検索できます。番号の一部を入力してください。"
   },
   "messages": {
     "title": "メッセージ",
@@ -480,8 +509,16 @@
     "nameSaved": "名前を保存しました。",
     "nameRemoved": "名前を削除しました。",
     "toNumber": "宛先 {number}",
-    "emptyForNumber": "この番号宛ての SMS はまだありません。",
-    "descriptionMany": "あなたの各番号に届いた SMS です。1 セグメントあたり {price}。受信専用のため、返信には対応していません。"
+    "descriptionMany": "あなたの各番号に届いた SMS です。1 セグメントあたり {price}。受信専用のため、返信には対応していません。",
+    "filtersLabel": "メッセージを絞り込む",
+    "searchLabel": "メッセージを検索",
+    "searchPlaceholder": "名前または番号で検索",
+    "sortNewest": "新しい順",
+    "sortOldest": "古い順",
+    "unreadLabel": "既読で絞り込む",
+    "unreadOnly": "未読のみ",
+    "matching": "{count} 件の会話が該当",
+    "emptyFiltered": "条件に合う会話はありません。"
   },
   "account": {
     "title": "アカウント",
@@ -541,10 +578,23 @@
     "columnDate": "日付",
     "columnDescription": "内容",
     "columnAmount": "金額",
-    "activityLimited": "最新の {count} 件を表示しています。",
     "payments": "支払い",
     "checkoutItem": "VFi クレジット",
-    "knowledgeSource": "ナレッジソース"
+    "knowledgeSource": "ナレッジソース",
+    "activityFilter": "履歴を絞り込む",
+    "activityType": "種類",
+    "activityAll": "すべての履歴",
+    "activityKinds": {
+      "topup": "チャージ",
+      "call": "通話",
+      "number_monthly": "電話番号",
+      "voice_clone": "ボイスクローン",
+      "sms": "SMS",
+      "knowledge_source": "ナレッジベース",
+      "refund": "返金",
+      "adjustment": "調整"
+    },
+    "noActivityOfType": "この種類の履歴はまだありません。"
   },
   "stored": {
     "ledgerTopup": "チャージ {amount, number, ::currency/USD}",
